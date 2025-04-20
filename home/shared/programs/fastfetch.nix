@@ -35,7 +35,7 @@
         {
           type = "os";
           key = " {#39}│ {#32}Distro{#}    {#31}>{#}";
-          format = "{$1}  {2} {8} {10}"; # Corresponds to Distro Name, Version ID, Codename
+          format = "{$1}  {2} {8}"; # Corresponds to Distro Name, Version ID
         }
         {
           type = "kernel";
@@ -52,7 +52,7 @@
         {
           type = "terminal";
           key = " {#39}│ {#32}Terminal{#}  {#31}>{#}";
-          format = "{$1}  {5} v{6}"; # Corresponds to Process Name, Version
+          format = "{$1}  {5} {?6}v{6}"; # Corresponds to Process Name, Version
         }
         {
           type = "shell";
@@ -79,7 +79,7 @@
           type = "uptime";
           key = " {#39}│ {#32}Uptime{#}    {#31}>{#}";
           # Using placeholders {0}, {1}, {2} for days, hours, minutes respectively
-          format = "{$1}  {0} days {1} hours {2} minutes";
+          format = "{$1}  {?1}{1}d {?}{?2}{2}h {?}{3}m";
         }
 
         # Bottom Border
