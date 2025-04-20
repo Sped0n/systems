@@ -33,5 +33,14 @@
       "2606:4700:4700::1111"
       "2001:4860:4860::8888"
     ];
+
+    # Firewall
+    firewall = {
+      extraCommands = ''
+        iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+        iptables -t nat -A POSTROUTING -o tailscale0 -j MASQUERADE
+      '';
+      trustedInterfaces = ["docker0"];
+    };
   };
 }
