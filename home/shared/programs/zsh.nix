@@ -14,7 +14,7 @@
       source ${../config/zsh/extras.zsh}
       source ${../config/zsh/functions.zsh}
     ";
-    initExtra = "macchina";
+    initExtra = "fastfetch";
     plugins = [
       {
         name = "vi-mode";
