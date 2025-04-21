@@ -23,8 +23,8 @@
       };
 
       "gitea" = {
-        hostname = vars.tennousei.ipv4;
-        port = 12222;
+        hostname = "100.69.27.45";
+        port = 22222;
         user = "git";
         identityFile = [
           config.age.secrets."github-ssh-key".path
