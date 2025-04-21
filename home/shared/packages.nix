@@ -1,7 +1,26 @@
 {pkgs, ...}:
 with pkgs; {
   home.packages =
+    # Core
     [
+      gcc
+      coreutils
+      findutils
+      diffutils
+      gnused
+      gnugrep
+      gawk
+      gnutar
+      gzip
+      bzip2
+      xz
+      gnumake
+      patch
+      zip
+      unzip
+      inetutils
+    ]
+    ++ [
       # General packages for development and system management
       just
       tlrc
