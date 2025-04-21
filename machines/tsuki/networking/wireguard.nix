@@ -7,6 +7,7 @@
 
     firewall = {
       allowedUDPPorts = [51820];
+      checkReversePath = false;
     };
   };
 
