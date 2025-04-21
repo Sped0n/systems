@@ -1,8 +1,4 @@
-{
-  pkgs-stable,
-  modulesPath,
-  ...
-}: {
+{modulesPath, ...}: {
   imports = [
     (modulesPath + "/profiles/qemu-guest.nix")
   ];
@@ -18,7 +14,6 @@
       "vmw_pvscsi"
     ];
     kernelModules = ["kvm-amd"];
-    kernelPackages = pkgs-stable.linuxPackages;
   };
 
   swapDevices = [
