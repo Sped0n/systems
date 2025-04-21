@@ -18,7 +18,7 @@
 
   services.logrotate = {
     enable = true;
-    paths = {
+    settings = {
       traefik = {
         path = "/home/spedon/infra/data/traefik/logs/*.log";
 
