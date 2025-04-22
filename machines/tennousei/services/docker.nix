@@ -2,17 +2,15 @@
   virtualisation.docker = {
     enable = true;
     enableOnBoot = true;
-    daemon.settings = {
-      "iptables" = false;
-    };
   };
 
   networking.firewall = {
+    allowedUDPPorts = [21027 22000];
+    allowedTCPPorts = [22000];
     extraCommands = ''
-      iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-      iptables -t nat -A POSTROUTING -o tailscale0 -j MASQUERADE
+      iptables -I INPUT 1 -s 172.16.0.0/12 -p tcp -d 172.17.0.1 -j ACCEPT
+      iptables -I INPUT 2 -s 172.16.0.0/12 -p udp -d 172.17.0.1 -j ACCEPT
     '';
-    trustedInterfaces = ["docker0"];
     checkReversePath = false;
   };
 

@@ -4,9 +4,10 @@
 
     ./system.nix
     ./disko.nix
-    ./networking
-    ./docker.nix
     ./secrets.nix
+
+    ./networking
+    ./services
   ];
 
   home-manager = {

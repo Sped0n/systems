@@ -1,7 +1,7 @@
 {...}: {
   networking.firewall = {
     enable = true;
-    allowPing = false;
+    pingLimit = "--limit 10/minute --limit-burst 5";
     trustedInterfaces = ["tailscale0"];
   };
 

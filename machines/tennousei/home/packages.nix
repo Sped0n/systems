@@ -18,5 +18,6 @@ in
       [
         codegpt
         hugo
+        go
       ];
   }
