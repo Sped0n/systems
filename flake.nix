@@ -3,16 +3,9 @@
 
   inputs = {
     # Core
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs-darwin.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
     nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-24.11";
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    agenix = {
-      url = "github:ryantm/agenix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
 
     # Misc
     secrets = {
@@ -21,34 +14,53 @@
     };
 
     # NixOS
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    agenix = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     # Darwin
+    home-manager-darwin = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs-darwin";
+    };
+    agenix-darwin = {
+      url = "github:ryantm/agenix";
+      inputs.nixpkgs.follows = "nixpkgs-darwin";
+    };
     nix-darwin = {
       url = "github:nix-darwin/nix-darwin/master";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
     nix-homebrew = {
       url = "github:zhaofengli-wip/nix-homebrew";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
     nix-rosetta-builder = {
       url = "github:cpick/nix-rosetta-builder";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
   };
 
   outputs = inputs @ {
     self,
     nixpkgs,
+    nixpkgs-darwin,
     nixpkgs-stable,
+    secrets,
     home-manager,
     agenix,
-    secrets,
     disko,
+    home-manager-darwin,
+    agenix-darwin,
     nix-darwin,
     nix-homebrew,
     nix-rosetta-builder,
@@ -69,9 +81,9 @@
         }
         // inputs;
       modules = [
-        home-manager.darwinModules.home-manager
+        home-manager-darwin.darwinModules.home-manager
         nix-homebrew.darwinModules.nix-homebrew
-        agenix.darwinModules.default
+        agenix-darwin.darwinModules.default
         nix-rosetta-builder.darwinModules.default
         ./machines/ringo
       ];
