@@ -1,7 +1,6 @@
 {vars, ...}: {
   imports = [
     ./sshd.nix
-    ./wireguard.nix
   ];
 
   networking = {

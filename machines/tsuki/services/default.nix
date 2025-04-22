@@ -1,7 +1,6 @@
 {
   imports = [
-    ./docker.nix
-    ./caddy.nix
+    ./wireguard.nix
     ./beszel.nix
   ];
 }
