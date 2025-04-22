@@ -33,6 +33,7 @@ in
         minicom
         nali
         tokei
+        smartmontools
       ]
       ++
       # Languages supports
