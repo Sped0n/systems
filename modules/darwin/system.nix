@@ -53,9 +53,7 @@
       #   https://github.com/yannbertrand/macos-defaults
       NSGlobalDomain = {
         "com.apple.trackpad.scaling" = 1.6; # Configures the trackpad tracking speed (0 to 3).
-
         "com.apple.sound.beep.feedback" = 0; # Disable beep sound when pressing volume up/down key
-
         AppleKeyboardUIMode = 3; # Mode 3 enables full keyboard control
         InitialKeyRepeat = 15; # Normal minimum is 15 (225 ms), maximum is 120 (1800 ms)
         KeyRepeat = 3; # Normal minimum is 2 (30 ms), maximum is 120 (1800 ms)
@@ -66,7 +64,7 @@
         NSAutomaticQuoteSubstitutionEnabled = false; # Disable auto quote substitution
         NSAutomaticSpellingCorrectionEnabled = false; # Disable auto spelling correction
         NSNavPanelExpandedStateForSaveMode = true; # Expand save panel by default
-        NSNavPanelExpandedStateForSaveMode2 = true;
+        AppleShowAllExtensions = true; # Show all file extensions in Finder
       };
 
       # Customize settings that not supported by nix-darwin directly
@@ -102,10 +100,6 @@
           # Require password immediately after sleep or screen saver begins
           askForPassword = 1;
           askForPasswordDelay = 0;
-        };
-        "com.apple.screencapture" = {
-          location = "~/Desktop";
-          type = "png";
         };
         "com.apple.AdLib" = {
           allowApplePersonalizedAdvertising = false;
