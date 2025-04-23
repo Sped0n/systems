@@ -19,7 +19,7 @@
       Type = "simple";
       Restart = "always";
       RestartSec = "3s";
-      User = "root";
+      User = "${username}";
       WorkingDirectory = "${home}/infra/beszel";
       ExecStart = ''
         ${pkgs.beszel}/bin/beszel-hub serve --http "0.0.0.0:8090"
