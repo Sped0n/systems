@@ -6,8 +6,8 @@
     };
 
     firewall = {
-      allowedTCPPorts = [6881];
-      allowedUDPPorts = [6881 51820];
+      allowedTCPPorts = [55555];
+      allowedUDPPorts = [55555 51820];
       checkReversePath = false;
     };
   };
