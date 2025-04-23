@@ -6,9 +6,15 @@
     };
 
     firewall = {
-      allowedUDPPorts = [51820];
+      allowedTCPPorts = [6881];
+      allowedUDPPorts = [6881 51820];
       checkReversePath = false;
     };
+  };
+
+  boot.kernel.sysctl = {
+    "net.ipv4.ip_forward" = 1;
+    "net.ipv6.conf.all.forwarding" = 1;
   };
 
   # https://rakhesh.com/linux-bsd/tailscale-wireguard-co-existing-or-i-love-policy-based-routing
