@@ -408,11 +408,11 @@
     "secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1745431023,
-        "narHash": "sha256-3Z7PLbhZZnwy9/naXx/u4L2I7hoafcQXOehynG4h8gM=",
+        "lastModified": 1745434213,
+        "narHash": "sha256-43esM7KQW/SmdENlt6glLRA6wg/RqnFmiHexQskp3Bk=",
         "ref": "refs/heads/main",
-        "rev": "b395a263db2a1ac0d9dd8ff116bab06e26193529",
-        "revCount": 26,
+        "rev": "c758d6c0758b28a18946b49eaed657f11b6df32b",
+        "revCount": 27,
         "type": "git",
         "url": "ssh://git@github.com/Sped0n/secrets"
       },
