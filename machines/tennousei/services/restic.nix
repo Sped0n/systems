@@ -13,16 +13,16 @@
     EnvironmentFile = config.age.secrets."restic-env".path;
     TimeoutStartSec = "15m";
   };
+  environment = {
+    RESTIC_REPOSITORY = "s3:s3.eu-central-003.backblazeb2.com/${vars.backupBucketName}/tennousei";
+    RESTIC_PASSWORD_FILE = "${config.age.secrets."restic-password".path}";
+  };
   keepDaily = 3;
   keepWeekly = 2;
 in {
   systemd.services."restic-backup" = {
     description = "Stop services, run Restic backup for ${sourceDir}, restart services";
-    inherit serviceConfig;
-    environment = {
-      RESTIC_REPOSITORY = "s3:s3.eu-central-003.backblazeb2.com/${vars.backupBucketName}/tennousei";
-      RESTIC_PASSWORD_FILE = "${config.age.secrets."restic-password".path}";
-    };
+    inherit serviceConfig environment;
     script = ''
       set -euo pipefail # Exit on error, unset variable, or pipe failure
 
@@ -71,11 +71,7 @@ in {
 
   systemd.services."restic-check" = {
     description = "Restic repository health check";
-    inherit serviceConfig;
-    environment = {
-      RESTIC_REPOSITORY = "s3:s3.eu-central-003.backblazeb2.com/${vars.backupBucketName}/tennousei";
-      RESTIC_PASSWORD_FILE = "${config.age.secrets."restic-password".path}";
-    };
+    inherit serviceConfig environment;
     script = ''
       set -euo pipefail
       echo "Starting Restic repository check..."
