@@ -9,6 +9,7 @@
     enableOnBoot = true;
     daemon.settings = {
       iptables = false;
+      max-concurrent-downloads = 2;
     };
   };
 

@@ -1,4 +1,8 @@
 {...}: {
+  systemd.tmpfiles.rules = [
+    "d /srv/eyes 0755 root root -"
+  ];
+
   services.caddy = {
     enable = true;
     virtualHosts."http://:10001" = {
