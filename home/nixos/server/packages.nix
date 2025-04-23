@@ -12,7 +12,6 @@ with pkgs; {
     # Others
     [
       restic
-      rclone
       beszel
     ];
 }
