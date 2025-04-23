@@ -15,8 +15,21 @@
     secrets = {
       "tennousei-cf-tunnel-json" =
         {
-          path = "${home}/.config/secrets/cf-tunnel.json";
           file = "${secrets}/tennousei-cf-tunnel-json.age";
+          owner = "root";
+        }
+        // readable;
+
+      "restic-env" =
+        {
+          file = "${secrets}/restic-env.age";
+          owner = "root";
+        }
+        // readable;
+
+      "restic-password" =
+        {
+          file = "${secrets}/restic-password.age";
           owner = "root";
         }
         // readable;
