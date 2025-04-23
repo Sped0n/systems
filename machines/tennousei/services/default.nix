@@ -4,5 +4,6 @@
     ./caddy.nix
     ./beszel.nix
     ./restic.nix
+    ./rclone.nix
   ];
 }

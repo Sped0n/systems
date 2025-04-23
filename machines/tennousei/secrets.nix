@@ -33,6 +33,13 @@
           owner = "root";
         }
         // readable;
+
+      "rclone-webdav-htpasswd" =
+        {
+          file = "${secrets}/tennousei-rclone-webdav-htpasswd.age";
+          owner = "root";
+        }
+        // readable;
     };
   };
 }
