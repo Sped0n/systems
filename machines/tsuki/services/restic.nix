@@ -6,6 +6,7 @@
   ...
 }: let
   sourceDir = "${home}/infra/data";
+  composeFile = "${home}/infra/docker-compose.yml";
   serviceConfig = {
     Type = "oneshot";
     User = "root";
@@ -27,6 +28,7 @@ in {
 
       echo "Attempting to stop related services..."
       systemctl stop beszel-hub.service
+      ${pkgs.docker}/bin/docker compose -f "${composeFile}" stop
       echo "Related services stopped."
 
       # --- Restic Backup ---
@@ -51,6 +53,7 @@ in {
       # --- Restart Related Services ---
       echo "Attempting to start related services..."
       systemctl start beszel-hub.service
+      ${pkgs.docker}/bin/docker compose -f "${composeFile}" start
       echo "Related services started."
 
       echo "Restic backup process complete for ${sourceDir}."
