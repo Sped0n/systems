@@ -36,6 +36,10 @@ _brew_update:
 # Update command (macOS version)
 [macos]
 update: _brew_update
+    @just _nix_update "nixpkgs-darwin"
+
+[macos]
+update-flake:
     @just _nix_update "nixpkgs-darwin secrets home-manager-darwin agenix-darwin nix-darwin nix-homebrew nix-rosetta-builder"
 
 [macos]
@@ -45,6 +49,9 @@ update-all: _brew_update
 # Update command (Linux version)
 [linux]
 update:
+    @just _nix_update "nixpkgs nixpkgs-stable"
+
+update-flake:
     @just _nix_update "nixpkgs nixpkgs-stable home-manager agenix disko"
 
 [linux]
