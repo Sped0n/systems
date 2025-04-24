@@ -35,13 +35,21 @@ _brew_update:
 
 # Update command (macOS version)
 [macos]
-update *args: _brew_update
-    @just _nix_update {{args}}
+update: _brew_update
+    @just _nix_update "nixpkgs-darwin secrets home-manager-darwin agenix-darwin nix-darwin nix-homebrew nix-rosetta-builder"
+
+[macos]
+update-all: _brew_update
+    @just _nix_update 
 
 # Update command (Linux version)
 [linux]
-update *args:
-    @just _nix_update {{args}}
+update:
+    @just _nix_update "nixpkgs nixpkgs-stable home-manager agenix disko"
+
+[linux]
+update-all:
+    @just _nix_update
 
 # Switch command
 [macos]
@@ -60,6 +68,10 @@ switch:
 build:
     @echo "Running: darwin-rebuild build --flake ."
     @darwin-rebuild build --flake .
+    @echo "--------------------------------------------------"
+    @echo "Complete! Below is the diff-closures result:"
+    @nix store diff-closures /run/current-system ./result
+    @echo "--------------------------------------------------"
     @echo "Removing ./result symlink..."
     @unlink ./result
 
@@ -68,6 +80,10 @@ build:
     @echo "Running: nixos-rebuild build --flake ."
     @# NixOS build usually does *not* require root privileges
     @nixos-rebuild build --flake .
+    @echo "--------------------------------------------------"
+    @echo "Complete! Below is the diff-closures result:"
+    @nix store diff-closures /run/current-system ./result
+    @echo "--------------------------------------------------"
     @echo "Removing ./result symlink..."
     @unlink ./result
 
