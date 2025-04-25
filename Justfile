@@ -51,6 +51,7 @@ update-all: _brew_update
 update:
     @just _nix_update "nixpkgs nixpkgs-stable"
 
+[linux]
 update-flake:
     @just _nix_update "nixpkgs nixpkgs-stable home-manager agenix disko"
 
