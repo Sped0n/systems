@@ -1,4 +1,8 @@
-{pkgs, ...}: {
+{
+  lib,
+  pkgs,
+  ...
+}: {
   programs.zsh = {
     enable = true;
     completionInit = "autoload -Uz compinit && compinit";
@@ -10,11 +14,15 @@
     syntaxHighlighting = {
       enable = true;
     };
-    initExtraFirst = "
-      source ${../config/zsh/extras.zsh}
-      source ${../config/zsh/functions.zsh}
-    ";
-    initExtra = "fastfetch";
+    initContent = lib.mkMerge [
+      (
+        lib.mkOrder 500 ''
+          source ${../config/zsh/extras.zsh}
+          source ${../config/zsh/functions.zsh}
+        ''
+      )
+      (lib.mkOrder 1500 "fastfetch")
+    ];
     plugins = [
       {
         name = "vi-mode";
