@@ -3,9 +3,11 @@
     ../../shared
 
     ./system.nix
-    ./networking.nix
     ./users.nix
-    ./sshd.nix
+    ./secrets.nix
+
+    ./networking
+    ./services
   ];
 
   nix.gc.dates = "weekly";
