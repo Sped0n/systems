@@ -33,6 +33,7 @@ return {
         showtabline = 0,
         clipboard = "",
         cursorlineopt = "number",
+        mouse = "a",
       },
       g = { -- vim.g.<key>
         -- configure global vim variables (vim.g)
