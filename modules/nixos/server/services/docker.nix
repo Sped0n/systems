@@ -14,8 +14,6 @@
       ''
         iptables -I INPUT 1 -s 172.16.0.0/12 -p tcp -d 172.17.0.1 -j ACCEPT
         iptables -I INPUT 2 -s 172.16.0.0/12 -p udp -d 172.17.0.1 -j ACCEPT
-        iptables -I INPUT 3 -s 192.168.0.0/16 -p tcp -d 172.17.0.1 -j ACCEPT
-        iptables -I INPUT 4 -s 192.168.0.0/16 -p udp -d 172.17.0.1 -j ACCEPT
       ''
       +
       # Need to MASQUERADE after we set docker's iptables to false
@@ -28,8 +26,6 @@
       ''
         iptables -D INPUT -s 172.16.0.0/12 -p tcp -d 172.17.0.1 -j ACCEPT || true
         iptables -D INPUT -s 172.16.0.0/12 -p udp -d 172.17.0.1 -j ACCEPT || true
-        iptables -D INPUT -s 192.168.0.0/16 -p tcp -d 172.17.0.1 -j ACCEPT || true
-        iptables -D INPUT -s 192.168.0.0/16 -p udp -d 172.17.0.1 -j ACCEPT || true
       ''
       +
       # Need to MASQUERADE after we set docker's iptables to false
