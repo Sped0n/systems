@@ -5,7 +5,7 @@
     # Core
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-darwin.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-24.11";
+    # nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-24.11";
 
     # Misc
     secrets = {
@@ -54,7 +54,7 @@
     self,
     nixpkgs,
     nixpkgs-darwin,
-    nixpkgs-stable,
+    # nixpkgs-stable,
     secrets,
     home-manager,
     agenix,
@@ -68,65 +68,74 @@
     vars = import "${secrets}/vars";
     username = "spedon";
   in {
-    darwinConfigurations."ringo" = nix-darwin.lib.darwinSystem rec {
-      system = "aarch64-darwin";
-      specialArgs =
-        {
-          inherit vars username;
-          home = "/Users/${username}";
-          pkgs-stable = import nixpkgs-stable {
-            inherit system;
-            config.allowUnfree = true;
-          };
-        }
-        // inputs;
-      modules = [
-        home-manager-darwin.darwinModules.home-manager
-        nix-homebrew.darwinModules.nix-homebrew
-        agenix-darwin.darwinModules.default
-        nix-rosetta-builder.darwinModules.default
-        ./machines/ringo
-      ];
-    };
+    darwinConfigurations."ringo" =
+      nix-darwin.lib.darwinSystem
+      # rec
+      {
+        system = "aarch64-darwin";
+        specialArgs =
+          {
+            inherit vars username;
+            home = "/Users/${username}";
+            # pkgs-stable = import nixpkgs-stable {
+            #   inherit system;
+            #   config.allowUnfree = true;
+            # };
+          }
+          // inputs;
+        modules = [
+          home-manager-darwin.darwinModules.home-manager
+          nix-homebrew.darwinModules.nix-homebrew
+          agenix-darwin.darwinModules.default
+          nix-rosetta-builder.darwinModules.default
+          ./machines/ringo
+        ];
+      };
 
-    nixosConfigurations."tsuki" = nixpkgs.lib.nixosSystem rec {
-      system = "x86_64-linux";
-      specialArgs =
-        {
-          inherit vars username;
-          home = "/home/${username}";
-          pkgs-stable = import nixpkgs-stable {
-            inherit system;
-            config.allowUnfree = true;
-          };
-        }
-        // inputs;
-      modules = [
-        disko.nixosModules.disko
-        agenix.nixosModules.default
-        home-manager.nixosModules.home-manager
-        ./machines/tsuki
-      ];
-    };
+    nixosConfigurations."tsuki" =
+      nixpkgs.lib.nixosSystem
+      # rec
+      {
+        system = "x86_64-linux";
+        specialArgs =
+          {
+            inherit vars username;
+            home = "/home/${username}";
+            # pkgs-stable = import nixpkgs-stable {
+            #   inherit system;
+            #   config.allowUnfree = true;
+            # };
+          }
+          // inputs;
+        modules = [
+          disko.nixosModules.disko
+          agenix.nixosModules.default
+          home-manager.nixosModules.home-manager
+          ./machines/tsuki
+        ];
+      };
 
-    nixosConfigurations."tennousei" = nixpkgs.lib.nixosSystem rec {
-      system = "x86_64-linux";
-      specialArgs =
-        {
-          inherit vars username;
-          home = "/home/${username}";
-          pkgs-stable = import nixpkgs-stable {
-            inherit system;
-            config.allowUnfree = true;
-          };
-        }
-        // inputs;
-      modules = [
-        disko.nixosModules.disko
-        agenix.nixosModules.default
-        home-manager.nixosModules.home-manager
-        ./machines/tennousei
-      ];
-    };
+    nixosConfigurations."tennousei" =
+      nixpkgs.lib.nixosSystem
+      # rec
+      {
+        system = "x86_64-linux";
+        specialArgs =
+          {
+            inherit vars username;
+            home = "/home/${username}";
+            # pkgs-stable = import nixpkgs-stable {
+            #   inherit system;
+            #   config.allowUnfree = true;
+            # };
+          }
+          // inputs;
+        modules = [
+          disko.nixosModules.disko
+          agenix.nixosModules.default
+          home-manager.nixosModules.home-manager
+          ./machines/tennousei
+        ];
+      };
   };
 }
