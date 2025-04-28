@@ -26,7 +26,7 @@
       git_status = {
         ahead = ">$count";
         behind = "$count<";
-        diverged = "behind_count<>$ahead_count";
+        diverged = "$behind_count<|>$ahead_count";
         renamed = "r";
         deleted = "x";
       };
@@ -35,8 +35,6 @@
       azure = {symbol = "az ";};
       buf = {symbol = "buf ";};
       bun = {symbol = "bun ";};
-      c = {symbol = "C ";};
-      cpp = {symbol = "C++ ";};
       cobol = {symbol = "cobol ";};
       conda = {symbol = "conda ";};
       container = {symbol = "container ";};
@@ -76,7 +74,6 @@
       perl = {symbol = "pl ";};
       php = {symbol = "php ";};
       pijul_channel = {symbol = "pijul ";};
-      pixi = {symbol = "pixi ";};
       pulumi = {symbol = "pulumi ";};
       purescript = {symbol = "purs ";};
       python = {symbol = "py ";};
