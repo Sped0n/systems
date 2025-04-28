@@ -34,7 +34,7 @@
     };
     gc = {
       automatic = true;
-      options = "--delete-older-than 14d";
+      options = "--delete-older-than 30d";
     };
   };
 
