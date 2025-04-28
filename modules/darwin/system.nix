@@ -34,6 +34,7 @@
         wvous-tr-corner = 1; # top-right - Disabled
         wvous-bl-corner = 1; # bottom-left - Disabled
         wvous-br-corner = 4; # bottom-right - Desktop
+        appswitcher-all-displays = true; # Show app switcher on all displays
       };
 
       finder = {
