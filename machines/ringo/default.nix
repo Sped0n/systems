@@ -49,7 +49,8 @@
     "WeChat" = 836500024;
     "WhatsApp Messenger" = 310633997;
     "Endel" = 1346247457;
-    "Photomator" = 1444636541;
     "VidHub" = 1659622164;
+    "Flow" = 1423210932;
+    "FastZip" = 1565629813;
   };
 }
