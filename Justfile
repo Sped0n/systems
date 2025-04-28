@@ -1,18 +1,6 @@
 # Default recipe to show available commands
 default:
-    @echo "Available commands:"
-    @echo "  update [ARG]      - Update flake lock (and brew on macOS). ARG is passed to 'nix flake update'."
-    @echo "  switch            - Activate the current configuration (nixos-rebuild/darwin-rebuild switch)."
-    @echo "  build             - Build the current configuration without activating (nixos-rebuild/darwin-rebuild build)."
-    @echo "                      Removes ./result symlink upon successful completion."
-    @echo "  deploy <HOST>     - Deploy NixOS configuration to remote host <HOST>."
-    @echo "  list-generations  - List available system generations."
-    @echo "  rollback <GEN>    - Rollback to a specific system generation number <GEN>."
-    @echo ""
-    @echo "Aliases:"
-    @echo "  s: switch"
-    @echo "  b: build"
-    @echo "  u: update"
+    @just --list
 
 # --- Helper Recipes ---
 
@@ -33,29 +21,27 @@ _brew_update:
 
 # --- Main Recipes ---
 
-# Update command (macOS version)
+# Update nixpkgs and brew for darwin
 [macos]
 update: _brew_update
     @just _nix_update "nixpkgs-darwin"
 
+# Update all flakes for darwin
 [macos]
 update-flake:
     @just _nix_update "nixpkgs-darwin secrets home-manager-darwin agenix-darwin nix-darwin nix-homebrew nix-rosetta-builder"
 
-[macos]
-update-all: _brew_update
-    @just _nix_update 
-
-# Update command (Linux version)
+# Update nixpkgs for NixOS
 [linux]
 update:
-    @just _nix_update "nixpkgs nixpkgs-stable"
+    @just _nix_update "nixpkgs"
 
+# Update all flakes for NixOS
 [linux]
 update-flake:
-    @just _nix_update "nixpkgs nixpkgs-stable home-manager agenix disko"
+    @just _nix_update "nixpkgs home-manager agenix disko"
 
-[linux]
+# Update all flake inputs
 update-all:
     @just _nix_update
 
@@ -102,11 +88,20 @@ deploy target_host:
     @echo "Running: nix run nixpkgs#nixos-rebuild -- switch --flake .#{{target_host}} --target-host root@{{target_host}} --fast"
     @nix run nixpkgs#nixos-rebuild -- switch --flake .#{{target_host}} --target-host root@{{target_host}} --fast
 
+
 [linux]
 deploy target_host:
     @echo "Deploying configuration to {{target_host}}..."
     @echo "Running: nixos-rebuild switch --flake .#{{target_host}} --target-host root@{{target_host}}"
     @nixos-rebuild switch --flake .#{{target_host}} --target-host root@{{target_host}}
+
+# Update nixpkgs for remote target
+deploy-update:
+    @just _nix_update "nixpkgs"
+
+# Update all flakes for remote target
+deploy-update-flake:
+    @just _nix_update "nixpkgs home-manager agenix disko"
 
 # List Generations command (macOS version)
 [macos]
