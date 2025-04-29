@@ -3,7 +3,6 @@
     enable = true;
     enableZshIntegration = true;
     settings = {
-      # Keep original settings
       format = lib.concatStrings [
         "$all"
         "$fill"
@@ -29,6 +28,14 @@
         diverged = "$behind_count<|>$ahead_count";
         renamed = "r";
         deleted = "x";
+      };
+      hostname = {
+        ssh_symbol = "";
+        format = "[\\($hostname\\)]($style) ";
+        style = "bold dimmed red";
+      };
+      username = {
+        disabled = true;
       };
 
       aws = {symbol = "aws ";};
