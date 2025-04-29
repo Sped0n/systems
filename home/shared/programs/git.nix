@@ -25,7 +25,7 @@
       enable = true;
       options = {
         line-number = true;
-        light = false;
+        dark = true;
         navigate = true;
         syntax-theme = "ansi";
       };
