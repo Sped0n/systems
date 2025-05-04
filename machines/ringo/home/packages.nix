@@ -15,12 +15,7 @@ in
       [
         agenix-darwin.packages."${pkgs.system}".default
         docker
-        openocd
-        qemu
-        cmake
         gcc
-        gdb
-        lldb
       ]
       ++
       # Utils
