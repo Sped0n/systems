@@ -13,6 +13,10 @@
     "d ${home}/storage/syncthing 0755 ${username} users -"
   ];
 
+  boot.kernel.sysctl = {
+    "vm.overcommit_memory" = 1;
+  };
+
   networking.firewall = {
     allowedTCPPorts = [22000];
     allowedUDPPorts = [22000 21027];
