@@ -35,7 +35,8 @@
         {
           type = "os";
           key = " {#39}│ {#32}Distro{#}    {#31}>{#}";
-          format = "{$1}  {2} {8}"; # Corresponds to Distro Name, Version ID
+          # If pretty name not applicable, fallbacks to Distro Name, Codename, Version ID
+          format = "{$1}  {/3}{2} {10} {8}{/}{?3}{3}{?}";
         }
         {
           type = "kernel";
