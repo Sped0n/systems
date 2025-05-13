@@ -137,5 +137,25 @@
           ./machines/tennousei
         ];
       };
+
+    homeConfigurations."shigoto" =
+      home-manager.lib.homeManagerConfiguration
+      # rec
+      {
+        pkgs = nixpkgs.legacyPackages."x86_64-linux";
+        extraSpecialArgs =
+          {
+            inherit vars username;
+            home = "/home/${username}";
+            # pkgs-stable = import nixpkgs-stable {
+            #   inherit system;
+            #   config.allowUnfree = true;
+            # };
+          }
+          // inputs;
+        modules = [
+          ./machines/shigoto
+        ];
+      };
   };
 }
