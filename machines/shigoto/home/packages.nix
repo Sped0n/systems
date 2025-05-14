@@ -3,7 +3,7 @@
 in
   with pkgs; {
     imports = [
-      ../../../home/nixos/server/packages.nix
+      ../../../home/shared/packages.nix
     ];
 
     home.packages =
