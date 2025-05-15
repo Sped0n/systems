@@ -16,15 +16,10 @@
 -- }
 
 -- Disable arrow keys
-vim.keymap.set("", "<Up>", "<nop>", { noremap = true })
-vim.keymap.set("", "<Down>", "<nop>", { noremap = true })
-vim.keymap.set("", "<Left>", "<nop>", { noremap = true })
-vim.keymap.set("", "<Right>", "<nop>", { noremap = true })
-
 vim.keymap.set("i", "<Up>", "<nop>", { noremap = true })
 vim.keymap.set("i", "<Down>", "<nop>", { noremap = true })
-vim.keymap.set("i", "<Left>", "<nop>", { noremap = true })
-vim.keymap.set("i", "<Right>", "<nop>", { noremap = true })
+vim.keymap.set("v", "<Left>", "<nop>", { noremap = true })
+vim.keymap.set("v", "<Right>", "<nop>", { noremap = true })
 
 -- Disable mouse drag
 vim.keymap.set("", "<LeftDrag>", "<nop>", { noremap = true })
@@ -35,4 +30,3 @@ vim.keymap.set("", "<C-d>", "<C-d>zz", { noremap = true })
 vim.keymap.set("", "<C-u>", "<C-u>zz", { noremap = true })
 vim.keymap.set("", "n", "nzzzv", { noremap = true })
 vim.keymap.set("", "N", "Nzzzv", { noremap = true })
-
