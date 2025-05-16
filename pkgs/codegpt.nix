@@ -6,20 +6,20 @@
 }:
 buildGoModule rec {
   pname = "codegpt";
-  version = "0.16.1"; # <-- Update this when a new version is released
+  version = "1.0.0"; # <-- Update this when a new version is released
 
   src = fetchFromGitHub {
     owner = "appleboy";
     repo = "CodeGPT";
     rev = "v${version}";
     # Get this hash by running:
-    # nix run nixpkgs#nix-prefetch-github -- appleboy CodeGPT --rev ${version}
-    hash = "sha256-pBdppzYP2AJUifLGvEUoN5g2fZNNKj4M25FQBu2/j9s="; # <-- Update this when a new version is released
+    # nix run nixpkgs#nix-prefetch-github -- appleboy CodeGPT --rev v${version}
+    hash = "sha256-tMAjRjImovjjZqpZrW9saZVgvLmuHDRB1TsQiPhOMG4="; # <-- Update this when a new version is released
   };
 
   # To obtain the actual hash, set vendorHash = lib.fakeHash; and run the build
   # you will get a error message with the real vendorHash
-  vendorHash = "sha256-Lgl3tIfLECBUtTgOTdYHCpkVr/Y64ny0GB98bCyZFQk="; # <-- Update this when a new version is released
+  vendorHash = "sha256-NR4qSLzS5ipOO9qUzfEwS8HW4c9rN8b8EuhX0hNW0bw="; # <-- Update this when a new version is released
 
   ldflags = [
     "-s"
