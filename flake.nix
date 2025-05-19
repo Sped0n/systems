@@ -143,7 +143,7 @@
       rec
       {
         system = "x86_64-linux";
-        extraSpecialArgs =
+        specialArgs =
           {
             inherit vars username;
             home = "/home/${username}";
