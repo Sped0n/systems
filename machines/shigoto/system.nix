@@ -1,20 +1,14 @@
 {...}: {
-  boot = {
-    loader.grub = {
-      useOSProber = true;
-    };
-
-    initrd.availableKernelModules = [
-      "ata_piix"
-      "mptspi"
-      "uhci_hcd"
-      "ehci_pci"
-      "ahci"
-      "xhci_pci"
-      "sd_mod"
-      "sr_mod"
-    ];
-  };
+  boot.initrd.availableKernelModules = [
+    "ata_piix"
+    "mptspi"
+    "uhci_hcd"
+    "ehci_pci"
+    "ahci"
+    "xhci_pci"
+    "sd_mod"
+    "sr_mod"
+  ];
 
   swapDevices = [
     {
