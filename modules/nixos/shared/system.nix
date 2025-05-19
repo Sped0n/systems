@@ -10,6 +10,9 @@
     };
   };
 
+  # Timezone
+  time.timeZone = "Asia/Singapore";
+
   # Power management
   services = {
     power-profiles-daemon = {
@@ -18,6 +21,12 @@
     upower.enable = true;
   };
 
-  # Timezone
-  time.timeZone = "Asia/Singapore";
+  # SUID Wrappers
+  programs = {
+    mtr.enable = true;
+    gnupg.agent = {
+      enable = true;
+      enableSSHSupport = true;
+    };
+  };
 }

@@ -12,6 +12,13 @@ in
         vim
       ]
       ++
+      # Desktop Application
+      [
+        brave
+        bitwarden-desktop
+        teams-for-linux
+      ]
+      ++
       # Languages supports
       [
         # python

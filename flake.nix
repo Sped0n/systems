@@ -3,9 +3,9 @@
 
   inputs = {
     # Core
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+    nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs-darwin.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    # nixpkgs-stable.url = "github:nixos/nixpkgs/nixos-24.11";
 
     # Misc
     secrets = {
@@ -15,7 +15,7 @@
 
     # NixOS
     home-manager = {
-      url = "github:nix-community/home-manager";
+      url = "github:nix-community/home-manager/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     agenix = {
@@ -54,7 +54,7 @@
     self,
     nixpkgs,
     nixpkgs-darwin,
-    # nixpkgs-stable,
+    nixpkgs-unstable,
     secrets,
     home-manager,
     agenix,
@@ -94,17 +94,17 @@
 
     nixosConfigurations."tsuki" =
       nixpkgs.lib.nixosSystem
-      # rec
+      rec
       {
         system = "x86_64-linux";
         specialArgs =
           {
             inherit vars username;
             home = "/home/${username}";
-            # pkgs-stable = import nixpkgs-stable {
-            #   inherit system;
-            #   config.allowUnfree = true;
-            # };
+            pkgs-unstable = import nixpkgs-unstable {
+              inherit system;
+              config.allowUnfree = true;
+            };
           }
           // inputs;
         modules = [
@@ -117,17 +117,17 @@
 
     nixosConfigurations."tennousei" =
       nixpkgs.lib.nixosSystem
-      # rec
+      rec
       {
         system = "x86_64-linux";
         specialArgs =
           {
             inherit vars username;
             home = "/home/${username}";
-            # pkgs-stable = import nixpkgs-stable {
-            #   inherit system;
-            #   config.allowUnfree = true;
-            # };
+            pkgs-unstable = import nixpkgs-unstable {
+              inherit system;
+              config.allowUnfree = true;
+            };
           }
           // inputs;
         modules = [
@@ -138,22 +138,25 @@
         ];
       };
 
-    homeConfigurations."shigoto" =
-      home-manager.lib.homeManagerConfiguration
-      # rec
+    nixosConfigurations."shigoto" =
+      nixpkgs.lib.nixosSystem
+      rec
       {
-        pkgs = nixpkgs.legacyPackages."x86_64-linux";
+        system = "x86_64-linux";
         extraSpecialArgs =
           {
             inherit vars username;
             home = "/home/${username}";
-            # pkgs-stable = import nixpkgs-stable {
-            #   inherit system;
-            #   config.allowUnfree = true;
-            # };
+            pkgs-unstable = import nixpkgs-unstable {
+              inherit system;
+              config.allowUnfree = true;
+            };
           }
           // inputs;
         modules = [
+          disko.nixosModules.disko
+          agenix.nixosModules.default
+          home-manager.nixosModules.home-manager
           ./machines/shigoto
         ];
       };
