@@ -1,15 +1,22 @@
-{
-  home,
-  username,
-  ...
-}: {
+{username, ...}: {
   imports = [
-    ./home
+    ../../modules/nixos/desktop
+
+    ./system.nix
+    ./disko.nix
+
+    ./networking
   ];
 
-  home.username = username;
-  home.homeDirectory = home;
-  home.stateVersion = "24.11";
+  home-manager = {
+    users.${username} = {...}: {
+      imports = [./home];
+      home = {
+        enableNixpkgsReleaseCheck = false;
+        stateVersion = "24.11";
+      };
+    };
+  };
 
-  programs.home-manager.enable = true;
+  system.stateVersion = "24.11";
 }
