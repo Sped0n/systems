@@ -17,6 +17,7 @@ in
         brave
         bitwarden-desktop
         teams-for-linux
+        open-vm-tools
       ]
       ++
       # Languages supports
