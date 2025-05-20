@@ -24,22 +24,12 @@ _brew_update:
 # Update nixpkgs and brew for darwin
 [macos]
 update: _brew_update
-    @just _nix_update "nixpkgs-darwin"
-
-# Update all flakes for darwin
-[macos]
-update-flake:
-    @just _nix_update "nixpkgs-darwin secrets home-manager-darwin agenix-darwin nix-darwin nix-homebrew nix-rosetta-builder"
+    @just _nix_update "nixpkgs-darwin nixpkgs-darwin-unstable"
 
 # Update nixpkgs for NixOS
 [linux]
 update:
-    @just _nix_update "nixpkgs"
-
-# Update all flakes for NixOS
-[linux]
-update-flake:
-    @just _nix_update "nixpkgs home-manager agenix disko"
+    @just _nix_update "nixpkgs nixpkgs-unstable"
 
 # Update all flake inputs
 update-all:
@@ -48,8 +38,8 @@ update-all:
 # Switch command
 [macos]
 switch:
-    @echo "Running: darwin-rebuild switch --flake ."
-    @darwin-rebuild switch --flake .
+    @echo "Running: sudo darwin-rebuild switch --flake ."
+    @sudo darwin-rebuild switch --flake .
 
 [linux]
 switch:
@@ -111,10 +101,15 @@ list-generations:
         echo "Error: 'darwin-rebuild' command not found in PATH."
         exit 1
     fi
-    REBUILD_CMD=$(command -v darwin-rebuild)
 
-    echo "Available Nix-Darwin generations:"
-    "$REBUILD_CMD" --list-generations
+    # Check for sudo privileges (needed for list)
+    if ! sudo -n true 2>/dev/null; then
+        echo "Requesting sudo privileges for listing generations..."
+        sudo -v || { echo "Error: sudo privileges are required."; exit 1; }
+    fi
+
+    echo "Available nix-darwin generations (requires sudo):"
+    sudo darwin-rebuild --list-generations
 
 # List Generations command (Linux version)
 [linux]
@@ -138,7 +133,7 @@ list-generations:
 [macos]
 rollback gen_num:
     #!/bin/sh -e
-    # This recipe rolls back to a specific Nix-Darwin generation provided as an argument.
+    # This recipe rolls back to a specific NixOS generation provided as an argument.
 
     GEN_NUM="{{gen_num}}" # Get generation number from just argument
 
@@ -153,16 +148,31 @@ rollback gen_num:
         exit 1
     fi
 
-    # Try to find darwin-rebuild command dynamically
+    # Check for darwin-rebuild command
     if ! command -v darwin-rebuild > /dev/null; then
         echo "Error: 'darwin-rebuild' command not found in PATH."
         exit 1
     fi
-    REBUILD_CMD=$(command -v darwin-rebuild)
 
-    echo "Rolling back to generation $GEN_NUM..."
-    # Use the found command and quote the variable
-    "$REBUILD_CMD" switch --flake . --switch-generation "$GEN_NUM"
+    # Check for sudo privileges (needed for switch)
+    if ! sudo -n true 2>/dev/null; then
+        echo "Requesting sudo privileges for switching generation..."
+        sudo -v || { echo "Error: sudo privileges are required."; exit 1; }
+    fi
+
+    # Construct the profile path
+    PROFILE_PATH="/nix/var/nix/profiles/system-${GEN_NUM}-link"
+
+    # Verify the profile path exists before attempting to switch
+    # Use sudo to check because the path might require root to access/stat
+    if ! sudo test -L "$PROFILE_PATH"; then
+      echo "Error: Generation $GEN_NUM (profile path $PROFILE_PATH) does not exist."
+      exit 1
+    fi
+
+    echo "Rolling back to generation $GEN_NUM (requires sudo)..."
+    # Execute the switch using the specific profile path
+    sudo darwin-rebuild switch -G "$GEN_NUM"
 
     echo "Rollback to generation $GEN_NUM complete!"
 
@@ -204,9 +214,6 @@ rollback gen_num:
     # Use sudo to check because the path might require root to access/stat
     if ! sudo test -L "$PROFILE_PATH"; then
       echo "Error: Generation $GEN_NUM (profile path $PROFILE_PATH) does not exist."
-      # Optionally, list generations again here for convenience
-      # echo "Available generations:"
-      # sudo nixos-rebuild --list-generations
       exit 1
     fi
 
