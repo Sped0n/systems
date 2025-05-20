@@ -22,6 +22,7 @@ with pkgs; {
     ]
     ++ [
       # General packages for development and system management
+      vim
       just
       tlrc
       openssh

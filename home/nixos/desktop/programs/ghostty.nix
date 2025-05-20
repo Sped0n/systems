@@ -4,7 +4,6 @@
     settings = {
       font-family = "Lilex Medium";
       font-size = 12;
-      clipboard-read = "allow";
     };
   };
 
