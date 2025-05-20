@@ -16,7 +16,6 @@ in
       [
         brave
         bitwarden-desktop
-        open-vm-tools
       ]
       ++
       # Languages supports
