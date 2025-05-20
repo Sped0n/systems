@@ -9,7 +9,6 @@ in
     home.packages =
       # Main
       [
-        cloudflared
         docker-compose
         rclone
       ]

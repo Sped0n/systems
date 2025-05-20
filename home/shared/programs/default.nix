@@ -1,4 +1,4 @@
-{...}: {
+{pkgs-unstable, ...}: {
   imports = [
     ./zsh.nix
     ./starship.nix
@@ -30,6 +30,7 @@
 
   programs.atuin = {
     enable = true;
+    package = pkgs-unstable.atuin;
     enableZshIntegration = false;
     settings = {
       auto_sync = true;
@@ -44,6 +45,7 @@
 
   programs.mise = {
     enable = true;
+    package = pkgs-unstable.mise;
     enableZshIntegration = true;
     globalConfig = {
       settings = {
