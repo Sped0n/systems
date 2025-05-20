@@ -5,7 +5,8 @@
     # Core
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-    nixpkgs-darwin.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    nixpkgs-darwin.url = "github:NixOS/nixpkgs/nixpkgs-25.05-darwin";
+    nixpkgs-darwin-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     # Misc
     secrets = {
@@ -29,7 +30,7 @@
 
     # Darwin
     home-manager-darwin = {
-      url = "github:nix-community/home-manager";
+      url = "github:nix-community/home-manager/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
     agenix-darwin = {
@@ -37,7 +38,7 @@
       inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
     nix-darwin = {
-      url = "github:nix-darwin/nix-darwin/master";
+      url = "github:nix-darwin/nix-darwin/nix-darwin-25.05";
       inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
     nix-homebrew = {
@@ -53,8 +54,9 @@
   outputs = inputs @ {
     self,
     nixpkgs,
-    nixpkgs-darwin,
     nixpkgs-unstable,
+    nixpkgs-darwin,
+    nixpkgs-darwin-unstable,
     secrets,
     home-manager,
     agenix,
@@ -70,17 +72,17 @@
   in {
     darwinConfigurations."ringo" =
       nix-darwin.lib.darwinSystem
-      # rec
+      rec
       {
         system = "aarch64-darwin";
         specialArgs =
           {
             inherit vars username;
             home = "/Users/${username}";
-            # pkgs-stable = import nixpkgs-stable {
-            #   inherit system;
-            #   config.allowUnfree = true;
-            # };
+            pkgs-unstable = import nixpkgs-darwin-unstable {
+              inherit system;
+              config.allowUnfree = true;
+            };
           }
           // inputs;
         modules = [
