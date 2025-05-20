@@ -1,11 +1,9 @@
 {...}: {
   boot.initrd.availableKernelModules = [
     "ata_piix"
-    "mptspi"
-    "uhci_hcd"
+    "ohci_pci"
     "ehci_pci"
     "ahci"
-    "xhci_pci"
     "sd_mod"
     "sr_mod"
   ];
