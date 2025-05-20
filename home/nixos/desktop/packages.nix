@@ -16,6 +16,7 @@ in {
         [
           brave
           bitwarden-desktop
+          jan
         ]
         ++
         # Languages supports
