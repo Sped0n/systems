@@ -1,7 +1,5 @@
 {
   imports = [
-    ../../../../home/shared/programs/default.nix
-
-    ./ghostty.nix
+    ../../../../home/nixos/desktop/programs
   ];
 }

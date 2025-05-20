@@ -27,6 +27,8 @@
       window-padding-y = 9;
       window-inherit-working-directory = true;
 
+      clipboard-read = "allow";
+
       keybind = [
         "ctrl+shift+\\=new_split:right"
         "ctrl+shift+-=new_split:down"

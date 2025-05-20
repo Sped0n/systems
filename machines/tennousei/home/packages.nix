@@ -12,7 +12,6 @@ in
         cloudflared
         docker-compose
         rclone
-        vim
       ]
       ++
       # Others
