@@ -27,4 +27,7 @@
       y = 1080;
     }
   ];
+
+  # Virtualbox
+  virtualisation.virtualbox.guest.enable = true;
 }
