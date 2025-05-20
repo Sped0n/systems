@@ -6,6 +6,7 @@
     ./git.nix
     ./ssh.nix
     ./zellij.nix
+    ./mise.nix
     ./fastfetch.nix
     ./ghostty.nix
   ];
@@ -40,18 +41,6 @@
       inline_height = 10;
       invert = false;
       enter_accept = false;
-    };
-  };
-
-  programs.mise = {
-    enable = true;
-    package = pkgs-unstable.mise;
-    enableZshIntegration = true;
-    globalConfig = {
-      settings = {
-        disable_hints = ["python_multi"];
-        trusted_config_paths = ["~"];
-      };
     };
   };
 }
