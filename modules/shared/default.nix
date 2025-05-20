@@ -31,6 +31,7 @@
     settings = {
       trusted-users = ["${username}" "@admin"];
       experimental-features = "nix-command flakes";
+      nix-path = ["nixpkgs=${pkgs.path}"];
     };
     gc = {
       automatic = true;
