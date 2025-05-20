@@ -29,7 +29,6 @@ return {
       opts.winbar = { -- winbar
         init = function(self) self.bufnr = vim.api.nvim_get_current_buf() end,
         {
-          condition = function() return status.condition.is_active() end,
           status.component.separated_path(),
           status.component.file_info {
             file_icon = {
