@@ -31,6 +31,11 @@ in {
           # c/cpp
           clang-tools
           neocmakelsp
+
+          # bash
+          bash-language-server
+          shellcheck
+          shfmt
         ]
     )
     ++
