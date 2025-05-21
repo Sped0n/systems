@@ -27,7 +27,7 @@
         #   we use 3.12
         # - Last working version is 3.12.10
         # - For the needed package, check nixpkgs python source
-        python = "3.12";
+        # python = "3.12";
       };
     };
   };
