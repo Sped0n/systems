@@ -22,6 +22,13 @@
         ''
       )
       (lib.mkOrder 1500 "fastfetch")
+      (lib.mkOrder 1600 ''
+        if [[ $1 == eval ]]
+        then
+            "$@"
+        set --
+        fi
+      '')
     ];
     plugins = [
       {
