@@ -43,7 +43,6 @@
         "ctrl+shift+alt+k=resize_split:up,10"
         "ctrl+shift+alt+l=resize_split:right,10"
 
-        "ctrl+shift+x=close_surface"
         "ctrl+shift+z=toggle_split_zoom"
       ];
     };
