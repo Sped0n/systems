@@ -2,7 +2,9 @@
   pkgs,
   pkgs-unstable,
   ...
-}: {
+}: let
+  codegpt = pkgs.callPackage ../../pkgs/codegpt.nix {};
+in {
   home.packages =
     (
       with pkgs;
@@ -49,6 +51,7 @@
           tree
           less
           yazi
+          codegpt
         ]
     )
     ++ (
