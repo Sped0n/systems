@@ -1,5 +1,16 @@
 {
+  pkgs,
+  agenix,
+  ...
+}: {
   imports = [
     ../../../home/nixos/desktop/packages.nix
+  ];
+
+  home.packages = with pkgs; [
+    agenix.packages."${pkgs.system}".default
+
+    popsicle
+    peazip
   ];
 }
