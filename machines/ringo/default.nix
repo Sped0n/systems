@@ -1,4 +1,8 @@
-{username, ...}: {
+{
+  lib,
+  username,
+  ...
+}: {
   imports = [
     ../../modules/darwin
   ];
@@ -9,30 +13,31 @@
     user = "${username}";
   };
 
-  # nix.linux-builder = {
-  #   enable = true;
-  #   systems = ["x86_64-linux" "aarch64-linux"];
-  #   ephemeral = true;
-  #   maxJobs = 1;
-  #   config = {
-  #     boot.binfmt.emulatedSystems = ["x86_64-linux"];
-  #     virtualisation = {
-  #       darwin-builder = {
-  #         diskSize = 30 * 1024;
-  #         memorySize = 3 * 1024; # qemu seems to have a 2x memeory leak
-  #       };
-  #       cores = 4;
-  #     };
-  #   };
-  # };
-
-  nix-rosetta-builder = {
+  nix.linux-builder = {
     enable = true;
-    cores = 6;
-    memory = "6GiB";
-    diskSize = "40GiB";
-    onDemand = true;
-    onDemandLingerMinutes = 60;
+    systems = ["x86_64-linux" "aarch64-linux"];
+    ephemeral = true;
+    maxJobs = 6;
+    config = {
+      virtualisation = {
+        cores = 6;
+        darwin-builder = {
+          diskSize = 30 * 1024;
+          # we have two emulated runners, so max memory usage would be 6GiB
+          memorySize = 3 * 1024;
+        };
+      };
+
+      # please comment below config for the very first run
+      boot.binfmt.emulatedSystems = ["x86_64-linux"];
+      systemd.coredump.enable = false;
+      swapDevices = lib.mkOverride 9 [
+        {
+          device = "/swapfile";
+          size = 2 * 1024;
+        }
+      ];
+    };
   };
 
   home-manager = {
