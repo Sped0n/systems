@@ -10,6 +10,7 @@ return {
   -- editor
   { import = "astrocommunity.editing-support.conform-nvim" },
   { import = "astrocommunity.recipes.disable-tabline" },
+  { import = "astrocommunity.git.git-blame-nvim" },
   -- languages
   { import = "astrocommunity.pack.lua" },
   { import = "astrocommunity.pack.python-ruff" },
