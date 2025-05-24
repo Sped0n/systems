@@ -1,64 +1,76 @@
 {
   pkgs,
+  pkgs-unstable,
   agenix-darwin,
   ...
-}:
-with pkgs; {
+}: {
   imports = [
     ../../../home/darwin/packages.nix
   ];
 
   home.packages =
-    # Core
-    [
-      agenix-darwin.packages."${pkgs.system}".default
-      docker
-      gcc
-    ]
-    ++
-    # Utils
-    [
-      bfg-repo-cleaner
-      hyperfine
-      act
-      ast-grep
-      minicom
-      nali
-      tokei
-      smartmontools
-    ]
-    ++
-    # Languages supports
-    [
-      # python
-      uv
-      ruff
-      basedpyright
+    (
+      # Core
+      with pkgs; [
+        agenix-darwin.packages."${pkgs.system}".default
+        docker
+        gcc
+      ]
+    )
+    ++ (
+      # Utils
+      (with pkgs; [
+        bfg-repo-cleaner
+        minicom
+        smartmontools
+      ])
+      ++ (with pkgs-unstable; [
+        act
+        hyperfine
+        ast-grep
+        nali
+        tokei
+      ])
+    )
+    ++ (
+      # Languages supports
+      with pkgs-unstable; [
+        # python
+        uv
+        ruff
+        basedpyright
 
-      # go
-      gopls
-      gofumpt
+        # go
+        gopls
+        gofumpt
 
-      # rust
-      rustup
+        # rust
+        rustup
 
-      # c/cpp
-      clang-tools
-      neocmakelsp
+        # c/cpp
+        clang-tools
+        neocmakelsp
 
-      # typescript
-      vtsls
-      eslint
-      pnpm
+        # typescript
+        vtsls
+        eslint
+        pnpm
 
-      # zig
-      zls
-    ]
-    ++
-    # Others
-    [
-      ffmpeg
-      imagemagick
-      restic
-    ];
+        # zig
+        zls
+
+        # bash
+        bash-language-server
+        shellcheck
+        shfmt
+      ]
+    )
+    ++ (
+      # Others
+      with pkgs; [
+        ffmpeg
+        imagemagick
+        restic
+      ]
+    );
 }
