@@ -30,6 +30,13 @@
         fi
       '')
     ];
+    shellAliases = {
+      "gis" = "git status";
+      "gilo" = "git log --oneline";
+      "exl" = "exa -l";
+      ".." = "cd ..";
+      "..." = "cd ...";
+    };
     plugins = [
       {
         name = "vi-mode";
