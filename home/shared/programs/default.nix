@@ -4,6 +4,7 @@
     ./starship.nix
     ./neovim.nix
     ./git.nix
+    ./gitui.nix
     ./ssh.nix
     ./zellij.nix
     ./mise.nix
