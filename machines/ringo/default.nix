@@ -23,8 +23,8 @@
         cores = 6;
         darwin-builder = {
           diskSize = 30 * 1024;
-          # we have two emulated runners, so max memory usage would be 6GiB
-          memorySize = 3 * 1024;
+          # we have two emulated runners, so max memory usage would be 8GiB
+          memorySize = 4 * 1024;
         };
       };
 
