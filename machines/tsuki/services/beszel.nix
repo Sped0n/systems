@@ -16,6 +16,9 @@
     description = "Beszel Hub";
     after = ["network.target" "tailscaled.service"];
     wantedBy = ["multi-user.target"];
+    environment = {
+      DISABLE_PASSWORD_AUTH = "true"; # use oidc instead
+    };
     serviceConfig = {
       Type = "simple";
       Restart = "always";
