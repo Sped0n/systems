@@ -10,6 +10,8 @@
   home.packages = with pkgs; [
     agenix.packages."${pkgs.system}".default
 
+    android-tools
+
     popsicle
     peazip
   ];
