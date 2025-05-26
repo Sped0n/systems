@@ -16,6 +16,22 @@
           "TCPKeepAlive" = "yes";
           "AddKeysToAgent" = "yes";
         };
+        setEnv = {
+          "TERM" = "xterm-256color";
+        };
+      };
+
+      "orangepi" = {
+        hostname = "10.10.2.183";
+        port = 22;
+        user = "orangepi";
+        extraOptions = {
+          "TCPKeepAlive" = "yes";
+          "AddKeysToAgent" = "yes";
+        };
+        setEnv = {
+          "TERM" = "xterm-256color";
+        };
       };
     };
   };
