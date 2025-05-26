@@ -1,5 +1,5 @@
 {
-  lib,
+  pkgs,
   username,
   ...
 }: {
@@ -15,7 +15,7 @@
 
   nix.linux-builder = {
     enable = true;
-    systems = ["x86_64-linux" "aarch64-linux"];
+    package = pkgs.darwin.linux-builder-x86_64;
     ephemeral = true;
     maxJobs = 6;
     config = {
@@ -23,20 +23,9 @@
         cores = 6;
         darwin-builder = {
           diskSize = 30 * 1024;
-          # we have two emulated runners, so max memory usage would be 8GiB
-          memorySize = 4 * 1024;
+          memorySize = 6 * 1024;
         };
       };
-
-      # please comment below config for the very first run
-      boot.binfmt.emulatedSystems = ["x86_64-linux"];
-      systemd.coredump.enable = false;
-      swapDevices = lib.mkOverride 9 [
-        {
-          device = "/swapfile";
-          size = 2 * 1024;
-        }
-      ];
     };
   };
 
