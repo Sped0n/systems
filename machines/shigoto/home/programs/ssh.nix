@@ -1,10 +1,20 @@
 {
   config,
+  home,
   vars,
   ...
 }: {
   programs.ssh = {
     matchBlocks = {
+      "gitlab.com" = {
+        identityFile = "${home}/.ssh/id_github";
+        user = "git";
+        extraOptions = {
+          "TCPKeepAlive" = "yes";
+          "AddKeysToAgent" = "yes";
+        };
+      };
+
       "espressif-builder" = {
         hostname = vars.espressif-builder.ipv4;
         port = 12222;
