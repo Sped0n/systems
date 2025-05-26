@@ -27,6 +27,13 @@
       #     file = "${secrets}/github-signing-key.age";
       #   }
       #   // readable;
+
+      "espressif-ssh-key" =
+        {
+          path = "${home}/.ssh/id_espressif";
+          file = "${secrets}/espressif-ssh-key.age";
+        }
+        // readable;
     };
   };
 }
