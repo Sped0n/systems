@@ -34,6 +34,13 @@
           file = "${secrets}/espressif-ssh-key.age";
         }
         // readable;
+
+      "tennousei-ssh-key" =
+        {
+          path = "${home}/.ssh/id_tennousei";
+          file = "${secrets}/tennousei-ssh-key.age";
+        }
+        // readable;
     };
   };
 }

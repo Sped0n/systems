@@ -1,6 +1,7 @@
 {
   config,
   home,
+  username,
   vars,
   ...
 }: {
@@ -41,6 +42,19 @@
         };
         setEnv = {
           "TERM" = "xterm-256color";
+        };
+      };
+
+      "tennousei" = {
+        hostname = vars.tennousei.ipv4;
+        port = 12222;
+        user = "${username}";
+        identityFile = [
+          config.age.secrets."tennousei-ssh-key".path
+        ];
+        extraOptions = {
+          "TCPKeepAlive" = "yes";
+          "AddKeysToAgent" = "yes";
         };
       };
     };

@@ -1,4 +1,10 @@
 {...}: {
+  imports = [
+    ../../../modules/nixos/shared/networking.nix
+
+    ./tailscale.nix
+  ];
+
   networking = {
     hostName = "shigoto";
     nameservers = [
