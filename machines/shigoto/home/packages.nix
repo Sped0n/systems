@@ -1,5 +1,6 @@
 {
   pkgs,
+  pkgs-unstable,
   agenix,
   ...
 }: {
@@ -7,12 +8,16 @@
     ../../../home/nixos/desktop/packages.nix
   ];
 
-  home.packages = with pkgs; [
-    agenix.packages."${pkgs.system}".default
+  home.packages =
+    (with pkgs; [
+      agenix.packages."${pkgs.system}".default
 
-    android-tools
+      android-tools
 
-    popsicle
-    peazip
-  ];
+      popsicle
+      peazip
+    ])
+    ++ (with pkgs-unstable; [
+      beekeeper-studio
+    ]);
 }

@@ -145,7 +145,12 @@
             home = "/home/${username}";
             pkgs-unstable = import nixpkgs-unstable {
               inherit system;
-              config.allowUnfree = true;
+              config = {
+                allowUnfree = true;
+                permittedInsecurePackages = [
+                  "beekeeper-studio-5.2.9"
+                ];
+              };
             };
           }
           // inputs;
