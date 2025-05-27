@@ -35,7 +35,7 @@
       "gilo" = "git log --oneline";
       "exl" = "exa -l";
       ".." = "cd ..";
-      "..." = "cd ...";
+      "..." = "cd ../..";
     };
     plugins = [
       {
