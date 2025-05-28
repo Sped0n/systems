@@ -2,9 +2,9 @@
   imports = [
     ../../modules/nixos/desktop
 
-    ./system.nix
     ./disko.nix
 
+    ./system
     ./networking
   ];
 

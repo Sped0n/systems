@@ -1,4 +1,6 @@
 {...}: {
+  imports = [./usb.nix];
+
   boot.initrd.availableKernelModules = [
     "ata_piix"
     "ohci_pci"

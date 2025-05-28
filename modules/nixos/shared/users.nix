@@ -9,7 +9,6 @@
 
   users.groups = {
     docker = {};
-    dialout = {};
   };
 
   users.users."${username}" = {
@@ -20,7 +19,6 @@
       "networkmanager"
       "wheel"
       "docker"
-      "dialout"
     ];
     shell = pkgs.zsh;
   };
