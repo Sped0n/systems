@@ -5,4 +5,6 @@
     ./ghostty.nix
     ./zsh.nix
   ];
+
+  programs.uv.enable = true;
 }

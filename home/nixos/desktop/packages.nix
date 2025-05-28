@@ -14,7 +14,6 @@
       # Languages supports
       [
         # python
-        uv
         ruff
         basedpyright
 

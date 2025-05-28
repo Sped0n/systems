@@ -7,6 +7,7 @@
       settings = {
         disable_hints = ["python_multi"];
         trusted_config_paths = ["~"];
+        idiomatic_version_file_enable_tools = ["python"];
       };
 
       tools = {

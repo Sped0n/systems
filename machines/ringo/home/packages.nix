@@ -36,7 +36,6 @@
       # Languages supports
       with pkgs-unstable; [
         # python
-        uv
         ruff
         basedpyright
 
