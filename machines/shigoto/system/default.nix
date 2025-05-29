@@ -1,7 +1,6 @@
 {...}: {
   imports = [
     ./usb.nix
-    ./swap.nix
   ];
 
   boot.initrd.availableKernelModules = [
