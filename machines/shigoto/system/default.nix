@@ -1,5 +1,8 @@
 {...}: {
-  imports = [./usb.nix];
+  imports = [
+    ./usb.nix
+    ./swap.nix
+  ];
 
   boot.initrd.availableKernelModules = [
     "ata_piix"
@@ -8,13 +11,6 @@
     "ahci"
     "sd_mod"
     "sr_mod"
-  ];
-
-  swapDevices = [
-    {
-      device = "/swapfile";
-      size = 6 * 1024; # 6GB
-    }
   ];
 
   # Enable CUPS to print documents
