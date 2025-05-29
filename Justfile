@@ -218,8 +218,8 @@ rollback gen_num:
     fi
 
     echo "Rolling back to generation $GEN_NUM (requires sudo)..."
-    # Execute the switch using the specific profile path
-    sudo nixos-rebuild switch --profile "$PROFILE_PATH"
+    sudo nix-env --switch-generation "$GEN_NUM" -p /nix/var/nix/profiles/system
+    sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
 
     echo "Rollback to generation $GEN_NUM complete!"
 
