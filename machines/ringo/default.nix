@@ -15,6 +15,7 @@
 
   nix.linux-builder = {
     enable = true;
+    systems = ["x86_64-linux" "aarch64-linux"];
     package = pkgs.darwin.linux-builder-x86_64;
     ephemeral = true;
     maxJobs = 6;
@@ -26,6 +27,8 @@
           memorySize = 6 * 1024;
         };
       };
+      # We have to emulate aarch64 on x86 qemu, see https://github.com/golang/go/issues/69255
+      boot.binfmt.emulatedSystems = ["aarch64-linux"];
     };
   };
 
