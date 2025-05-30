@@ -29,6 +29,7 @@
     };
 
     # Darwin
+    nix-homebrew.url = "github:zhaofengli/nix-homebrew";
     home-manager-darwin = {
       url = "github:nix-community/home-manager/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs-darwin";
@@ -39,10 +40,6 @@
     };
     nix-darwin = {
       url = "github:nix-darwin/nix-darwin/nix-darwin-25.05";
-      inputs.nixpkgs.follows = "nixpkgs-darwin";
-    };
-    nix-homebrew = {
-      url = "github:zhaofengli-wip/nix-homebrew";
       inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
   };
