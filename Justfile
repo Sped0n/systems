@@ -2,7 +2,7 @@
 default:
     @just --list
 
-# --- Helper Recipes ---
+# --- Helper Recipes -----------------------------------------------------------
 
 # Internal recipe for nix flake update logic
 _nix_update *args:
@@ -19,21 +19,31 @@ _brew_update:
     @echo "Running: brew update"
     @brew update || (echo "Brew update failed, continuing with Nix update..."; exit 0)
 
-# --- Main Recipes ---
+# --- Main Recipes -------------------------------------------------------------
 
 # Update nixpkgs and brew for darwin
 [macos]
-update: _brew_update
+update-pkgs: _brew_update
     @just _nix_update "nixpkgs-darwin nixpkgs-darwin-unstable"
+
+# Update flakes for darwin
+[macos]
+update-flakes:
+    @just _nix_update "home-manager-darwin agenix-darwin nix-darwin nix-homebrew"
 
 # Update nixpkgs for NixOS
 [linux]
-update:
+update-pkgs:
     @just _nix_update "nixpkgs nixpkgs-unstable"
 
-# Update all flake inputs
-update-all:
-    @just _nix_update
+# Update flakes for NixOS
+[linux]
+update-flakes:
+    @just _nix_update "home-manager agenix disko"
+
+# Update specific flake input
+update-specific package:
+    @just _nix_update {{package}}
 
 # Switch command
 [macos]
@@ -85,13 +95,13 @@ deploy target_host:
     @echo "Running: nixos-rebuild switch --flake .#{{target_host}} --target-host root@{{target_host}}"
     @nixos-rebuild switch --flake .#{{target_host}} --target-host root@{{target_host}}
 
-# Update nixpkgs for remote target
-deploy-update:
-    @just _nix_update "nixpkgs"
+# Update nixpkgs for remote target (NixOS)
+deploy-update-pkgs:
+    @just _nix_update "nixpkgs nixpkgs-unstable"
 
-# Update all flakes for remote target
-deploy-update-flake:
-    @just _nix_update "nixpkgs home-manager agenix disko"
+# Update all flakes for remote target (NixOS)
+deploy-update-flakes:
+    @just _nix_update "home-manager agenix disko"
 
 # List Generations command (macOS version)
 [macos]
@@ -223,8 +233,11 @@ rollback gen_num:
 
     echo "Rollback to generation $GEN_NUM complete!"
 
-
-# --- Aliases ---
+# --- Aliases ------------------------------------------------------------------
 alias s := switch
 alias b := build
-alias u := update
+alias up := update-pkgs
+alias uf := update-flakes
+alias us := update-specific
+alias dup := deploy-update-pkgs
+alias duf := deploy-update-flakes
