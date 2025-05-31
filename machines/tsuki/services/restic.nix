@@ -5,7 +5,7 @@
   home,
   ...
 }: let
-  sourceDir = "${home}/infra/data";
+  sourceDir = "${home}/infra";
   composeFile = "${home}/infra/docker-compose.yml";
   serviceConfig = {
     Type = "oneshot";
