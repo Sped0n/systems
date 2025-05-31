@@ -3,6 +3,7 @@
     ../../modules/nixos/server
 
     ./system.nix
+    ./secrets.nix
     ./disko.nix
 
     ./networking
