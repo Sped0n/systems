@@ -37,7 +37,7 @@
     enableZshIntegration = false;
     settings = {
       auto_sync = true;
-      sync_frequency = "1d";
+      sync_frequency = "10m";
       sync_address = "https://atuin.sped0n.com";
       style = "compact";
       inline_height = 10;
