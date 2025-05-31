@@ -1,7 +1,7 @@
 {
   imports = [
     ./wireguard.nix
-    ./beszel.nix
+    ./beszel-hub.nix
     ./restic.nix
     ./docker.nix
   ];
