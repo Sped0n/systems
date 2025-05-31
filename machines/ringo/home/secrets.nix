@@ -48,6 +48,13 @@
           file = "${secrets}/tsuki-ssh-key.age";
         }
         // readable;
+
+      "suisei-ssh-key" =
+        {
+          path = "${home}/.ssh/id_suisei";
+          file = "${secrets}/suisei-ssh-key.age";
+        }
+        // readable;
     };
   };
 }

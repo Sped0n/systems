@@ -60,6 +60,19 @@
           "AddKeysToAgent" = "yes";
         };
       };
+
+      "suisei" = {
+        hostname = vars.suisei.ipv4Public;
+        port = 12222;
+        user = "${username}";
+        identityFile = [
+          config.age.secrets."suisei-ssh-key".path
+        ];
+        extraOptions = {
+          "TCPKeepAlive" = "yes";
+          "AddKeysToAgent" = "yes";
+        };
+      };
     };
   };
 }

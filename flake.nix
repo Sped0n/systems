@@ -164,5 +164,30 @@
           ./machines/shigoto
         ];
       };
+
+    nixosConfigurations."suisei" =
+      nixpkgs.lib.nixosSystem
+      rec
+      {
+        system = "aarch64-linux";
+        specialArgs =
+          {
+            inherit vars username;
+            home = "/home/${username}";
+            pkgs-unstable = import nixpkgs-unstable {
+              inherit system;
+              config = {
+                allowUnfree = true;
+              };
+            };
+          }
+          // inputs;
+        modules = [
+          disko.nixosModules.disko
+          agenix.nixosModules.default
+          home-manager.nixosModules.home-manager
+          ./machines/suisei
+        ];
+      };
   };
 }
