@@ -6,6 +6,7 @@
     ./disko.nix
 
     ./networking
+    ./services
   ];
 
   home-manager = {
