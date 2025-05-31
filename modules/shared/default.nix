@@ -32,6 +32,7 @@
       trusted-users = ["${username}" "@admin"];
       experimental-features = "nix-command flakes";
       nix-path = ["nixpkgs=${pkgs.path}"];
+      download-buffer-size = 524288000;
     };
     gc = {
       automatic = true;
