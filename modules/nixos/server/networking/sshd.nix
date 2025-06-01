@@ -7,7 +7,7 @@
       PasswordAuthentication = false;
     };
     openFirewall = true;
-    ports = [12222];
+    ports = [22];
   };
 
   # Add terminfo database of all known terminals to the system profile.

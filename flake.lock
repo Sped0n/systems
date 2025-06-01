@@ -310,11 +310,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1748302896,
-        "narHash": "sha256-ixMT0a8mM091vSswlTORZj93WQAJsRNmEvqLL+qwTFM=",
+        "lastModified": 1748437600,
+        "narHash": "sha256-hYKMs3ilp09anGO7xzfGs3JqEgUqFMnZ8GMAqI6/k04=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "7848cd8c982f7740edf76ddb3b43d234cb80fc4d",
+        "rev": "7282cb574e0607e65224d33be8241eae7cfe0979",
         "type": "github"
       },
       "original": {
@@ -356,13 +356,29 @@
         "type": "github"
       }
     },
+    "nixpkgs-qemu8": {
+      "locked": {
+        "lastModified": 1715797492,
+        "narHash": "sha256-ZJ5q8Wzj+sCBrZUHjkCbiPYMdxcJ08/HuKhdckfvw38=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "3eebbc5fe26801ff612f2cdd4566e76651dc8106",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "3eebbc5fe26801ff612f2cdd4566e76651dc8106",
+        "type": "github"
+      }
+    },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1748370509,
-        "narHash": "sha256-QlL8slIgc16W5UaI3w7xHQEP+Qmv/6vSNTpoZrrSlbk=",
+        "lastModified": 1748693115,
+        "narHash": "sha256-StSrWhklmDuXT93yc3GrTlb0cKSS0agTAxMGjLKAsY8=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "4faa5f5321320e49a78ae7848582f684d64783e9",
+        "rev": "910796cabe436259a29a72e8d3f5e180fc6dfacc",
         "type": "github"
       },
       "original": {
@@ -385,6 +401,7 @@
         "nixpkgs": "nixpkgs",
         "nixpkgs-darwin": "nixpkgs-darwin",
         "nixpkgs-darwin-unstable": "nixpkgs-darwin-unstable",
+        "nixpkgs-qemu8": "nixpkgs-qemu8",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "secrets": "secrets"
       }
@@ -392,11 +409,11 @@
     "secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1748682280,
-        "narHash": "sha256-jvp3wcY/rNpjpCBVyeXRl83fiojIi8Z9xSY+kZIrLvk=",
+        "lastModified": 1748802337,
+        "narHash": "sha256-EgTDtLr/uKy+p8XrEmesdbFHkS04ybVsbNPcTWHugnA=",
         "ref": "refs/heads/main",
-        "rev": "3b3d430f897ef2d2841a926113d43b011af60d63",
-        "revCount": 38,
+        "rev": "c4ca275b2bb0e91a503ebe07456ace3d3c3c63e5",
+        "revCount": 40,
         "type": "git",
         "url": "ssh://git@github.com/Sped0n/secrets"
       },

@@ -5,6 +5,7 @@
     # Core
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs-qemu8.url = "github:NixOS/nixpkgs/3eebbc5fe26801ff612f2cdd4566e76651dc8106";
     nixpkgs-darwin.url = "github:NixOS/nixpkgs/nixpkgs-25.05-darwin";
     nixpkgs-darwin-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
@@ -52,6 +53,7 @@
     self,
     nixpkgs,
     nixpkgs-unstable,
+    nixpkgs-qemu8,
     nixpkgs-darwin,
     nixpkgs-darwin-unstable,
     secrets,
@@ -175,6 +177,12 @@
             inherit vars username;
             home = "/home/${username}";
             pkgs-unstable = import nixpkgs-unstable {
+              inherit system;
+              config = {
+                allowUnfree = true;
+              };
+            };
+            pkgs-qemu8 = import nixpkgs-qemu8 {
               inherit system;
               config = {
                 allowUnfree = true;

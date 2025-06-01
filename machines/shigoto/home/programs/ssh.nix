@@ -47,7 +47,7 @@
 
       "tennousei" = {
         hostname = vars.tennousei.ipv4;
-        port = 12222;
+        port = 22;
         user = "${username}";
         identityFile = [
           config.age.secrets."tennousei-ssh-key".path

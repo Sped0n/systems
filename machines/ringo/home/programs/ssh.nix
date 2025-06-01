@@ -11,7 +11,7 @@
     matchBlocks = {
       "tennousei" = {
         hostname = vars.tennousei.ipv4;
-        port = 12222;
+        port = 22;
         user = "${username}";
         identityFile = [
           config.age.secrets."tennousei-ssh-key".path
@@ -50,7 +50,7 @@
 
       "tsuki" = {
         hostname = vars.tsuki.ipv4;
-        port = 12222;
+        port = 22;
         user = "${username}";
         identityFile = [
           config.age.secrets."tsuki-ssh-key".path
@@ -63,7 +63,7 @@
 
       "suisei" = {
         hostname = vars.suisei.ipv4Public;
-        port = 12222;
+        port = 22;
         user = "${username}";
         identityFile = [
           config.age.secrets."suisei-ssh-key".path

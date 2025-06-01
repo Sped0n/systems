@@ -27,6 +27,13 @@
       #     file = "${secrets}/github-signing-key.age";
       #   }
       #   // readable;
+
+      "deploy-ssh-key" =
+        {
+          path = "${home}/.ssh/id_deploy";
+          file = "${secrets}/deploy-ssh-key.age";
+        }
+        // readable;
     };
   };
 }
