@@ -45,7 +45,7 @@ in {
           du-dust
           fd
           fzf
-          bottom
+          btop
           jq
           ripgrep
           tree
