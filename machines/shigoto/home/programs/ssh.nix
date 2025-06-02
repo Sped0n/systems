@@ -6,57 +6,42 @@
   ...
 }: {
   programs.ssh = {
-    matchBlocks = {
-      "gitlab.com" = {
-        identityFile = "${home}/.ssh/id_github";
-        user = "git";
+    matchBlocks = let
+      basicTmpl = {
         extraOptions = {
           "TCPKeepAlive" = "yes";
           "AddKeysToAgent" = "yes";
         };
       };
+      serverTmpl =
+        {
+          port = 12222;
+          user = "${username}";
+          identityFile = [config.age.secrets."server-ssh-key".path];
+        }
+        // basicTmpl;
+    in {
+      "gitlab.com" =
+        {
+          identityFile = "${home}/.ssh/id_github";
+          user = "git";
+        }
+        // basicTmpl;
 
-      "espressif-builder" = {
-        hostname = vars.espressif-builder.ipv4;
-        port = 12222;
-        user = "espressif";
-        identityFile = [
-          config.age.secrets."espressif-ssh-key".path
-        ];
-        extraOptions = {
-          "TCPKeepAlive" = "yes";
-          "AddKeysToAgent" = "yes";
-        };
-        setEnv = {
-          "TERM" = "xterm-256color";
-        };
-      };
+      "orangepi" =
+        {
+          hostname = "10.10.2.183";
+          port = 22;
+          user = "orangepi";
+          setEnv = {
+            "TERM" = "xterm-256color";
+          };
+        }
+        // basicTmpl;
 
-      "orangepi" = {
-        hostname = "10.10.2.183";
-        port = 22;
-        user = "orangepi";
-        extraOptions = {
-          "TCPKeepAlive" = "yes";
-          "AddKeysToAgent" = "yes";
-        };
-        setEnv = {
-          "TERM" = "xterm-256color";
-        };
-      };
-
-      "tennousei" = {
-        hostname = vars.tennousei.ipv4;
-        port = 22;
-        user = "${username}";
-        identityFile = [
-          config.age.secrets."tennousei-ssh-key".path
-        ];
-        extraOptions = {
-          "TCPKeepAlive" = "yes";
-          "AddKeysToAgent" = "yes";
-        };
-      };
+      "tennousei" = {hostname = vars.tennousei.ipv4;} // serverTmpl;
+      "tsuki" = {hostname = vars.tsuki.ipv4;} // serverTmpl;
+      "suisei" = {hostname = vars.suisei.ipv4Public;} // serverTmpl;
     };
   };
 }

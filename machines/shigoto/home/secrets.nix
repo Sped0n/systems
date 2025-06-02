@@ -16,7 +16,7 @@
       "github-ssh-key" =
         {
           path = "${home}/.ssh/id_github";
-          file = "${secrets}/github-ssh-key.age";
+          file = "${secrets}/ages/github-ssh-key.age";
         }
         // readable;
 
@@ -24,21 +24,14 @@
       # "github-signing-key" =
       #   {
       #     path = "${home}/.config/secrets/pgp_github.key";
-      #     file = "${secrets}/github-signing-key.age";
+      #     file = "${secrets}/ages/github-signing-key.age";
       #   }
       #   // readable;
 
-      "espressif-ssh-key" =
+      "server-ssh-key" =
         {
-          path = "${home}/.ssh/id_espressif";
-          file = "${secrets}/espressif-ssh-key.age";
-        }
-        // readable;
-
-      "tennousei-ssh-key" =
-        {
-          path = "${home}/.ssh/id_tennousei";
-          file = "${secrets}/tennousei-ssh-key.age";
+          path = "${home}/.ssh/id_server";
+          file = "${secrets}/ages/server-ssh-key.age";
         }
         // readable;
     };
