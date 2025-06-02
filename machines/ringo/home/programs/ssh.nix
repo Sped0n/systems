@@ -3,52 +3,40 @@
   vars,
   username,
   ...
-}: let
-  personalServerTmpl = {
-    port = 12222;
-    user = "${username}";
-    identityFile = [config.age.secrets."server-ssh-key".path];
-    extraOptions = {
-      "TCPKeepAlive" = "yes";
-      "AddKeysToAgent" = "yes";
-    };
-  };
-in {
+}: {
   programs.ssh = {
     includes = [
       "~/.orbstack/ssh/config"
     ];
-    matchBlocks = {
-      "gitea" = {
-        hostname = "100.69.27.45";
-        port = 22222;
-        user = "git";
-        identityFile = [
-          config.age.secrets."github-ssh-key".path
-        ];
+    matchBlocks = let
+      basicTmpl = {
         extraOptions = {
           "TCPKeepAlive" = "yes";
           "AddKeysToAgent" = "yes";
         };
       };
-
-      "tennousei" =
+      serverTmpl =
         {
-          hostname = vars.tennousei.ipv4;
+          port = 12222;
+          user = "${username}";
+          identityFile = [config.age.secrets."server-ssh-key".path];
         }
-        // personalServerTmpl;
-
-      "tsuki" =
+        // basicTmpl;
+    in {
+      "gitea" =
         {
-          hostname = vars.tsuki.ipv4;
+          hostname = "100.69.27.45";
+          port = 22222;
+          user = "git";
+          identityFile = [
+            config.age.secrets."github-ssh-key".path
+          ];
         }
-        // personalServerTmpl;
+        // basicTmpl;
 
-      "suisei" =
-        {
-          hostname = vars.suisei.ipv4Public;
-        }
-        // personalServerTmpl;
+      "tennousei" = {hostname = vars.tennousei.ipv4;} // serverTmpl;
+      "tsuki" = {hostname = vars.tsuki.ipv4;} // serverTmpl;
+      "suisei" = {hostname = vars.suisei.ipv4Public;} // serverTmpl;
     };
   };
 }
