@@ -1,8 +1,4 @@
 {vars, ...}: {
-  imports = [
-    ./sshd.nix
-  ];
-
   networking = {
     # Static IP
     hostName = "suisei";

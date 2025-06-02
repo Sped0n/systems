@@ -1,8 +1,4 @@
-{
-  username,
-  agenix,
-  ...
-}: {
+{username, ...}: {
   imports = [
     ../../modules/nixos/server
 
@@ -23,12 +19,7 @@
       };
     };
     users.root = {...}: {
-      imports = [
-        agenix.homeManagerModules.default
-
-        ./home/programs/ssh.nix
-        ./home/secrets.nix
-      ];
+      imports = [./root-ssh.nix]; # for build-host/target-host deployment
       home = {
         enableNixpkgsReleaseCheck = false;
         stateVersion = "24.11";

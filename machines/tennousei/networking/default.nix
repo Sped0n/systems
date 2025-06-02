@@ -1,6 +1,5 @@
 {vars, ...}: {
   imports = [
-    ./sshd.nix
     ./cloudflared.nix
   ];
 

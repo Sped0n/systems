@@ -15,7 +15,7 @@
     secrets = {
       "smtp-password" =
         {
-          file = "${secrets}/smtp-password.age";
+          file = "${secrets}/ages/smtp-password.age";
           owner = "root";
         }
         // readable;

@@ -16,7 +16,7 @@
       "github-ssh-key" =
         {
           path = "${home}/.ssh/id_github";
-          file = "${secrets}/github-ssh-key.age";
+          file = "${secrets}/ages/github-ssh-key.age";
         }
         // readable;
 
@@ -24,7 +24,7 @@
       # "github-signing-key" =
       #   {
       #     path = "${home}/.config/secrets/pgp_github.key";
-      #     file = "${secrets}/github-signing-key.age";
+      #     file = "${secrets}/ages/github-signing-key.age";
       #   }
       #   // readable;
     };

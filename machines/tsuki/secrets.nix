@@ -15,21 +15,21 @@
     secrets = {
       "wg0-conf" =
         {
-          file = "${secrets}/tsuki-wg0-conf.age";
+          file = "${secrets}/ages/tsuki-wg0-conf.age";
           owner = "root";
         }
         // readable;
 
       "restic-env" =
         {
-          file = "${secrets}/restic-env.age";
+          file = "${secrets}/ages/restic-env.age";
           owner = "root";
         }
         // readable;
 
       "restic-password" =
         {
-          file = "${secrets}/restic-password.age";
+          file = "${secrets}/ages/restic-password.age";
           owner = "root";
         }
         // readable;
