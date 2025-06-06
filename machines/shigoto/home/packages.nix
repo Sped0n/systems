@@ -19,5 +19,7 @@
     ])
     ++ (with pkgs-unstable; [
       beekeeper-studio
+
+      obsidian
     ]);
 }

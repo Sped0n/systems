@@ -6,6 +6,7 @@
 
     ./system
     ./networking
+    ./services
   ];
 
   home-manager = {
