@@ -27,6 +27,13 @@
       #     file = "${secrets}/ages/github-signing-key.age";
       #   }
       #   // readable;
+
+      "aws-cli-credentials" =
+        {
+          path = "${home}/.aws/credentials";
+          file = "${secrets}/ages/suisei-aws-cli-credentials.age";
+        }
+        // readable;
     };
   };
 }

@@ -38,7 +38,10 @@
         disabled = true;
       };
 
-      aws = {symbol = "aws ";};
+      aws = {
+        symbol = "aws ";
+        disabled = true;
+      };
       azure = {symbol = "az ";};
       buf = {symbol = "buf ";};
       bun = {symbol = "bun ";};
