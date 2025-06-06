@@ -91,8 +91,8 @@ deploy target_host:
 [linux]
 deploy target_host:
     @echo "Deploying configuration to {{target_host}}..."
-    @echo "Running: nixos-rebuild switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}}"
-    @nixos-rebuild switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}}
+    @echo "Running: nixos-rebuild switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}} --fast"
+    @nixos-rebuild switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}} --fast
 
 # Update nixpkgs for remote target (NixOS)
 deploy-update-pkgs:
