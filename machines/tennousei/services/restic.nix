@@ -116,4 +116,23 @@ in {
       };
     };
   };
+
+  environment.systemPackages = let
+    restic-wrapper = pkgs.writeShellScriptBin "restic-wrapper" ''
+      #!${pkgs.bash}/bin/bash
+      set -euo pipefail
+
+      if [[ "$EUID" -ne 0 ]]; then
+        echo "Error: This script must be run as root. Please use sudo." >&2
+        exit 1
+      fi
+
+      export $(${pkgs.coreutils}/bin/cat "${config.age.secrets."restic-env".path}" | ${pkgs.findutils}/bin/xargs)
+      export RESTIC_REPOSITORY="${environment.RESTIC_REPOSITORY}"
+      export RESTIC_PASSWORD_FILE="${environment.RESTIC_PASSWORD_FILE}"
+
+      echo "--- Restic Wrapper: executing with preset environment ---" >&2
+      exec env "${pkgs.restic}/bin/restic" "$@"
+    '';
+  in [restic-wrapper];
 }
