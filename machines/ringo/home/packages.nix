@@ -3,7 +3,9 @@
   pkgs-unstable,
   agenix-darwin,
   ...
-}: {
+}: let
+  codegpt = pkgs.callPackage ../../../pkgs/codegpt.nix {};
+in {
   imports = [
     ../../../home/darwin/packages.nix
   ];
@@ -71,5 +73,6 @@
         imagemagick
         restic
       ]
-    );
+    )
+    ++ [codegpt];
 }
