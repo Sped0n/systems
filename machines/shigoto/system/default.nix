@@ -1,6 +1,7 @@
 {...}: {
   imports = [
     ./usb.nix
+    ./waydroid.nix
   ];
 
   boot.initrd.availableKernelModules = [
