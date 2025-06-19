@@ -7,12 +7,6 @@
 }: let
   sourceDir = "${home}/infra";
   composeFile = "${home}/infra/docker-compose.yml";
-  serviceConfig = {
-    Type = "oneshot";
-    User = "root";
-    EnvironmentFile = config.age.secrets."restic-env".path;
-    TimeoutStartSec = "15m";
-  };
   environment = {
     RESTIC_REPOSITORY =
       "s3:s3.eu-central-003.backblazeb2.com/"
@@ -23,7 +17,14 @@
   keepWeekly = 2;
 in {
   systemd = {
-    services = {
+    services = let
+      serviceConfig = {
+        Type = "oneshot";
+        User = "root";
+        EnvironmentFile = config.age.secrets."restic-env".path;
+        TimeoutStartSec = "15m";
+      };
+    in {
       "restic-backup" = {
         description = "Stop services, run Restic backup for ${sourceDir}, restart services";
         inherit serviceConfig environment;
@@ -32,7 +33,6 @@ in {
           set -euo pipefail
 
           echo "Attempting to stop related services..."
-          systemctl stop beszel-hub.service
           ${pkgs.docker}/bin/docker compose -f "${composeFile}" stop
           echo "Related services stopped."
 
@@ -54,7 +54,6 @@ in {
           echo "Restic prune complete."
 
           echo "Attempting to start related services..."
-          systemctl start beszel-hub.service
           ${pkgs.docker}/bin/docker compose -f "${composeFile}" start
           echo "Related services started."
 

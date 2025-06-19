@@ -11,11 +11,6 @@
     (with pkgs-unstable; [
       nali
     ])
-    ++
-    # Others
-    (with pkgs-unstable; [
-      beszel
-    ])
     ++ (with pkgs; [
       restic
     ]);
