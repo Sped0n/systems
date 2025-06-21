@@ -18,8 +18,8 @@
   services.logrotate = {
     enable = true;
     settings = {
-      "${home}/infra/data/traefik/logs/access.log" = {
-        "create 0644 root root" = true;
+      "${home}/infra/data/traefik/access.log" = {
+        "create 755 ${username} users" = true;
         frequency = "daily";
         size = "10M";
         rotate = 3;
