@@ -6,7 +6,7 @@
   codegpt = pkgs.callPackage ../../../pkgs/codegpt.nix {};
 in {
   imports = [
-    ../../../home/shared/packages.nix
+    ../shared/packages.nix
   ];
 
   home.packages =
@@ -37,5 +37,7 @@ in {
           shfmt
         ]
     )
-    ++ [codegpt];
+    ++ [
+      codegpt
+    ];
 }

@@ -4,7 +4,7 @@
   ...
 }: {
   imports = [
-    ../../shared/packages.nix
+    ../shared/packages.nix
   ];
   home.packages =
     # Utils
