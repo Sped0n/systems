@@ -2,8 +2,9 @@
   imports = [
     ../../../shared/programs
 
-    ./ghostty.nix
+    ./gnome.nix
     ./zsh.nix
+    ./ghostty.nix
   ];
 
   programs.uv.enable = true;
