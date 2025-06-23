@@ -20,7 +20,18 @@
       "org/gnome/desktop/input-sources" = {
         mru-sources = [(mkTuple ["xkb" "us"]) (mkTuple ["ibus" "rime"])];
         sources = [(mkTuple ["xkb" "us"]) (mkTuple ["ibus" "rime"])];
-        xkb-options = [];
+        xkb-options = ["grp:caps_toggle"];
+      };
+
+      "org/gnome/desktop/wm/keybindings" = {
+        switch-input-source = [];
+        switch-input-source-backward = [];
+      };
+
+      "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
+        binding = "<Super>space";
+        command = "albert toggle";
+        name = "albert";
       };
     };
   };
