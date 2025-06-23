@@ -67,10 +67,20 @@ return {
         -- this is useful for naming menus
         ["<Leader>b"] = { desc = "Buffers" },
 
-        -- setting a mapping to false will disable it
-        -- ["<C-S>"] = false,
-
         ["<Leader>gB"] = { "<cmd>GitBlameToggle<cr>", desc = "Toggle Git Glame Virtual Text" },
+      },
+    },
+
+    autocmds = {
+      userdefine = {
+        {
+          event = "User",
+          pattern = "AstroFile",
+          once = true,
+          desc = "Disable codeium on start up",
+          group = "userdefine",
+          callback = function() require("codeium").disable() end,
+        },
       },
     },
   },
