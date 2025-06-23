@@ -29,9 +29,9 @@
         kernel.collect = ["psi"];
         exec = [
           {
-            name_override = "kversion";
+            name_override = "info_kernel_version";
             commands = ["${pkgs.coreutils}/bin/uname -r"];
-            interval = "10m";
+            interval = "15m";
             timeout = "5s";
             data_format = "value";
             data_type = "string";
@@ -88,7 +88,7 @@
             endpoint = "/insert/loki/api/v1/push";
             gzip_request = true;
             sanitize_label_names = true;
-            namepass = ["kversion"];
+            namepass = ["info_kernel_version"];
           }
         ];
       };
