@@ -16,7 +16,6 @@ in {
       with pkgs; [
         agenix-darwin.packages."${pkgs.system}".default
         docker
-        gcc
       ]
     )
     ++ (
@@ -37,10 +36,6 @@ in {
     ++ (
       # Languages supports
       with pkgs-unstable; [
-        # python
-        ruff
-        basedpyright
-
         # go
         gopls
         gofumpt
@@ -59,11 +54,6 @@ in {
 
         # zig
         zls
-
-        # bash
-        bash-language-server
-        shellcheck
-        shfmt
       ]
     )
     ++ (
@@ -71,7 +61,6 @@ in {
       with pkgs; [
         ffmpeg
         imagemagick
-        restic
       ]
     )
     ++ [codegpt];

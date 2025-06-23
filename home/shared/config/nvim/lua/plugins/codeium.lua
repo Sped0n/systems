@@ -1,5 +1,39 @@
 return {
   {
+    "Exafunction/codeium.nvim",
+    cmd = "Codeium",
+    event = "InsertEnter",
+    build = ":Codeium Auth",
+    opts = {
+      enable_chat = false,
+    },
+  },
+
+  {
+    "AstroNvim/astroui",
+    ---@type AstroUIOpts
+    opts = {
+      icons = {
+        Codeium = "󰞋",
+      },
+    },
+  },
+
+  {
+    "AstroNvim/astrocore",
+    opts = {
+      mappings = {
+        n = {
+          ["<Leader>;"] = {
+            desc = "Toggle Codeium Completion",
+            function() vim.cmd "Codeium Toggle" end,
+          },
+        },
+      },
+    },
+  },
+
+  {
     "saghen/blink.cmp",
     opts = {
       sources = {
@@ -11,32 +45,12 @@ return {
             async = true,
             transform_items = function(_, items)
               for _, item in ipairs(items) do
-                item.kind_icon = "󰬄"
+                item.kind_icon = require("astroui").get_icon("Codeium", 1, true)
                 item.kind_name = "Codeium"
+                item.kind_hl = "MiniIconsCyan"
               end
               return items
             end,
-          },
-        },
-      },
-    },
-  },
-
-  {
-    "Exafunction/codeium.nvim",
-    opts = {
-      wrapper = (vim.fn.has "linux" == 1 and vim.fn.isdirectory "/nix/store" == 1) and "steam-run" or nil,
-    },
-  },
-
-  {
-    "AstroNvim/astrocore",
-    opts = {
-      mappings = {
-        n = {
-          ["<Leader>;t"] = {
-            desc = "Toggle Completion",
-            function() vim.cmd "Codeium Toggle" end,
           },
         },
       },

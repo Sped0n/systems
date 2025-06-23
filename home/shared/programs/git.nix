@@ -11,6 +11,7 @@
       pull.rebase = true;
       rebase.autoStash = true;
       merge.conflictStyle = "zdiff3";
+      core.editor = "nvim";
     };
 
     signing = {

@@ -32,8 +32,7 @@
           tlrc
           openssh
           wget
-          zip
-          unzip
+          curl
 
           # Encryption and security tools
           age
@@ -48,29 +47,48 @@
           ripgrep
           tree
           less
-          yazi
+
+          # Backup tools
+          restic
         ]
     )
     ++ (
-      with pkgs-unstable; [
-        # lua
-        lua-language-server
-        stylua
-        selene
+      with pkgs-unstable;
+      # Language supports
+        [
+          # nix
+          nixd
+          alejandra
 
-        # nix
-        nixd
-        alejandra
+          # toml
+          taplo
 
-        # toml
-        taplo
+          # yaml
+          yaml-language-server
+          prettierd
 
-        # yaml
-        yaml-language-server
-        prettierd
+          # json
+          vscode-langservers-extracted
 
-        # json
-        vscode-langservers-extracted
-      ]
+          # bash
+          bash-language-server
+          shellcheck
+          shfmt
+
+          # python
+          ruff
+          basedpyright
+
+          # lua
+          lua-language-server
+          stylua
+          selene
+        ]
+        ++
+        # Others
+        [
+          nali
+          yazi
+        ]
     );
 }
