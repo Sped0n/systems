@@ -6,13 +6,12 @@
 
   i18n.inputMethod = {
     enable = true;
-    type = "fcitx5";
-    fcitx5.addons = with pkgs; [
-      # NOTE:
-      # While manually adding input source in fcitx config
-      # GUI, search cn/pinyin instead of Chinese
-      fcitx5-chinese-addons
-      fcitx5-gtk
+    type = "ibus";
+    # NOTE: User has to select rime or libpinyin as input method
+    # in gnome settings (under keyboard).
+    ibus.engines = with pkgs.ibus-engines; [
+      libpinyin
+      rime
     ];
   };
 }
