@@ -25,6 +25,7 @@
     ++ (with pkgs-unstable; [
       # Dev tools
       beekeeper-studio
+      imhex
 
       # Productivity
       obsidian
