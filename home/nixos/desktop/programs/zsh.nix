@@ -1,16 +1,11 @@
-{
-  lib,
-  pkgs,
-  ...
-}: {
+{pkgs, ...}: {
   programs.zsh = {
-    initContent = lib.mkMerge [
-      (lib.mkOrder 1550 ''
-        alias pbcopy='xclip -selection clipboard'
-        alias pbpaste='xclip -selection clipboard -o'
-      '')
-    ];
+    shellAliases = {
+      pbcopy = "${pkgs.wl-clipboard}/bin/wl-copy";
+      pbpaste = "${pkgs.wl-clipboard}/bin/wl-paste";
+      open = "xdg-open";
+    };
   };
 
-  home.packages = [pkgs.xclip];
+  home.packages = [pkgs.wl-clipboard];
 }
