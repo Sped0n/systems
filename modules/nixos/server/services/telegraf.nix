@@ -58,7 +58,14 @@
         docker = {
           timeout = "10s";
           source_tag = true;
-          docker_label_exclude = ["traefik.*"];
+          docker_label_exclude = [
+            "traefik.*"
+            "com.*"
+            "org.*"
+            "io.*"
+            "summary"
+            "description"
+          ];
         };
       };
 
