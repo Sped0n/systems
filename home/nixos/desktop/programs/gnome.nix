@@ -15,6 +15,12 @@
         enabled-extensions = [
           "appindicatorsupport@rgcjonas.gmail.com"
         ];
+        favorite-apps = [
+          "org.gnome.Nautilus.desktop"
+          "brave-browser.desktop"
+          "com.mitchellh.ghostty.desktop"
+          "teams-for-linux.desktop"
+        ];
       };
 
       "org/gnome/desktop/input-sources" = {
