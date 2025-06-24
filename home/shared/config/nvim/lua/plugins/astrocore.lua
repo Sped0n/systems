@@ -70,18 +70,5 @@ return {
         ["<Leader>gB"] = { "<cmd>GitBlameToggle<cr>", desc = "Toggle Git Glame Virtual Text" },
       },
     },
-
-    autocmds = {
-      userdefine = {
-        {
-          event = "User",
-          pattern = "AstroFile",
-          once = true,
-          desc = "Disable codeium on start up",
-          group = "userdefine",
-          callback = function() require("codeium").disable() end,
-        },
-      },
-    },
   },
 }

@@ -10,23 +10,16 @@ return {
   },
 
   {
-    "AstroNvim/astroui",
-    ---@type AstroUIOpts
-    opts = {
-      icons = {
-        Codeium = "󰞋",
-      },
-    },
-  },
-
-  {
     "AstroNvim/astrocore",
     opts = {
       mappings = {
         n = {
           ["<Leader>;"] = {
-            desc = "Toggle Codeium Completion",
-            function() vim.cmd "Codeium Toggle" end,
+            desc = "Toggle Full Codeium Completion",
+            function()
+              vim.g.codeium_full = not vim.g.codeium_full
+              vim.notify("Codeium Full Completion " .. (vim.g.codeium_full and "On" or "Off"), vim.log.levels.INFO)
+            end,
           },
         },
       },
@@ -37,7 +30,17 @@ return {
     "saghen/blink.cmp",
     opts = {
       sources = {
-        default = { "lsp", "path", "snippets", "buffer", "codeium" },
+        default = function(_)
+          local success, node = pcall(vim.treesitter.get_node)
+          if
+            (success and node and (string.find(node:type(), "string") or string.find(node:type(), "comment")))
+            or vim.g.codeium_full
+          then
+            return { "lsp", "path", "snippets", "buffer", "codeium" }
+          else
+            return { "lsp", "path", "snippets", "buffer" }
+          end
+        end,
         providers = {
           codeium = {
             name = "Codeium",
@@ -45,9 +48,8 @@ return {
             async = true,
             transform_items = function(_, items)
               for _, item in ipairs(items) do
-                item.kind_icon = require("astroui").get_icon("Codeium", 1, true)
+                item.kind_icon = ""
                 item.kind_name = "Codeium"
-                item.kind_hl = "MiniIconsCyan"
               end
               return items
             end,
