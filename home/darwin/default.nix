@@ -6,7 +6,7 @@
   imports = [
     agenix-darwin.homeManagerModules.default
 
-    ../../shared
+    ../shared
 
     ./packages.nix
     ./programs
