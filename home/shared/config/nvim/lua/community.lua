@@ -12,7 +12,7 @@ return {
   { import = "astrocommunity.recipes.disable-tabline" },
   { import = "astrocommunity.git.git-blame-nvim" },
   { import = "astrocommunity.completion.minuet-ai-nvim" },
-  -- { import = "astrocommunity.completion.codeium-nvim" },
+  { import = "astrocommunity.recipes.heirline-vscode-winbar" },
   -- languages
   { import = "astrocommunity.pack.lua" },
   { import = "astrocommunity.pack.python-ruff" },

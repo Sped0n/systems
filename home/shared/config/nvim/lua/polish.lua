@@ -30,6 +30,3 @@ vim.keymap.set("", "<C-d>", "<C-d>zz", { noremap = true })
 vim.keymap.set("", "<C-u>", "<C-u>zz", { noremap = true })
 vim.keymap.set("", "n", "nzzzv", { noremap = true })
 vim.keymap.set("", "N", "Nzzzv", { noremap = true })
-
--- Flag for codeium
-vim.g.codeium_full = false
