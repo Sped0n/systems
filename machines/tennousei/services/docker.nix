@@ -1,5 +1,4 @@
 {
-  pkgs,
   home,
   username,
   ...
@@ -18,21 +17,17 @@
   services.logrotate = {
     enable = true;
     settings = {
-      "${home}/infra/data/traefik/access.log" = {
-        "create 755 ${username} users" = true;
-        frequency = "daily";
-        size = "10M";
-        rotate = 3;
+      "/var/log/traefik/access.log" = {
+        copytruncate = true;
+        frequency = "hourly";
+        size = "1M";
+        rotate = 1;
         missingok = true;
         notifempty = true;
-        postrotate = ''
-          echo "Attempting to signal Traefik container..." >&2
-          ${pkgs.docker}/bin/docker exec traefik kill -USR1 1 || echo "Failed to signal PID 1 in Docker container 'traefik'" >&2
-        '';
       };
 
       "${home}/infra/data/vaultwarden/vaultwarden.log" = {
-        "create 0755 ${username} users" = true;
+        copytruncate = true;
         frequency = "daily";
         size = "10M";
         rotate = 3;

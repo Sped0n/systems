@@ -1,12 +1,13 @@
-{home, ...}: {
+{...}: {
   services.telegraf = {
     extraConfig = {
       inputs = {
         tail = [
           {
             name_override = "traefik_access_log";
-            files = ["/var/log/telegraf-binds/traefik-access.log"];
+            files = ["/var/log/traefik/access.log"];
             watch_method = "inotify";
+            initial_read_offset = "saved-or-end";
             data_format = "json";
             json_string_fields = [
               "RouterName"
@@ -14,6 +15,7 @@
               "downstream_Content-Type"
               "request_Cf-Ray"
               "request_Referer"
+              "time"
             ];
             tag_keys = [
               "DownstreamStatus"
@@ -47,19 +49,5 @@
   };
 
   users.users.telegraf.extraGroups = ["docker"];
-  systemd = {
-    tmpfiles.rules = [
-      "d /var/log/telegraf-binds 0755 root root -"
-    ];
-    mounts = [
-      {
-        what = "${home}/infra/data/traefik/access.log";
-        where = "/var/log/telegraf-binds/traefik-access.log";
-        type = "none";
-        options = "bind,ro"; # 'bind' creates the mirror, 'ro' makes it read-only
-        wantedBy = ["multi-user.target"];
-      }
-    ];
-    services.telegraf.after = ["tailscaled.service"];
-  };
+  systemd.services.telegraf.after = ["tailscaled.service"];
 }
