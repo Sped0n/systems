@@ -19,6 +19,20 @@
           owner = "root";
         }
         // readable;
+
+      "restic-env" =
+        {
+          file = "${secrets}/ages/restic-env.age";
+          owner = "root";
+        }
+        // readable;
+
+      "restic-password" =
+        {
+          file = "${secrets}/ages/restic-password.age";
+          owner = "root";
+        }
+        // readable;
     };
   };
 }
