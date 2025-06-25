@@ -1,8 +1,8 @@
 {...}: {
   imports = [
-    ../../../home/nixos/server
+    ../shared
 
-    ./programs
     ./packages.nix
+    ./programs
   ];
 }

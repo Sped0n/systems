@@ -1,6 +1,6 @@
-{agenix, ...}: {
+{...}: {
   imports = [
-    agenix.homeManagerModules.default
+    ../../../home/nixos/desktop
 
     ./programs
     ./packages.nix

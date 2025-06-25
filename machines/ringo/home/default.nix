@@ -1,6 +1,6 @@
-{agenix-darwin, ...}: {
+{...}: {
   imports = [
-    agenix-darwin.homeManagerModules.default
+    ../../../home/darwin
 
     ./programs
     ./packages.nix

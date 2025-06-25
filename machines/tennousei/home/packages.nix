@@ -1,19 +1,9 @@
 {pkgs, ...}:
 with pkgs; {
-  imports = [
-    ../../../home/nixos/server/packages.nix
-  ];
+  home.packages = [
+    rclone
 
-  home.packages =
-    # Main
-    [
-      docker-compose
-      rclone
-    ]
-    ++
-    # Others
-    [
-      hugo
-      go
-    ];
+    hugo
+    go
+  ];
 }

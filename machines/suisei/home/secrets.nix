@@ -3,37 +3,16 @@
   home,
   ...
 }: {
-  age = let
+  age.secrets = let
     readable = {
       mode = "0500";
     };
   in {
-    identityPaths = [
-      "${home}/.config/secrets/id_agenix"
-    ];
-
-    secrets = {
-      "github-ssh-key" =
-        {
-          path = "${home}/.ssh/id_github";
-          file = "${secrets}/ages/github-ssh-key.age";
-        }
-        // readable;
-
-      # NOTE: disable after imported
-      # "github-signing-key" =
-      #   {
-      #     path = "${home}/.config/secrets/pgp_github.key";
-      #     file = "${secrets}/ages/github-signing-key.age";
-      #   }
-      #   // readable;
-
-      "aws-cli-credentials" =
-        {
-          path = "${home}/.aws/credentials";
-          file = "${secrets}/ages/suisei-aws-cli-credentials.age";
-        }
-        // readable;
-    };
+    "aws-cli-credentials" =
+      {
+        path = "${home}/.aws/credentials";
+        file = "${secrets}/ages/suisei-aws-cli-credentials.age";
+      }
+      // readable;
   };
 }

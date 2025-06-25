@@ -1,67 +1,61 @@
 {
   pkgs,
   pkgs-unstable,
-  agenix-darwin,
   ...
 }: let
   codegpt = pkgs.callPackage ../../../pkgs/codegpt.nix {};
 in {
-  imports = [
-    ../../../home/darwin/packages.nix
-  ];
-
   home.packages =
     (
-      # Core
-      with pkgs; [
-        agenix-darwin.packages."${pkgs.system}".default
-        docker
-      ]
+      with pkgs;
+      # Dev tools
+        [
+          docker
+          bfg-repo-cleaner
+          minicom
+          smartmontools
+        ]
+        ++
+        # Others
+        [
+          ffmpeg
+          imagemagick
+        ]
     )
     ++ (
-      # Utils
-      (with pkgs; [
-        bfg-repo-cleaner
-        minicom
-        smartmontools
-      ])
-      ++ (with pkgs-unstable; [
-        act
-        hyperfine
-        ast-grep
-        nali
-        tokei
-      ])
-    )
-    ++ (
-      # Languages supports
-      with pkgs-unstable; [
-        # go
-        gopls
-        gofumpt
+      with pkgs-unstable;
+      # Dev tools
+        [
+          act
+          hyperfine
+          ast-grep
+        ]
+        ++
+        # CLI tools
+        [
+          nali
+          tokei
+        ]
+        ++ [
+          # go
+          gopls
+          gofumpt
 
-        # rust
-        rustup
+          # rust
+          rustup
 
-        # c/cpp
-        clang-tools
-        neocmakelsp
+          # c/cpp
+          clang-tools
+          neocmakelsp
 
-        # typescript
-        vtsls
-        eslint
-        pnpm
+          # typescript
+          vtsls
+          eslint
+          pnpm
 
-        # zig
-        zls
-      ]
-    )
-    ++ (
-      # Others
-      with pkgs; [
-        ffmpeg
-        imagemagick
-      ]
+          # zig
+          zls
+        ]
     )
     ++ [codegpt];
 }

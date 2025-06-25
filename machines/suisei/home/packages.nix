@@ -1,5 +1,3 @@
 {...}: {
-  imports = [
-    ../../../home/nixos/server/packages.nix
-  ];
+  home.packages = [];
 }
