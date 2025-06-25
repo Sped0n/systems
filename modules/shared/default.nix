@@ -4,6 +4,10 @@
   username,
   ...
 }: {
+  imports = [
+    ./secrets.nix
+  ];
+
   # Nixpkgs
   nixpkgs = {
     config = {
@@ -36,7 +40,7 @@
     };
     gc = {
       automatic = true;
-      options = "--delete-older-than 30d";
+      options = "--delete-older-than 21d";
     };
   };
 

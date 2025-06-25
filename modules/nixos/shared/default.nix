@@ -8,8 +8,5 @@
     ./virt.nix
   ];
 
-  nix.gc.dates = "weekly";
-
-  # NOTE: for codeium language server
-  programs.nix-ld.enable = true;
+  nix.gc.dates = "daily";
 }
