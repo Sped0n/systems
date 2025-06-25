@@ -4,7 +4,7 @@ return {
     "milanglacier/minuet-ai.nvim",
     opts = {
       provider = "openai_fim_compatible",
-      request_timeout = 4.0,
+      request_timeout = 5.0,
       throttle = 1200,
       debounce = 400,
       provider_options = {
@@ -12,7 +12,7 @@ return {
           api_key = "OPENAI_API_KEY",
           name = "deepseek",
           optional = {
-            max_tokens = 128,
+            max_tokens = 256,
             top_p = 0.9,
           },
         },
@@ -47,7 +47,7 @@ return {
               return items
             end,
             async = true,
-            timeout_ms = 4000,
+            timeout_ms = 5000,
             score_offset = 8,
           },
         },
