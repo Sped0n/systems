@@ -10,6 +10,8 @@
     "d ${home}/storage/qbtrt 0755 ${username} users -"
   ];
 
+  environment.systemPackages = with pkgs; [rclone];
+
   systemd.services.qbtrt-webdav = {
     enable = true;
     description = "WebDAV server for qbittorrent media";
