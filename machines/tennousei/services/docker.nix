@@ -20,8 +20,8 @@
       "/var/log/traefik/access.log" = {
         copytruncate = true;
         frequency = "hourly";
-        size = "1M";
-        rotate = 1;
+        size = "100K";
+        rotate = 0;
         missingok = true;
         notifempty = true;
       };
