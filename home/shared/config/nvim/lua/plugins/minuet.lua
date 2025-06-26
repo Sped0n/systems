@@ -5,8 +5,6 @@ return {
     opts = {
       provider = "openai_fim_compatible",
       request_timeout = 5.0,
-      throttle = 1200,
-      debounce = 400,
       provider_options = {
         openai_fim_compatible = {
           api_key = "OPENAI_API_KEY",
@@ -27,14 +25,6 @@ return {
         ["<C-;>"] = require("minuet").make_blink_map(),
       },
       sources = {
-        default = function(_)
-          local success, node = pcall(vim.treesitter.get_node)
-          if success and node and (string.find(node:type(), "comment")) then
-            return { "lsp", "path", "snippets", "buffer", "minuet" }
-          else
-            return { "lsp", "path", "snippets", "buffer" }
-          end
-        end,
         providers = {
           minuet = {
             name = "minuet",
@@ -88,7 +78,7 @@ return {
         callback = function()
           if clear_timer then clear_timer:stop() end
           minuet_status.active = true
-          minuet_status.message = " Thinking..."
+          minuet_status.message = "Thinking..."
           minuet_status.icon = "MinuetLoading"
           vim.cmd.redrawstatus()
         end,
