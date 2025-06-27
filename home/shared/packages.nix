@@ -30,6 +30,7 @@
       ast-grep
       act
       bfg-repo-cleaner
+      yek
 
       # Encryption and security tools
       age
