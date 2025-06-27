@@ -45,6 +45,9 @@
         gopls
         delve
         gofumpt
+
+        # markdown
+        marksman
       ];
     sessionVariables.EDITOR = "nvim";
   };

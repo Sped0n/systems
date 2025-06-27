@@ -24,6 +24,8 @@ return {
       "yamlls",
       -- json
       "jsonls",
+      -- markdown
+      "marksman",
     })
   end,
 }
