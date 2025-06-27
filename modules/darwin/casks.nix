@@ -1,13 +1,13 @@
 _: [
   # Development Tools
-  "tailscale"
+  "tailscale-app"
   "visual-studio-code"
   "ghostty"
   "beekeeper-studio"
   "orbstack"
   "virtualbuddy"
   "netron"
-  "httpie"
+  "httpie-desktop"
   "termius"
 
   # Communication Tools
@@ -15,7 +15,7 @@ _: [
   "telegram"
 
   # Utility Tools
-  "syncthing"
+  "syncthing-app"
   "stats"
   "soundsource"
   "bettermouse"
@@ -23,7 +23,6 @@ _: [
   "betterdisplay"
   "jordanbaird-ice"
   "localsend"
-  "keka"
   "one-switch"
   "rectangle"
   "shottr"
@@ -49,7 +48,7 @@ _: [
   # Creativity
   "affinity-photo"
   "affinity-designer"
-  "handbrake"
+  "handbrake-app"
 
   # Others
   "moonlight"
