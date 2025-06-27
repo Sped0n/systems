@@ -24,6 +24,5 @@ return {
   { "WhoIsSethDaniel/mason-tool-installer.nvim", enabled = false },
   { "jay-babu/mason-nvim-dap.nvim", enabled = false },
 
-  { "olexsmir/gopher.nvim", enabled = false },
-  { "mfussenegger/nvim-dap-python", enabled = false },
+  -- { "olexsmir/gopher.nvim", enabled = false },
 }

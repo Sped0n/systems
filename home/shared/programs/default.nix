@@ -38,7 +38,7 @@
     settings = {
       auto_sync = true;
       sync_frequency = "10m";
-      sync_address = "https://atuin.sped0n.com";
+      sync_address = "http://tennousei:10004";
       style = "compact";
       inline_height = 10;
       invert = false;

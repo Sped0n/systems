@@ -54,6 +54,9 @@
   # Zsh
   programs.zsh.enable = true;
   environment = {
-    shells = [pkgs.zsh];
+    shells = with pkgs; [zsh];
   };
+
+  # Vim
+  environment.systemPackages = with pkgs; [vim];
 }

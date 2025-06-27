@@ -2,34 +2,19 @@
   pkgs,
   pkgs-unstable,
   ...
-}: {
-  home.packages =
-    (
-      with pkgs;
-      # Dev tools
-        [
-          android-tools
-        ]
-        ++
-        # Desktop apps
-        [
-          teams-for-linux
+}: let
+  codegpt = pkgs.callPackage ../../../pkgs/codegpt.nix {};
+in {
+  home.packages = with pkgs-unstable;
+    [
+      android-tools
+      imhex
+      beekeeper-studio
+      popsicle
 
-          popsicle
-          peazip
-        ]
-    )
-    ++ (
-      with pkgs-unstable;
-      # Dev tools
-        [
-          beekeeper-studio
-          imhex
-        ]
-        ++
-        # Productivity
-        [
-          obsidian
-        ]
-    );
+      teams-for-linux
+
+      obsidian
+    ]
+    ++ [codegpt];
 }
