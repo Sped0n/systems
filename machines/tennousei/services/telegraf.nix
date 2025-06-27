@@ -10,7 +10,6 @@
             initial_read_offset = "saved-or-end";
             data_format = "json";
             json_string_fields = [
-              "RouterName"
               "ServiceName"
               "downstream_Content-Type"
               "request_Cf-Ray"
