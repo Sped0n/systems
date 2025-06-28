@@ -7,7 +7,6 @@
     ./gitui.nix
     ./ssh.nix
     ./zellij.nix
-    ./mise.nix
     ./fastfetch.nix
     ./ghostty.nix
     ./uv.nix
