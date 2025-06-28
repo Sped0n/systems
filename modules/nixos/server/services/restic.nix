@@ -135,8 +135,25 @@ in {
         };
 
         timers = {
-          "restic-backup".timerConfig.OnCalendar = "*-*-* 03:00:00";
-          "restic-check".timerConfig.OnCalendar = "weekly";
+          "restic-backup" = {
+            description = "Daily timer for Restic backup";
+            wantedBy = ["timers.target"];
+            timerConfig = {
+              OnCalendar = "*-*-* 03:00:00";
+              Persistent = true;
+              Unit = "restic-backup.service";
+            };
+          };
+
+          "restic-check" = {
+            description = "Weekly timer for Restic repository check";
+            wantedBy = ["timers.target"];
+            timerConfig = {
+              OnCalendar = "weekly";
+              Persistent = true;
+              Unit = "restic-check.service";
+            };
+          };
         };
       };
 
