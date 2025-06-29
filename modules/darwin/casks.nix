@@ -1,14 +1,12 @@
 _: [
   # Development Tools
   "tailscale-app"
-  "visual-studio-code"
   "ghostty"
   "beekeeper-studio"
   "orbstack"
   "virtualbuddy"
   "netron"
   "httpie-desktop"
-  "termius"
 
   # Communication Tools
   "discord"

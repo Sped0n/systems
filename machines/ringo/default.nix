@@ -30,7 +30,12 @@
     "WhatsApp Messenger" = 310633997;
     "Endel" = 1346247457;
     "VidHub" = 1659622164;
-    "Flow" = 1423210932;
-    "FastZip" = 1565629813;
+    "Windows App" = 1295203466;
+    "Microsoft Word" = 462054704;
+    "Microsoft Excel" = 462058435;
+    "Microsoft PowerPoint" = 462062816;
+    "Microsoft Outlook" = 985367838;
+    "Microsoft OneDrive" = 823766827;
+    "PDFgear" = 6469021132;
   };
 }
