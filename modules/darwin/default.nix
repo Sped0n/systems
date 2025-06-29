@@ -37,11 +37,4 @@
       "FastZip Pro" = 6740171321;
     };
   };
-
-  # Fonts
-  fonts = {
-    packages = with pkgs; [
-      lilex
-    ];
-  };
 }

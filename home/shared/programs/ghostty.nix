@@ -1,7 +1,12 @@
-{lib, ...}: {
+{
+  lib,
+  pkgs-unstable,
+  ...
+}: {
   programs.ghostty = {
     enable = lib.mkDefault false;
     enableZshIntegration = true;
+    package = lib.mkDefault pkgs-unstable.ghostty;
     settings = {
       shell-integration = "zsh";
       macos-option-as-alt = true;
@@ -74,4 +79,6 @@
       };
     };
   };
+
+  home.packages = [pkgs-unstable.lilex];
 }
