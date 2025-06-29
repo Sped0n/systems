@@ -78,7 +78,7 @@ return {
         callback = function()
           if clear_timer then clear_timer:stop() end
           minuet_status.active = true
-          minuet_status.message = "Thinking..."
+          minuet_status.message = " Thinking..."
           minuet_status.icon = "MinuetLoading"
           vim.cmd.redrawstatus()
         end,
