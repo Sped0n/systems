@@ -6,8 +6,8 @@
 }: {
   imports = [
     ../shared
+    ./system
 
-    ./system.nix
     ./casks.nix
   ];
 
