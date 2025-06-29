@@ -7,6 +7,7 @@
     ../../modules/darwin
 
     ./builder.nix
+    ./casks.nix
   ];
 
   nix-homebrew = {
@@ -34,7 +35,6 @@
     "Microsoft Word" = 462054704;
     "Microsoft Excel" = 462058435;
     "Microsoft PowerPoint" = 462062816;
-    "Microsoft Outlook" = 985367838;
     "Microsoft OneDrive" = 823766827;
     "PDFgear" = 6469021132;
   };

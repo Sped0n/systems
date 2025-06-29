@@ -1,53 +1,37 @@
-_: [
-  # Development Tools
-  "tailscale-app"
-  "ghostty"
-  "beekeeper-studio"
-  "orbstack"
-  "virtualbuddy"
-  "netron"
-  "httpie-desktop"
+{...}: {
+  homebrew.casks = [
+    # Development Tools
+    "tailscale-app"
+    "ghostty"
+    "orbstack"
 
-  # Communication Tools
-  "discord"
-  "telegram"
+    # Communication Tools
+    "telegram"
 
-  # Utility Tools
-  "syncthing-app"
-  "stats"
-  "soundsource"
-  "bettermouse"
-  "aldente"
-  "betterdisplay"
-  "jordanbaird-ice"
-  "localsend"
-  "one-switch"
-  "rectangle"
-  "shottr"
-  "pearcleaner"
+    # Utility Tools
+    "syncthing-app"
+    "stats"
+    "soundsource"
+    "bettermouse"
+    "aldente"
+    "betterdisplay"
+    "jordanbaird-ice"
+    "localsend"
+    "one-switch"
+    "rectangle"
+    "shottr"
+    "pearcleaner"
 
-  # Entertainment Tools
-  "iina"
+    # Entertainment Tools
+    "iina"
 
-  # Productivity Tools
-  "raycast"
-  "obsidian"
-  "typora"
-  "mactex"
-  "drawio"
-  "fantastical"
+    # Productivity Tools
+    "raycast"
+    "obsidian"
+    "typora"
+    "fantastical"
 
-  # Browsers
-  "brave-browser"
-
-  # AI
-  "chatwise"
-
-  # Creativity
-  "affinity-photo"
-  "affinity-designer"
-  "handbrake-app"
-
-  # Others
-  "moonlight"
-]
+    # Browsers
+    "brave-browser"
+  ];
+}

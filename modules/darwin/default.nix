@@ -8,6 +8,7 @@
     ../shared
 
     ./system.nix
+    ./casks.nix
   ];
 
   nix.gc.interval = {
@@ -23,7 +24,6 @@
 
   homebrew = {
     enable = true;
-    casks = pkgs.callPackage ./casks.nix {};
     onActivation = {
       autoUpdate = false;
       upgrade = true;
@@ -35,6 +35,7 @@
       "Bitwarden" = 1352778147;
       "Dropover" = 1355679052;
       "FastZip Pro" = 6740171321;
+      "Microsoft Outlook" = 985367838;
     };
   };
 }
