@@ -26,4 +26,7 @@
 
   # Virtualbox
   virtualisation.virtualbox.guest.enable = true;
+
+  # nix-ld
+  programs.nix-ld.enable = true;
 }
