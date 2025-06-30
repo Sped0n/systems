@@ -53,6 +53,7 @@
         net = {
           interfaces = ["eth0" "tailscale0"];
           fieldexclude = ["speed"];
+          ignore_protocol_stats = true;
         };
         netstat = {};
         docker = {
@@ -67,6 +68,7 @@
             "description"
           ];
         };
+        processes = {};
       };
 
       outputs = {
@@ -87,6 +89,7 @@
             "net*"
             "netstat*"
             "docker*"
+            "processes*"
           ];
         };
         loki = [
