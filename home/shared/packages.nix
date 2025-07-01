@@ -48,8 +48,5 @@
       yazi
       tokei
       tlrc
-
-      # Backup tools
-      restic
     ];
 }
