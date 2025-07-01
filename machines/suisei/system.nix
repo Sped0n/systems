@@ -25,4 +25,10 @@
     # - https://github.com/NixOS/nixpkgs/blob/b134951a4c9f3c995fd7be05f3243f8ecd65d798/pkgs/applications/virtualization/qemu/default.nix#L53C3-L57C45
     (self: super: {qemu-user = pkgs-qemu8.qemu;})
   ];
+
+  # builder setup
+  nix.settings = {
+    keep-outputs = true;
+    keep-derivations = true;
+  };
 }
