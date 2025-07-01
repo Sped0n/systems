@@ -31,7 +31,7 @@ return {
             module = "minuet.blink",
             transform_items = function(_, items)
               for _, item in ipairs(items) do
-                item.kind_icon = ""
+                item.kind_icon = "m"
                 item.kind_name = "Minuet"
               end
               return items
@@ -47,39 +47,40 @@ return {
   },
 
   {
-    "AstroNvim/astroui",
-    ---@type AstroUIOpts
-    opts = {
-      icons = {
-        MinuetLoading = "",
-        MinuetDone = "✓",
-      },
-    },
-  },
-
-  {
     "rebelot/heirline.nvim",
     opts = function(_, opts)
-      local status = require "astroui.status"
-
-      local minuet_status = {
+      local minuet_animation = {
         active = false,
-        message = "",
-        icon = "MinuetLoading",
+        timer = nil,
+        frames = { "[  m]", "[ m ]", "[m  ]" },
+        frame_index = 1,
+        interval = 200,
       }
 
-      local clear_timer = vim.uv.new_timer()
-
-      local minuet_augroup = vim.api.nvim_create_augroup("MinuetHeirline", { clear = true })
+      local minuet_augroup = vim.api.nvim_create_augroup("MinuetHeirlineAnimation", { clear = true })
 
       vim.api.nvim_create_autocmd("User", {
         group = minuet_augroup,
         pattern = "MinuetRequestStarted",
         callback = function()
-          if clear_timer then clear_timer:stop() end
-          minuet_status.active = true
-          minuet_status.message = " Thinking..."
-          minuet_status.icon = "MinuetLoading"
+          if minuet_animation.timer and not minuet_animation.timer:is_closing() then
+            minuet_animation.timer:stop()
+            minuet_animation.timer:close()
+          end
+
+          minuet_animation.active = true
+          minuet_animation.frame_index = 1
+
+          minuet_animation.timer = vim.uv.new_timer()
+          minuet_animation.timer:start(
+            0,
+            minuet_animation.interval,
+            vim.schedule_wrap(function()
+              if not minuet_animation.active then return end
+              minuet_animation.frame_index = (minuet_animation.frame_index % #minuet_animation.frames) + 1
+              vim.cmd.redrawstatus()
+            end)
+          )
           vim.cmd.redrawstatus()
         end,
       })
@@ -88,34 +89,19 @@ return {
         group = minuet_augroup,
         pattern = "MinuetRequestFinished",
         callback = function()
-          minuet_status.active = true
-          minuet_status.message = "Done"
-          minuet_status.icon = "MinuetDone"
-          vim.cmd.redrawstatus()
-
-          if clear_timer then
-            clear_timer:start(
-              3000,
-              0,
-              vim.schedule_wrap(function()
-                minuet_status.active = false
-                vim.cmd.redrawstatus()
-              end)
-            )
+          minuet_animation.active = false
+          if minuet_animation.timer and not minuet_animation.timer:is_closing() then
+            minuet_animation.timer:stop()
+            minuet_animation.timer:close()
+            minuet_animation.timer = nil
           end
+          vim.cmd.redrawstatus()
         end,
       })
 
-      local minuet_component = status.component.builder {
-        condition = function() return minuet_status.active end,
-        provider = function()
-          return status.utils.stylize(minuet_status.message, {
-            icon = { kind = minuet_status.icon, padding = { right = 1 } },
-          })
-        end,
-        hl = function()
-          if minuet_status.icon == "MinuetDone" then return require("astroui").get_hlgroup "GitSignsAdd" end
-        end,
+      local minuet_component = {
+        condition = function() return minuet_animation.active end,
+        provider = function() return minuet_animation.frames[minuet_animation.frame_index] end,
       }
 
       table.insert(opts.statusline, 9, minuet_component)
