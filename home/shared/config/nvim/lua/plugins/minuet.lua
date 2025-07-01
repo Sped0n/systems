@@ -4,14 +4,19 @@ return {
     "milanglacier/minuet-ai.nvim",
     opts = {
       provider = "openai_fim_compatible",
-      request_timeout = 5.0,
+      request_timeout = 3.0,
       provider_options = {
         openai_fim_compatible = {
           api_key = "OPENAI_API_KEY",
-          name = "deepseek",
+          end_point = "https://openrouter.ai/api/v1/completions",
+          model = "mistralai/codestral-2501",
+          name = "Openrouter",
           optional = {
             max_tokens = 256,
             top_p = 0.9,
+            provider = {
+              sort = "throughput",
+            },
           },
         },
       },
@@ -37,7 +42,7 @@ return {
               return items
             end,
             async = true,
-            timeout_ms = 5000,
+            timeout_ms = 3000,
             score_offset = 8,
           },
         },

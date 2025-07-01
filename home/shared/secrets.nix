@@ -23,9 +23,9 @@
         }
         // readable;
 
-      "deepseek-key" =
+      "openai-api-key" =
         {
-          file = "${secrets}/ages/deepseek-key.age";
+          file = "${secrets}/ages/openai-api-key.age";
         }
         // readable;
     };
@@ -35,7 +35,7 @@
   programs.zsh = {
     initContent = lib.mkMerge [
       (lib.mkOrder 1550 ''
-        export OPENAI_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."deepseek-key".path})"
+        export OPENAI_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."openai-api-key".path})"
       '')
     ];
   };
