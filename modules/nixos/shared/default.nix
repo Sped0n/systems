@@ -1,4 +1,4 @@
-{
+{lib, ...}: {
   imports = [
     ../../shared
 
@@ -8,5 +8,5 @@
     ./virt.nix
   ];
 
-  nix.gc.dates = "daily";
+  nix.gc.dates = lib.mkDefault "weekly";
 }

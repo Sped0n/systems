@@ -1,4 +1,5 @@
 {
+  lib,
   pkgs,
   specialArgs,
   username,
@@ -47,7 +48,7 @@
     };
     gc = {
       automatic = true;
-      options = "--delete-older-than 21d";
+      options = lib.mkDefault "--delete-older-than 21d";
     };
   };
 

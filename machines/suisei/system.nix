@@ -27,8 +27,14 @@
   ];
 
   # builder setup
-  nix.settings = {
-    keep-outputs = true;
-    keep-derivations = true;
+  nix = {
+    gc = {
+      dates = "monthly";
+      options = "--delete-older-than 30d";
+    };
+    settings = {
+      keep-outputs = true;
+      keep-derivations = true;
+    };
   };
 }
