@@ -10,6 +10,7 @@
     ./fastfetch.nix
     ./ghostty.nix
     ./uv.nix
+    ./direnv.nix
   ];
 
   programs.eza = {
