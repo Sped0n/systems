@@ -20,7 +20,7 @@
       signByDefault = true;
     };
 
-    ignores = [".DS_Store" "*.swp"];
+    ignores = [".DS_Store" "*.swp" ".direnv"];
 
     delta = {
       enable = true;
