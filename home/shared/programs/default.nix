@@ -6,12 +6,12 @@
     ./git.nix
     ./gitui.nix
     ./ssh.nix
-    ./zellij.nix
     ./fastfetch.nix
     ./ghostty.nix
     ./uv.nix
     ./direnv.nix
     ./codegpt.nix
+    ./tmux.nix
   ];
 
   programs.eza = {
