@@ -11,6 +11,7 @@
     ./ghostty.nix
     ./uv.nix
     ./direnv.nix
+    ./codegpt.nix
   ];
 
   programs.eza = {

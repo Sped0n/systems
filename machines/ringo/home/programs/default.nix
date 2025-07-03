@@ -5,4 +5,5 @@
   ];
 
   programs.uv.enable = true;
+  programs.codegpt.enable = true;
 }

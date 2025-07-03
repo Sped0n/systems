@@ -5,4 +5,6 @@
     ./neovim.nix
     ./trayscale.nix
   ];
+
+  programs.codegpt.enable = true;
 }
