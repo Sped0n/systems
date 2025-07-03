@@ -8,5 +8,5 @@
     ./virt.nix
   ];
 
-  nix.gc.dates = lib.mkDefault "weekly";
+  nix.gc.dates = lib.mkDefault "daily";
 }
