@@ -30,7 +30,7 @@
 
       window-padding-x = 9;
       window-padding-y = 9;
-      window-inherit-working-directory = true;
+      window-inherit-working-directory = false;
 
       clipboard-read = "allow";
 
