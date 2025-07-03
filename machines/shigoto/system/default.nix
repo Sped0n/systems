@@ -4,14 +4,16 @@
     ./waydroid.nix
   ];
 
-  boot.initrd.availableKernelModules = [
-    "ata_piix"
-    "ohci_pci"
-    "ehci_pci"
-    "ahci"
-    "sd_mod"
-    "sr_mod"
-  ];
+  boot = {
+    initrd.availableKernelModules = [
+      "virtio_pci"
+      "virtio_blk"
+      "xhci_pci"
+      "ahci"
+      "sr_mod"
+    ];
+    kernelModules = ["kvm-intel"];
+  };
 
   # Enable CUPS to print documents
   services.printing.enable = true;
@@ -24,8 +26,8 @@
     }
   ];
 
-  # Virtualbox
-  virtualisation.virtualbox.guest.enable = true;
+  # virt-manager
+  services.spice-vdagentd.enable = true;
 
   # nix-ld
   programs.nix-ld.enable = true;
