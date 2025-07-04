@@ -82,17 +82,14 @@ build:
     @unlink ./result
 
 # Deploy command
-[macos]
-deploy target_host:
-    @echo "Deploying configuration to {{target_host}}..."
-    @echo "Running: nix run nixpkgs#nixos-rebuild -- switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}} --fast --use-substitutes"
-    @nix run nixpkgs#nixos-rebuild -- switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}} --fast --use-substitutes
-
-[linux]
 deploy target_host:
     @echo "Deploying configuration to {{target_host}}..."
     @echo "Running: nixos-rebuild switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}} --fast --use-substitutes"
-    @nixos-rebuild switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}} --fast --use-substitutes
+    @TMP_SCRIPT=$(mktemp); \
+    trap 'rm -f "$TMP_SCRIPT"' EXIT; \
+    sed "s/ssh:\/\//ssh-ng:\/\//g" $(which nixos-rebuild) > "$TMP_SCRIPT"; \
+    chmod +x "$TMP_SCRIPT"; \
+    "$TMP_SCRIPT" switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}} --fast --use-substitutes
 
 # Update nixpkgs for remote target (NixOS)
 deploy-update-pkgs:

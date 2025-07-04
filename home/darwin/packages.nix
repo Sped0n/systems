@@ -3,5 +3,8 @@
     ../shared/packages.nix
   ];
 
-  home.packages = with pkgs; [restic];
+  home.packages = with pkgs; [
+    restic
+    nixos-rebuild
+  ];
 }
