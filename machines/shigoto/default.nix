@@ -3,6 +3,7 @@
     ../../modules/nixos/desktop
 
     ./disko.nix
+    ./secrets.nix
 
     ./system
     ./networking
