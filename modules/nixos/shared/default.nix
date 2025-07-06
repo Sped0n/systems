@@ -5,7 +5,7 @@
     ./system.nix
     ./users.nix
     ./networking.nix
-    ./virt.nix
+    ./docker.nix
   ];
 
   nix.gc.dates = lib.mkDefault "daily";

@@ -5,6 +5,10 @@
     daemon.settings = {
       iptables = false;
       max-concurrent-downloads = 2;
+      log-driver = "journald";
+      log-opts = {
+        tag = "docker#{{.Name}}({{.ID}})";
+      };
     };
   };
 
