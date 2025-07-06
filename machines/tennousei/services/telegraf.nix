@@ -14,7 +14,6 @@
               "downstream_Content-Type"
               "request_Cf-Ray"
               "request_Referer"
-              "time"
             ];
             tag_keys = [
               "DownstreamStatus"
