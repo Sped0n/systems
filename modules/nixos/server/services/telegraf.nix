@@ -143,15 +143,26 @@
           not program("docker#*");
         };
 
+        filter f_ignore_firewall {
+            not (program("kernel") and message("refused connection:"));
+        };
+
         filter f_basic {
-          program("sshd") or (
-              not program("sshd") and level(notice..emerg)
-          );
+            (
+                program("tailscaled") and
+                level(notice..emerg)
+            )
+            or
+            (
+                not program("tailscaled") and
+                level(info..emerg)
+            )
         };
 
         log {
           source(s_src);
           filter(f_skip_docker_containers);
+          filter(f_ignore_firewall);
           filter(f_basic);
           destination(d_telegraf);
         };
