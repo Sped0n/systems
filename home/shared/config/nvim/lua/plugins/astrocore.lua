@@ -46,5 +46,19 @@ return {
         ["<Leader>gB"] = { "<cmd>GitBlameToggle<cr>", desc = "Toggle Git Glame Virtual Text" },
       },
     },
+    autocmds = {
+      cmake_formatting = {
+        {
+          event = "FileType",
+          pattern = "cmake",
+          callback = function()
+            vim.bo.tabstop = 4
+            vim.bo.shiftwidth = 4
+            vim.bo.expandtab = true
+          end,
+          desc = "Set tab width to 4 for CMake files",
+        },
+      },
+    },
   },
 }
