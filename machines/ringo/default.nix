@@ -10,6 +10,12 @@
     ./casks.nix
   ];
 
+  nix.gc.interval = {
+    Weekday = 0;
+    Hour = 4;
+    Minute = 30;
+  };
+
   nix-homebrew = {
     enable = true;
     enableRosetta = true;

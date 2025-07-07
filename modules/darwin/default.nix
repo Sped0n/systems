@@ -1,4 +1,5 @@
 {
+  lib,
   pkgs,
   username,
   home,
@@ -11,7 +12,7 @@
     ./casks.nix
   ];
 
-  nix.gc.interval = {
+  nix.gc.interval = lib.mkDefault {
     Hour = 0;
     Minute = 0;
   };
