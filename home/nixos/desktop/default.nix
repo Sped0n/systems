@@ -2,7 +2,8 @@
   imports = [
     ../shared
 
-    ./packages.nix
     ./programs
+    ./packages.nix
+    ./secrets.nix
   ];
 }

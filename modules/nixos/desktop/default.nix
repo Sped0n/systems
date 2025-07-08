@@ -3,5 +3,6 @@
     ../shared
 
     ./services
+    ./secrets.nix
   ];
 }
