@@ -144,7 +144,19 @@
         };
 
         filter f_ignore_firewall {
-            not (program("kernel") and message("refused connection:"));
+            not (
+              program("kernel") and
+              level(info) and
+              message("refused connection:")
+            );
+        };
+
+        filter f_ignore_veth {
+            not (
+              program("kernel") and
+              level(info) and
+              message("veth")
+            );
         };
 
         filter f_basic {
@@ -163,6 +175,7 @@
           source(s_src);
           filter(f_skip_docker_containers);
           filter(f_ignore_firewall);
+          filter(f_ignore_veth);
           filter(f_basic);
           destination(d_telegraf);
         };
