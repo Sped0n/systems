@@ -21,37 +21,45 @@ _brew_update:
 
 # --- Packages -----------------------------------------------------------------
 
+# Update unstable packages and brew
 [macos]
 update-pkgs: _brew_update
     @just _nix_update "nixpkgs-darwin-unstable"
 
+# Update unstable packages
 [linux]
 update-pkgs:
     @just _nix_update "nixpkgs-unstable"
 
+# Update all packages
 [macos]
 update-pkgs-all: _brew_update
     @just _nix_update "nixpkgs-darwin nixpkgs-darwin-unstable"
 
+# Update all packages
 [linux]
 update-pkgs-all:
     @just _nix_update "nixpkgs nixpkgs-unstable"
 
+# Update specific flakes
 update-specific input:
     @just _nix_update {{input}}
 
 # --- Flakes -------------------------------------------------------------------
 
+# Update flakes
 [macos]
 update-flakes:
     @just _nix_update "home-manager-darwin agenix-darwin nix-darwin nix-homebrew"
 
+# Update flakes
 [linux]
 update-flakes:
     @just _nix_update "home-manager agenix disko"
 
 # --- Build and Switch ---------------------------------------------------------
 
+# Build the configuration and show diff-closures
 [macos]
 build:
     @echo "Running: darwin-rebuild build --flake ."
@@ -63,6 +71,7 @@ build:
     @echo "Removing ./result symlink..."
     @unlink ./result
 
+# Build the configuration and show diff-closures
 [linux]
 build:
     @echo "Running: nixos-rebuild build --flake ."
@@ -74,19 +83,21 @@ build:
     @echo "Removing ./result symlink..."
     @unlink ./result
 
+# Switch to the new configuration
 [macos]
 switch:
     @echo "Running: sudo darwin-rebuild switch --flake ."
     @sudo darwin-rebuild switch --flake .
 
+# Switch to the new configuration
 [linux]
 switch:
     @echo "Running: sudo nixos-rebuild switch --flake ."
-    @# NixOS switch usually requires root privileges
     @sudo nixos-rebuild switch --flake .
 
 # --- Deploy -------------------------------------------------------------------
 
+# Deploy the configuration to a target host
 deploy target_host:
     @echo "Deploying configuration to {{target_host}}..."
     @echo "Running: nixos-rebuild switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}} --fast --use-substitutes"
@@ -96,17 +107,21 @@ deploy target_host:
     chmod +x "$TMP_SCRIPT"; \
     "$TMP_SCRIPT" switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}} --fast --use-substitutes
 
+# Update unstable packages for the target hosts
 deploy-update-pkgs:
     @just _nix_update "nixpkgs-unstable"
 
+# Update all packages for the target hosts
 deploy-update-pkgs-all:
     @just _nix_update "nixpkgs nixpkgs-unstable"
 
+# Update flakes for the target hosts
 deploy-update-flakes:
     @just _nix_update "home-manager agenix disko"
 
 # --- Rollback -----------------------------------------------------------------
 
+# List available generations
 [macos]
 list-generations:
     #!/bin/sh -e
@@ -124,6 +139,7 @@ list-generations:
     echo "Available nix-darwin generations (requires sudo):"
     sudo darwin-rebuild --list-generations
 
+# List available generations
 [linux]
 list-generations:
     #!/bin/sh -e
@@ -141,6 +157,7 @@ list-generations:
     echo "Available NixOS generations (requires sudo):"
     sudo nixos-rebuild list-generations
 
+# Rollback to a specific generation
 [macos]
 rollback gen_num:
     #!/bin/sh -e
@@ -179,6 +196,7 @@ rollback gen_num:
 
     echo "Rollback to generation $GEN_NUM complete!"
 
+# Rollback to a specific generation
 [linux]
 rollback gen_num:
     #!/bin/sh -e
