@@ -15,6 +15,10 @@ in {
       after = ["docker.service"];
       wantedBy = ["multi-user.target"];
       path = with pkgs; [docker];
+      environment = {
+        RUST_LOG = "info";
+        LOG_LEVEL = "info";
+      };
       serviceConfig = {
         User = "root";
         ExecStart = "${pkgs.docuum}/bin/docuum --threshold 40GB";
