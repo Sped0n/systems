@@ -149,12 +149,12 @@
 
         filter f_basic {
             (
-                program("tailscaled") and
+                (program("tailscaled") or program("dhcpcd")) and
                 level(notice..emerg)
             )
             or
             (
-                not program("tailscaled") and
+                not (program("tailscaled") or program("dhcpcd")) and
                 level(info..emerg)
             )
         };
