@@ -38,7 +38,7 @@
     enableZshIntegration = false;
     settings = {
       auto_sync = true;
-      sync_frequency = "10m";
+      sync_frequency = "1m";
       sync_address = "http://tennousei:10004";
       style = "compact";
       inline_height = 10;
