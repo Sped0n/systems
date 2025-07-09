@@ -25,7 +25,7 @@
     in {
       "gitea" =
         {
-          hostname = "100.69.27.45";
+          hostname = "tennousei";
           port = 22222;
           user = "git";
           identityFile = [
@@ -35,8 +35,28 @@
         // basicTmpl;
 
       "tennousei" = {hostname = vars.tennousei.ipv4;} // serverTmpl;
+      "_tennousei" = {
+        match = ''
+          host tennousei exec "tailscale status"
+        '';
+        hostname = "tennousei";
+      };
+
       "tsuki" = {hostname = vars.tsuki.ipv4;} // serverTmpl;
+      "_tsuki" = {
+        match = ''
+          host tsuki exec "tailscale status"
+        '';
+        hostname = "tsuki";
+      };
+
       "suisei" = {hostname = vars.suisei.ipv4Public;} // serverTmpl;
+      "_suisei" = {
+        match = ''
+          host suisei exec "tailscale status"
+        '';
+        hostname = "suisei";
+      };
     };
   };
 }

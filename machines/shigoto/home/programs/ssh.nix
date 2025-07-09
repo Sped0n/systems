@@ -40,8 +40,28 @@
         // basicTmpl;
 
       "tennousei" = {hostname = vars.tennousei.ipv4;} // serverTmpl;
+      "_tennousei" = {
+        match = ''
+          host tennousei exec "tailscale status"
+        '';
+        hostname = "tennousei";
+      };
+
       "tsuki" = {hostname = vars.tsuki.ipv4;} // serverTmpl;
+      "_tsuki" = {
+        match = ''
+          host tsuki exec "tailscale status"
+        '';
+        hostname = "tsuki";
+      };
+
       "suisei" = {hostname = vars.suisei.ipv4Public;} // serverTmpl;
+      "_suisei" = {
+        match = ''
+          host suisei exec "tailscale status"
+        '';
+        hostname = "suisei";
+      };
     };
   };
 }

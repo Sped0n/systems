@@ -1,6 +1,6 @@
 {vars, ...}: {
   programs.ssh = let
-    matchBlkTmpl = {
+    serverTmpl = {
       port = 12222;
       user = "root";
       identityFile = ["/root/.ssh/id_server"];
@@ -12,8 +12,21 @@
   in {
     enable = true;
     matchBlocks = {
-      "tennousei" = {hostname = vars.tennousei.ipv4;} // matchBlkTmpl;
-      "tsuki" = {hostname = vars.tsuki.ipv4;} // matchBlkTmpl;
+      "tennousei" = {hostname = vars.tennousei.ipv4;} // serverTmpl;
+      "_tennousei" = {
+        match = ''
+          host tennousei exec "tailscale status"
+        '';
+        hostname = "tennousei";
+      };
+
+      "tsuki" = {hostname = vars.tsuki.ipv4;} // serverTmpl;
+      "_tsuki" = {
+        match = ''
+          host tsuki exec "tailscale status"
+        '';
+        hostname = "tsuki";
+      };
     };
   };
 }
