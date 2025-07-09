@@ -4,6 +4,54 @@
   config,
   ...
 }: {
+  systemd = {
+    tmpfiles.rules = ["d /var/log/nixos-info 0755 root telegraf -"];
+
+    services.nixos-info-update = {
+      description = "Generate a unified system info file for Telegraf";
+      serviceConfig.Type = "oneshot";
+      path = [pkgs.fastfetch pkgs.jq pkgs.coreutils];
+      script = ''
+        set -e
+
+        FILE_PATH="/var/log/nixos-info/nixos-info.log"
+
+        update_if_changed() {
+          local new_content="$1"
+          touch "$FILE_PATH"
+          if ! echo "$new_content" | cmp -s - "$FILE_PATH"; then
+            echo "System info is outdated. Updating $FILE_PATH."
+            echo "$new_content" > "$FILE_PATH"
+          fi
+        }
+
+        CPU_RAW=$(
+          fastfetch --structure 'CPU' --format json | \
+          jq -r '.[0].result | "\(.cpu) (\(.cores.physical))"'
+        )
+        KERNEL_RAW=$(uname -r)
+        OS_RAW=$(
+          fastfetch --structure 'OS' --format json | \
+          jq -r '.[0].result | "\(.prettyName)"'
+        )
+
+        FINAL_LINE="cpu_model=\"$CPU_RAW\" kernel_version=\"$KERNEL_RAW\" os_name=\"$OS_RAW\""
+
+        update_if_changed "$FINAL_LINE"
+      '';
+    };
+
+    timers.nixos-info-update = {
+      description = "Timer to generate Telegraf info file after boot";
+      wantedBy = ["timers.target"];
+      timerConfig = {
+        OnBootSec = "1min";
+        Persistent = false;
+        Unit = "nixos-info-update.service";
+      };
+    };
+  };
+
   services = {
     telegraf = {
       enable = true;
@@ -25,23 +73,14 @@
           omit_hostname = false;
         };
 
-        inputs = {
+        inputs = let
+          logTags = {
+            metric_type = "logs";
+            log_source = "telegraf";
+          };
+        in {
           system = {};
           kernel.collect = ["psi"];
-          exec = [
-            {
-              name_override = "info_kernel_version";
-              commands = ["${pkgs.coreutils}/bin/uname -r"];
-              interval = "15m";
-              timeout = "5s";
-              data_format = "value";
-              data_type = "string";
-              tags = {
-                metric_type = "misc";
-                log_source = "telegraf";
-              };
-            }
-          ];
           cpu.fieldexclude = ["time_*"];
           mem = {};
           swap = {};
@@ -82,11 +121,18 @@
               "facility_code"
               "timestamp"
             ];
-            tags = {
-              metric_type = "logs";
-              log_source = "telegraf";
-            };
+            tags = logTags;
           };
+          tail = [
+            {
+              files = ["/var/log/nixos-info/nixos-info.log"];
+              name_override = "info_system";
+              from_beginning = true;
+              watch_method = "inotify";
+              data_format = "logfmt";
+              tags = logTags;
+            }
+          ];
         };
 
         outputs = {
