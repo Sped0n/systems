@@ -1,5 +1,5 @@
 {
-  description = "worst nix config on this planet";
+  description = "systems";
 
   inputs = {
     # Core
@@ -61,135 +61,110 @@
     nix-darwin,
     nix-homebrew,
   }: let
-    vars = import "${secrets}/vars";
+    lib = nixpkgs.lib;
+    vars = import "${inputs.secrets}/vars";
     username = "spedon";
+
+    genSpecialArgs = {
+      system,
+      unstablePkgsInput,
+      unstableConfigOverrides ? {},
+      extraArgs ? {},
+    }:
+      {
+        inherit vars username;
+        home =
+          if lib.strings.hasSuffix "darwin" system
+          then "/Users/${username}"
+          else "/home/${username}";
+
+        pkgs-unstable = import unstablePkgsInput {
+          inherit system;
+          config = {allowUnfree = true;} // unstableConfigOverrides;
+          overlays =
+            # Apply each overlay found in the /overlays directory
+            let
+              path = ./overlays;
+            in
+              with builtins;
+                map (n: import (path + ("/" + n)))
+                (filter (n:
+                  match ".*\\.nix" n
+                  != null
+                  || pathExists (path + ("/" + n + "/default.nix")))
+                (attrNames (readDir path)))
+                ++ [];
+        };
+      }
+      // extraArgs // inputs;
+
+    commonNixosModules = [
+      disko.nixosModules.disko
+      agenix.nixosModules.default
+      home-manager.nixosModules.home-manager
+    ];
+
+    commonDarwinModules = [
+      home-manager-darwin.darwinModules.home-manager
+      agenix-darwin.darwinModules.default
+      nix-homebrew.darwinModules.nix-homebrew
+    ];
   in {
-    darwinConfigurations."ringo" =
-      nix-darwin.lib.darwinSystem
-      rec
-      {
+    darwinConfigurations = {
+      "ringo" = nix-darwin.lib.darwinSystem {
         system = "aarch64-darwin";
-        specialArgs =
-          {
-            inherit vars username;
-            home = "/Users/${username}";
-            pkgs-unstable = import nixpkgs-darwin-unstable {
-              inherit system;
-              config.allowUnfree = true;
-            };
-          }
-          // inputs;
-        modules = [
-          home-manager-darwin.darwinModules.home-manager
-          agenix-darwin.darwinModules.default
-          nix-homebrew.darwinModules.nix-homebrew
-          ./machines/ringo
-        ];
+        specialArgs = genSpecialArgs {
+          system = "aarch64-darwin";
+          unstablePkgsInput = nixpkgs-darwin-unstable;
+        };
+        modules = commonDarwinModules ++ [./machines/ringo];
       };
+    };
 
-    nixosConfigurations."tsuki" =
-      nixpkgs.lib.nixosSystem
-      rec
-      {
+    nixosConfigurations = {
+      "tsuki" = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        specialArgs =
-          {
-            inherit vars username;
-            home = "/home/${username}";
-            pkgs-unstable = import nixpkgs-unstable {
-              inherit system;
-              config.allowUnfree = true;
-            };
-          }
-          // inputs;
-        modules = [
-          disko.nixosModules.disko
-          agenix.nixosModules.default
-          home-manager.nixosModules.home-manager
-          ./machines/tsuki
-        ];
+        specialArgs = genSpecialArgs {
+          system = "x86_64-linux";
+          unstablePkgsInput = nixpkgs-unstable;
+        };
+        modules = commonNixosModules ++ [./machines/tsuki];
       };
 
-    nixosConfigurations."tennousei" =
-      nixpkgs.lib.nixosSystem
-      rec
-      {
+      "tennousei" = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        specialArgs =
-          {
-            inherit vars username;
-            home = "/home/${username}";
-            pkgs-unstable = import nixpkgs-unstable {
-              inherit system;
-              config.allowUnfree = true;
-            };
-          }
-          // inputs;
-        modules = [
-          disko.nixosModules.disko
-          agenix.nixosModules.default
-          home-manager.nixosModules.home-manager
-          ./machines/tennousei
-        ];
+        specialArgs = genSpecialArgs {
+          system = "x86_64-linux";
+          unstablePkgsInput = nixpkgs-unstable;
+        };
+        modules = commonNixosModules ++ [./machines/tennousei];
       };
 
-    nixosConfigurations."shigoto" =
-      nixpkgs.lib.nixosSystem
-      rec
-      {
+      "shigoto" = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        specialArgs =
-          {
-            inherit vars username;
-            home = "/home/${username}";
-            pkgs-unstable = import nixpkgs-unstable {
-              inherit system;
-              config = {
-                allowUnfree = true;
-                permittedInsecurePackages = [
-                  "beekeeper-studio-5.2.12"
-                ];
-              };
-            };
-          }
-          // inputs;
-        modules = [
-          disko.nixosModules.disko
-          agenix.nixosModules.default
-          home-manager.nixosModules.home-manager
-          ./machines/shigoto
-        ];
+        specialArgs = genSpecialArgs {
+          system = "x86_64-linux";
+          unstablePkgsInput = nixpkgs-unstable;
+          unstableConfigOverrides = {
+            permittedInsecurePackages = ["beekeeper-studio-5.2.12"];
+          };
+        };
+        modules = commonNixosModules ++ [./machines/shigoto];
       };
 
-    nixosConfigurations."suisei" =
-      nixpkgs.lib.nixosSystem
-      rec
-      {
+      "suisei" = nixpkgs.lib.nixosSystem rec {
         system = "aarch64-linux";
-        specialArgs =
-          {
-            inherit vars username;
-            home = "/home/${username}";
-            pkgs-unstable = import nixpkgs-unstable {
+        specialArgs = genSpecialArgs {
+          system = "aarch64-linux";
+          unstablePkgsInput = nixpkgs-unstable;
+          extraArgs = {
+            pkgs-qemu8 = import inputs.nixpkgs-qemu8 {
               inherit system;
-              config = {
-                allowUnfree = true;
-              };
             };
-            pkgs-qemu8 = import nixpkgs-qemu8 {
-              inherit system;
-              config = {
-                allowUnfree = true;
-              };
-            };
-          }
-          // inputs;
-        modules = [
-          disko.nixosModules.disko
-          agenix.nixosModules.default
-          home-manager.nixosModules.home-manager
-          ./machines/suisei
-        ];
+          };
+        };
+        modules = commonNixosModules ++ [./machines/suisei];
       };
+    };
   };
 }
