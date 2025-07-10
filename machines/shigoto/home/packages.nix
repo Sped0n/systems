@@ -1,12 +1,19 @@
-{pkgs-unstable, ...}: {
-  home.packages = with pkgs-unstable; [
-    android-tools
-    imhex
-    beekeeper-studio
-    popsicle
+{
+  pkgs,
+  pkgs-unstable,
+  ...
+}: {
+  home.packages =
+    (with pkgs; [
+      android-tools
+      popsicle
+      cdecl
+    ])
+    ++ (with pkgs-unstable; [
+      imhex
+      beekeeper-studio
 
-    teams-for-linux
-
-    obsidian
-  ];
+      teams-for-linux
+      obsidian
+    ]);
 }
