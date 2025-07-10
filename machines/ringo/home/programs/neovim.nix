@@ -13,6 +13,6 @@
     pnpm
 
     # zig
-    zls
+    zls-darwin
   ];
 }

@@ -6,5 +6,8 @@
     # c/cpp
     clang-tools
     neocmakelsp
+
+    # zig
+    zls
   ];
 }
