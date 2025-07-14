@@ -4,7 +4,10 @@
     enable = true;
     pingLimit = "--limit 10/minute --limit-burst 5";
   };
-  services.fail2ban.enable = true;
+  services.fail2ban = {
+    enable = true;
+    bantime-increment.enable = true;
+  };
 
   # BBR
   boot.kernel.sysctl = {
