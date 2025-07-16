@@ -10,7 +10,12 @@
     services.nixos-info-update = {
       description = "Generate a unified system info file for Telegraf";
       serviceConfig.Type = "oneshot";
-      path = [pkgs.fastfetch pkgs.jq pkgs.coreutils];
+      path = with pkgs; [
+        fastfetch
+        jq
+        coreutils
+        diffutils
+      ];
       script = ''
         set -e
 
@@ -127,7 +132,7 @@
             {
               files = ["/var/log/nixos-info/nixos-info.log"];
               name_override = "info_system";
-              from_beginning = true;
+              initial_read_offset = "beginning";
               watch_method = "inotify";
               data_format = "logfmt";
               tags = logTags;
