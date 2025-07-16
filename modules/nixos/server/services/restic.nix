@@ -25,19 +25,26 @@ in {
     preBackupCommands = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
-      description = "A list of shell commands to execute before the backup starts.";
+      description = "A list of shell commands to execute before the backup starts. Use extraPath to add commands to the PATH.";
       example = [
-        ''${pkgs.docker}/bin/docker compose -f /path/to/docker-compose.yml stop''
+        "docke -compose -f /path/to/docker-compose.yml stop"
       ];
     };
 
     postBackupCommands = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
-      description = "A list of shell commands to execute after the backup is complete.";
+      description = "A list of shell commands to execute after the backup is complete. Use extraPath to add commands to the PATH.";
       example = [
-        ''${pkgs.docker}/bin/docker compose -f /path/to/docker-compose.yml start''
+        "docker compose -f /path/to/docker-compose.yml start"
       ];
+    };
+
+    extraPath = lib.mkOption {
+      type = lib.types.listOf lib.types.package;
+      default = [];
+      description = "A list of packages to add to the PATH for the backup service, making their binaries available to pre/post backup commands.";
+      example = lib.literalExpression "[ pkgs.docker ]";
     };
 
     keepDaily = lib.mkOption {
@@ -76,6 +83,7 @@ in {
             description = "Restic backup for ${cfg.backupDir}";
             inherit serviceConfig environment;
             onFailure = ["restic-backup-failure-notify.service"];
+            path = (with pkgs; [coreutils restic]) ++ cfg.extraPath;
             script = ''
               set -euo pipefail
 
@@ -84,13 +92,13 @@ in {
               echo "Pre-backup commands finished."
 
               echo "Starting Restic backup for ${cfg.backupDir}..."
-              ${pkgs.restic}/bin/restic backup \
+              restic backup \
                 --exclude="*.log" --verbose --tag daily --tag systemd-timer \
                 "${cfg.backupDir}"
               echo "Backup finished."
 
               echo "Applying retention policy (keep ${toString cfg.keepDaily} daily, ${toString cfg.keepWeekly} weekly)..."
-              ${pkgs.restic}/bin/restic forget \
+              restic forget \
                 --verbose \
                 --keep-daily ${toString cfg.keepDaily} \
                 --keep-weekly ${toString cfg.keepWeekly} \
@@ -109,24 +117,26 @@ in {
               Type = "oneshot";
               User = "root";
             };
+            path = with pkgs; [coreutils systemd msmtp];
             script = ''
               {
                 echo "From: Infrastructure <${vars.infraEmail}>"
                 echo "To: ${vars.personalEmail}"
                 echo "Subject: [ALERT] Restic Backup Failed on ${config.networking.hostName}"
                 echo
-                echo "Restic backup failed at $(${pkgs.coreutils}/bin/date)."
+                echo "Restic backup failed at $(date)."
                 echo "Journal logs for restic-backup.service:"
                 echo "-----------------------------------------------------------------------"
                 journalctl -u restic-backup.service -n 30 --no-pager
                 echo "-----------------------------------------------------------------------"
-              } | ${pkgs.msmtp}/bin/sendmail -t
+              } | sendmail -t
             '';
           };
 
           "restic-check" = {
             description = "Restic repository health check";
             inherit serviceConfig environment;
+            path = with pkgs; [restic];
             script = ''
               set -euo pipefail
               ${pkgs.restic}/bin/restic check

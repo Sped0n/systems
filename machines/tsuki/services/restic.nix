@@ -6,11 +6,12 @@
   services.restic-backup = {
     enable = true;
     backupDir = "${home}/infra";
+    extraPath = [pkgs.docker];
     preBackupCommands = [
-      "${pkgs.docker}/bin/docker compose -f ${home}/infra/docker-compose.yml stop"
+      "docker compose -f ${home}/infra/docker-compose.yml stop"
     ];
     postBackupCommands = [
-      "${pkgs.docker}/bin/docker compose -f ${home}/infra/docker-compose.yml start"
+      "docker compose -f ${home}/infra/docker-compose.yml start"
     ];
   };
 }

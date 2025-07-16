@@ -8,11 +8,12 @@
     backupDir = "${home}/infra";
     keepDaily = 2;
     keepWeekly = 0;
+    extraPath = [pkgs.docker];
     preBackupCommands = [
-      "${pkgs.docker}/bin/docker compose -f ${home}/infra/docker-compose.yml stop"
+      "docker compose -f ${home}/infra/docker-compose.yml stop"
     ];
     postBackupCommands = [
-      "${pkgs.docker}/bin/docker compose -f ${home}/infra/docker-compose.yml start"
+      "docker compose -f ${home}/infra/docker-compose.yml start"
     ];
   };
 }
