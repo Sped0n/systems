@@ -3,15 +3,22 @@
   home,
   ...
 }: {
-  services.restic-backup = {
-    enable = true;
-    backupDir = "${home}/infra";
-    extraPath = [pkgs.docker];
-    preBackupCommands = [
-      "docker compose -f ${home}/infra/docker-compose.yml stop"
+  _services.restic.enable = true;
+
+  services.restic.backups."main" = {
+    paths = ["${home}/infra"];
+    exclude = [
+      "*.log"
     ];
-    postBackupCommands = [
-      "docker compose -f ${home}/infra/docker-compose.yml start"
+    pruneOpts = [
+      "--keep-daily 3"
+      "--keep-weekly 2"
     ];
+    backupPrepareCommand = ''
+      ${pkgs.docker}/bin/docker compose -f ${home}/infra/docker-compose.yml stop
+    '';
+    backupCleanupCommand = ''
+      ${pkgs.docker}/bin/docker compose -f ${home}/infra/docker-compose.yml start
+    '';
   };
 }
