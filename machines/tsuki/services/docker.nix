@@ -12,4 +12,11 @@
     allowedTCPPorts = [22000];
     allowedUDPPorts = [22000 21027];
   };
+
+  services.docuum = {
+    enable = true;
+    threshold = "3GB";
+  };
+
+  systemd.services.docuum.environment.LOG_LEVEL = "info";
 }
