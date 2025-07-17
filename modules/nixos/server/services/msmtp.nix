@@ -2,8 +2,18 @@
   pkgs,
   config,
   vars,
+  secrets,
   ...
 }: {
+  users.groups.smtp-auth-users = {};
+
+  age.secrets."smtp-password" = {
+    file = "${secrets}/ages/smtp-password.age";
+    owner = "root";
+    group = "smtp-auth-users";
+    mode = "0440";
+  };
+
   programs.msmtp = {
     enable = true;
     defaults = {

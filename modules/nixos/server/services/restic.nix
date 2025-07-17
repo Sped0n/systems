@@ -3,6 +3,7 @@
   config,
   pkgs,
   vars,
+  secrets,
   ...
 }: {
   options._services.restic = {
@@ -10,6 +11,21 @@
   };
 
   config = lib.mkIf config._services.restic.enable {
+    age.secrets = let
+      owner = "root";
+      mode = "0400";
+    in {
+      "restic-env" = {
+        inherit owner mode;
+        file = "${secrets}/ages/restic-env.age";
+      };
+
+      "restic-password" = {
+        inherit owner mode;
+        file = "${secrets}/ages/restic-password.age";
+      };
+    };
+
     services.restic.backups = {
       "main" = {
         user = "root";
@@ -31,14 +47,20 @@
       };
     };
 
+    users.users.restic-notify = {
+      isSystemUser = true;
+      group = "restic-notify";
+      extraGroups = [
+        "systemd-journal"
+        "smtp-auth-users"
+      ];
+    };
+    users.groups.restic-notify = {};
+
     systemd.services = {
       "restic-backups-main".onFailure = ["restic-failure-notify.service"];
       "restic-failure-notify" = {
         description = "Notify on Restic backup failure";
-        serviceConfig = {
-          Type = "oneshot";
-          User = "root";
-        };
         path = with pkgs; [coreutils systemd msmtp];
         script = ''
           {
@@ -53,6 +75,34 @@
             echo "-----------------------------------------------------------------------"
           } | sendmail -t
         '';
+        serviceConfig = {
+          Type = "oneshot";
+          User = "restic-notify";
+          Group = "restic-notify";
+
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          PrivateTmp = true;
+          BindReadOnlyPaths = [
+            "/etc/msmtprc"
+            config.age.secrets."smtp-password".path
+          ];
+
+          NoNewPrivileges = true;
+          LockPersonality = true;
+          RestrictSUIDSGID = true;
+
+          ProtectHostname = true;
+          ProtectClock = true;
+          ProtectKernelLogs = true;
+          ProtectKernelModules = true;
+          ProtectKernelTunables = true;
+          ProtectControlGroups = true;
+
+          KeyringMode = "private";
+          RemoveIPC = true;
+          RestrictRealtime = true;
+        };
       };
     };
   };
