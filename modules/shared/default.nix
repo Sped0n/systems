@@ -1,6 +1,7 @@
 {
   lib,
   pkgs,
+  pkgs-unstable,
   specialArgs,
   username,
   ...
@@ -52,7 +53,7 @@
     };
   };
 
-  # Home manager
+  # Home Manager
   home-manager = {
     useGlobalPkgs = true;
     useUserPackages = true;
@@ -65,6 +66,9 @@
     shells = with pkgs; [zsh];
   };
 
-  # Vim
-  environment.systemPackages = with pkgs; [vim];
+  # System Packages
+  environment.systemPackages = [
+    pkgs.vim
+    pkgs-unstable.nixos-rebuild-ng
+  ];
 }

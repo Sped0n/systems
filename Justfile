@@ -100,12 +100,8 @@ switch:
 # Deploy the configuration to a target host
 deploy target_host:
     @echo "Deploying configuration to {{target_host}}..."
-    @echo "Running: nixos-rebuild switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}} --fast --use-substitutes"
-    @TMP_SCRIPT=$(mktemp); \
-    trap 'rm -f "$TMP_SCRIPT"' EXIT; \
-    sed "s/ssh:\/\//ssh-ng:\/\//g" $(which nixos-rebuild) > "$TMP_SCRIPT"; \
-    chmod +x "$TMP_SCRIPT"; \
-    "$TMP_SCRIPT" switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}} --fast --use-substitutes
+    @echo "Running: {{deploy_rebuild_cmd}} switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}} --no-reexec --use-substitutes"
+    @NIX_SSHOPTS="-o ControlMaster=no" {{deploy_rebuild_cmd}} switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}} --no-reexec --use-substitutes
 
 # Update unstable packages for the target hosts
 deploy-update-pkgs:
