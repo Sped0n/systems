@@ -3,8 +3,21 @@
   pkgs,
   home,
   username,
+  secrets,
   ...
 }: {
+  users.users.rclone-webdav = {
+    isSystemUser = true;
+    group = "rclone-webdav";
+  };
+  users.groups.rclone-webdav = {};
+
+  age.secrets."rclone-webdav-htpasswd" = {
+    file = "${secrets}/ages/tennousei-rclone-webdav-htpasswd.age";
+    owner = "rclone-webdav";
+    mode = "0400";
+  };
+
   systemd = {
     tmpfiles.rules = [
       "d ${home}/storage 0755 ${username} users -"
@@ -16,9 +29,10 @@
       after = ["network.target"];
       wants = ["network-online.target"];
       wantedBy = ["multi-user.target"];
+      environment.RCLONE_CONFIG = "/tmp/rclone.conf";
       serviceConfig = {
-        User = username;
-        Group = "users";
+        User = "rclone-webdav";
+        Group = "rclone-webdav";
         Restart = "on-failure";
         RestartSec = "5s";
 
@@ -27,20 +41,29 @@
             --addr :9999 \
             --htpasswd ${config.age.secrets."rclone-webdav-htpasswd".path} \
             --read-only \
+            --dir-cache-time 10s \
             ${home}/storage/qbtrt
         '';
 
-        KeyringMode = "private";
-        LockPersonality = true;
-        NoNewPrivileges = true;
-        PrivateTmp = true;
-        ProtectClock = true;
         ProtectSystem = "strict";
-        ProtectHome = "read-only";
-        ProtectHostname = true;
-        ProtectKernelLogs = true;
-        RemoveIPC = true;
+        ProtectHome = "tmpfs";
+        PrivateTmp = true;
+        BindReadOnlyPaths = ["${home}/storage/qbtrt"];
+
+        NoNewPrivileges = true;
+        LockPersonality = true;
         RestrictSUIDSGID = true;
+
+        ProtectHostname = true;
+        ProtectClock = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        ProtectControlGroups = true;
+
+        KeyringMode = "private";
+        RemoveIPC = true;
+        RestrictRealtime = true;
       };
     };
   };

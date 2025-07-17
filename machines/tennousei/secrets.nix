@@ -1,8 +1,4 @@
-{
-  secrets,
-  username,
-  ...
-}: {
+{secrets, ...}: {
   age.secrets = let
     readable = {
       mode = "0500";
@@ -18,7 +14,6 @@
     "rclone-webdav-htpasswd" =
       {
         file = "${secrets}/ages/tennousei-rclone-webdav-htpasswd.age";
-        owner = username;
       }
       // readable;
   };
