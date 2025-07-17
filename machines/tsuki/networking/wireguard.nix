@@ -1,4 +1,14 @@
-{config, ...}: {
+{
+  config,
+  secrets,
+  ...
+}: {
+  age.secrets."wg0-conf" = {
+    file = "${secrets}/ages/tsuki-wg0-conf.age";
+    owner = "root";
+    mode = "0400";
+  };
+
   networking = {
     wg-quick.interfaces."wg0" = {
       configFile = config.age.secrets."wg0-conf".path;

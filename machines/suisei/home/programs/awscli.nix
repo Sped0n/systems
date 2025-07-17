@@ -1,4 +1,16 @@
-{...}: {
+{
+  home,
+  secrets,
+  ...
+}: {
+  age.secrets = {
+    "aws-cli-credentials" = {
+      path = "${home}/.aws/credentials";
+      file = "${secrets}/ages/suisei-aws-cli-credentials.age";
+      mode = "0400";
+    };
+  };
+
   programs.awscli = {
     enable = true;
     settings = {

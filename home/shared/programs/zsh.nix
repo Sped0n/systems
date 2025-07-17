@@ -1,8 +1,15 @@
 {
   lib,
   pkgs,
+  config,
+  secrets,
   ...
 }: {
+  age.secrets."openai-api-key" = {
+    file = "${secrets}/ages/openai-api-key.age";
+    mode = "0400";
+  };
+
   programs.zsh = {
     enable = true;
     completionInit = "autoload -Uz compinit && compinit";
@@ -22,12 +29,8 @@
         ''
       )
       (lib.mkOrder 1500 "fastfetch")
-      (lib.mkOrder 1600 ''
-        if [[ $1 == eval ]]
-        then
-            "$@"
-        set --
-        fi
+      (lib.mkOrder 1550 ''
+        export OPENAI_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."openai-api-key".path})"
       '')
     ];
     shellAliases = {

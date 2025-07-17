@@ -2,9 +2,16 @@
   config,
   home,
   username,
+  secrets,
   vars,
   ...
 }: {
+  age.secrets."server-ssh-key" = {
+    path = "${home}/.ssh/id_server";
+    file = "${secrets}/ages/server-ssh-key.age";
+    mode = "0400";
+  };
+
   programs.ssh = {
     matchBlocks = let
       basicTmpl = {

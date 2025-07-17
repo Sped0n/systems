@@ -4,19 +4,10 @@
   config,
   ...
 }: {
-  age = {
-    secrets = let
-      readable = {
-        mode = "0500";
-      };
-    in {
-      "espressif-signing-key" =
-        {
-          file = "${secrets}/ages/espressif-signing-key.age";
-          owner = "root";
-        }
-        // readable;
-    };
+  age.secrets."espressif-signing-key" = {
+    file = "${secrets}/ages/espressif-signing-key.age";
+    owner = "root";
+    mode = "0400";
   };
 
   environment.systemPackages = [

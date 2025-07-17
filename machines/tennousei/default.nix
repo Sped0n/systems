@@ -4,7 +4,6 @@
 
     ./system.nix
     ./disko.nix
-    ./secrets.nix
 
     ./networking
     ./services

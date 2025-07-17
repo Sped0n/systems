@@ -1,9 +1,17 @@
 {
   config,
-  vars,
+  home,
   username,
+  vars,
+  secrets,
   ...
 }: {
+  age.secrets."server-ssh-key" = {
+    path = "${home}/.ssh/id_server";
+    file = "${secrets}/ages/server-ssh-key.age";
+    mode = "0400";
+  };
+
   programs.ssh = {
     includes = [
       "~/.orbstack/ssh/config"

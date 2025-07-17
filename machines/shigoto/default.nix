@@ -3,7 +3,7 @@
     ../../modules/nixos/desktop
 
     ./disko.nix
-    ./secrets.nix
+    ./gpg-key.nix
 
     ./system
     ./networking

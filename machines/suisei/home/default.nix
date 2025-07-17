@@ -4,6 +4,5 @@
 
     ./programs
     ./packages.nix
-    ./secrets.nix
   ];
 }

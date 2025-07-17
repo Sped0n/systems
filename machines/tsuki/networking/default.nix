@@ -1,4 +1,8 @@
 {vars, ...}: {
+  imports = [
+    ./wireguard.nix
+  ];
+
   networking = {
     # Static IP
     hostName = "tsuki";

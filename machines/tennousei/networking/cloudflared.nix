@@ -2,8 +2,15 @@
   pkgs-unstable,
   vars,
   config,
+  secrets,
   ...
 }: {
+  age.secrets."tennousei-cf-tunnel-json" = {
+    file = "${secrets}/ages/tennousei-cf-tunnel-json.age";
+    owner = "root";
+    mode = "0400";
+  };
+
   services.cloudflared = {
     enable = true;
     package = pkgs-unstable.cloudflared;

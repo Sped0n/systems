@@ -8,6 +8,7 @@
 }: {
   imports = [
     ./secrets.nix
+    ./gpg-key.nix
   ];
 
   # Nixpkgs
