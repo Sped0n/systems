@@ -39,37 +39,42 @@ in {
       (pkgs.callPackage ../../../pkgs/codegpt.nix {})
     ];
 
-    xdg.configFile."codegpt/.codegpt.yaml" = {
-      source = yamlFormat.generate "codegpt-config" {
-        git = {
-          diff_unified = cfg.diffUnified;
-          exclude_list = "";
-          template_file = "";
-          template_string = "";
-        };
-        openai = {
-          api_key = "";
-          api_version = "";
-          base_url = "https://openrouter.ai/api/v1";
-          headers = "HTTP-Referer=https://github.com/appleboy/CodeGPT X-Title=CodeGPT";
-          max_tokens = 300;
-          model = cfg.model;
-          org_id = "";
-          provider = "openai";
-          proxy = "";
-          skip_verify = false;
-          socks = "";
-          temperature = cfg.temperature;
-          timeout = "30s";
-        };
-        output = {
-          file = "";
-          lang = "en";
-        };
-        prompt = {
-          folder = "${home}/.config/codegpt/prompt";
+    xdg.configFile = {
+      "codegpt/.codegpt.yaml" = {
+        source = yamlFormat.generate "codegpt-config" {
+          git = {
+            diff_unified = cfg.diffUnified;
+            exclude_list = "";
+            template_file = "";
+            template_string = "";
+          };
+          openai = {
+            api_key = "";
+            api_version = "";
+            base_url = "https://openrouter.ai/api/v1";
+            headers = "HTTP-Referer=https://github.com/appleboy/CodeGPT X-Title=CodeGPT";
+            max_tokens = 300;
+            model = cfg.model;
+            org_id = "";
+            provider = "openai";
+            proxy = "";
+            skip_verify = false;
+            socks = "";
+            temperature = cfg.temperature;
+            timeout = "30s";
+          };
+          output = {
+            file = "";
+            lang = "en";
+          };
+          prompt = {
+            folder = "${home}/.config/codegpt/prompt";
+          };
         };
       };
+
+      "codegpt/prompt/conventional_commit.tmpl".source = ../../shared/config/codegpt/conventional_commit.tmpl;
+      "codegpt/prompt/summarize_file_diff.tmpl".source = ../../shared/config/codegpt/summarize_file_diff.tmpl;
     };
   };
 }
