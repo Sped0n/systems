@@ -15,7 +15,7 @@
 
   services.docuum = {
     enable = true;
-    threshold = "3GB";
+    threshold = "2GB";
   };
 
   systemd.services.docuum.environment.LOG_LEVEL = "info";
