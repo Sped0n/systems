@@ -4,12 +4,20 @@
   config,
   ...
 }: {
+  users = {
+    users.nixos-info-updater = {
+      isSystemUser = true;
+      group = "nixos-info-updater";
+    };
+    groups.nixos-info-updater = {};
+  };
+
   systemd = {
-    tmpfiles.rules = ["d /var/log/nixos-info 0755 root telegraf -"];
+    tmpfiles.rules = ["d /var/log/nixos-info 0755 nixos-info-updater nixos-info-updater -"];
 
     services.nixos-info-update = {
       description = "Generate a unified system info file for Telegraf";
-      serviceConfig.Type = "oneshot";
+      wantedBy = ["multi-user.target"];
       path = with pkgs; [
         fastfetch
         jq
@@ -44,15 +52,30 @@
 
         update_if_changed "$FINAL_LINE"
       '';
-    };
+      serviceConfig = {
+        Type = "oneshot";
+        User = "nixos-info-updater";
+        Group = "nixos-info-updater";
 
-    timers.nixos-info-update = {
-      description = "Timer to generate Telegraf info file after boot";
-      wantedBy = ["timers.target"];
-      timerConfig = {
-        OnBootSec = "1min";
-        Persistent = false;
-        Unit = "nixos-info-update.service";
+        ProtectSystem = "strict";
+        ProtectHome = true;
+        PrivateTmp = true;
+        ReadWritePaths = ["/var/log/nixos-info"];
+
+        NoNewPrivileges = true;
+        LockPersonality = true;
+        RestrictSUIDSGID = true;
+
+        ProtectHostname = true;
+        ProtectClock = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
+        ProtectControlGroups = true;
+
+        KeyringMode = "private";
+        RemoveIPC = true;
+        RestrictRealtime = true;
       };
     };
   };
@@ -234,9 +257,12 @@
     };
   };
 
-  users.users.telegraf.extraGroups = ["docker"];
+  users.users.telegraf.extraGroups = ["docker" "nixos-info-updater"];
   systemd.services = {
-    telegraf.after = ["tailscaled.service"];
+    telegraf = {
+      requires = ["nixos-info-update.service"];
+      after = ["tailscaled.service" "nixos-info-update.service"];
+    };
     syslog-ng.after = ["telegraf.service"];
   };
 }
