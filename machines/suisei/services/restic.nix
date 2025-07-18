@@ -1,6 +1,6 @@
 {
-  pkgs,
   home,
+  pkgs,
   ...
 }: {
   _services.restic.enable = true;

@@ -1,6 +1,6 @@
 {
-  pkgs,
   agenix,
+  pkgs,
   ...
 }: {
   imports = [

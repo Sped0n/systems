@@ -1,7 +1,7 @@
 {
-  pkgs-unstable,
   config,
   home,
+  pkgs-unstable,
   ...
 }: {
   home = {

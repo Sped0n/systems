@@ -1,7 +1,7 @@
 {
+  config,
   pkgs,
   secrets,
-  config,
   ...
 }: {
   age.secrets."espressif-signing-key" = {

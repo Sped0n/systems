@@ -1,6 +1,6 @@
 {
-  vars,
   username,
+  vars,
   ...
 }: {
   users.users.root = {

@@ -4,7 +4,7 @@
 
     ./system.nix
     ./disko.nix
-    ./root-ssh.nix
+    ./deployer.nix
 
     ./networking
     ./services

@@ -1,7 +1,7 @@
 {
+  home,
   pkgs,
   username,
-  home,
   vars,
   ...
 }: {

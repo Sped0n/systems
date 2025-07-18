@@ -1,9 +1,9 @@
 {
   config,
   home,
+  secrets,
   username,
   vars,
-  secrets,
   ...
 }: {
   age.secrets."server-ssh-key" = {

@@ -1,7 +1,7 @@
 {
+  config,
   home,
   secrets,
-  config,
   ...
 }: {
   age.secrets."github-ssh-key" = {

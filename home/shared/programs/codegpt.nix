@@ -1,7 +1,7 @@
 {
-  lib,
   config,
   home,
+  lib,
   pkgs,
   ...
 }: let

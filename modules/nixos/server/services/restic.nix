@@ -1,9 +1,9 @@
 {
-  lib,
   config,
+  lib,
   pkgs,
-  vars,
   secrets,
+  vars,
   ...
 }: {
   options._services.restic = {

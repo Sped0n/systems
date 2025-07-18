@@ -4,7 +4,6 @@
     ./starship.nix
     ./neovim.nix
     ./git.nix
-    ./gitui.nix
     ./ssh.nix
     ./fastfetch.nix
     ./ghostty.nix

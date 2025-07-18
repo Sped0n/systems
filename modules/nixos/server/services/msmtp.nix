@@ -1,8 +1,8 @@
 {
-  pkgs,
   config,
-  vars,
+  pkgs,
   secrets,
+  vars,
   ...
 }: {
   users.groups.smtp-auth-users = {};

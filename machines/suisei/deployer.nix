@@ -1,6 +1,6 @@
 {
-  vars,
   secrets,
+  vars,
   ...
 }: {
   age.secrets = {
