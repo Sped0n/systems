@@ -7,8 +7,7 @@
   ...
 }: {
   imports = [
-    ./secrets.nix
-    ./gpg-key.nix
+    ./agenix.nix
   ];
 
   # Nixpkgs

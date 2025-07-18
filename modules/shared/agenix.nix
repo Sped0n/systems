@@ -1,13 +1,19 @@
 {
   pkgs,
-  secrets,
   config,
+  home,
+  secrets,
   ...
 }: {
-  age.secrets."github-signing-key" = {
-    file = "${secrets}/ages/github-signing-key.age";
-    owner = "root";
-    mode = "0400";
+  age = {
+    identityPaths = [
+      "${home}/.config/secrets/id_agenix"
+    ];
+    secrets."github-signing-key" = {
+      file = "${secrets}/ages/github-signing-key.age";
+      owner = "root";
+      mode = "0400";
+    };
   };
 
   environment.systemPackages = [

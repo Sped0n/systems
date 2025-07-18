@@ -3,6 +3,7 @@
     ../shared
 
     ./services
-    ./secrets.nix
+
+    ./agenix.nix
   ];
 }

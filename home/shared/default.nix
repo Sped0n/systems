@@ -1,7 +1,8 @@
 {...}: {
   imports = [
-    ./secrets.nix
     ./packages.nix
     ./programs
+
+    ./agenix.nix
   ];
 }

@@ -4,6 +4,7 @@
 
     ./programs
     ./packages.nix
-    ./secrets.nix
+
+    ./agenix.nix
   ];
 }

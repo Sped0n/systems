@@ -2,12 +2,11 @@
   imports = [
     ../../modules/nixos/desktop
 
-    ./disko.nix
-    ./gpg-key.nix
-
     ./system
     ./networking
     ./services
+    ./disko.nix
+    ./agenix.nix
   ];
 
   home-manager = {
