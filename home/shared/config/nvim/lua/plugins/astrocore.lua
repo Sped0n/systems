@@ -47,7 +47,7 @@ return {
       },
     },
     autocmds = {
-      cmake_formatting = {
+      indent = {
         {
           event = "FileType",
           pattern = "cmake",
@@ -57,6 +57,16 @@ return {
             vim.bo.expandtab = true
           end,
           desc = "Set tab width to 4 for CMake files",
+        },
+        {
+          event = "FileType",
+          pattern = "ld",
+          callback = function()
+            vim.bo.tabstop = 2
+            vim.bo.shiftwidth = 2
+            vim.bo.expandtab = true
+          end,
+          desc = "Set tab width to 2 for linker scripts",
         },
       },
     },
