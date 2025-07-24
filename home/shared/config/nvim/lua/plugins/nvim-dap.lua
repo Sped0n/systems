@@ -41,12 +41,4 @@ return {
       }
     end,
   },
-
-  {
-    "mfussenegger/nvim-dap-python",
-    config = function(_, opts)
-      local path = vim.fn.exepath "debugpy-adapter"
-      require("dap-python").setup(path, opts)
-    end,
-  },
 }
