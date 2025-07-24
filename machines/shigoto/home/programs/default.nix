@@ -6,5 +6,8 @@
     ./trayscale.nix
   ];
 
-  programs.codegpt.enable = true;
+  programs.codegpt = {
+    enable = true;
+    model = "moonshotai/kimi-k2";
+  };
 }
