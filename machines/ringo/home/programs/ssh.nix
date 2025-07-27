@@ -31,6 +31,13 @@
         }
         // basicTmpl;
     in {
+      "gitlab.com" =
+        {
+          identityFile = "${home}/.ssh/id_github";
+          user = "git";
+        }
+        // basicTmpl;
+
       "gitea" =
         {
           hostname = "tennousei";

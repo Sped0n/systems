@@ -2,6 +2,7 @@
   imports = [
     ../../modules/darwin
 
+    ./agenix.nix
     ./builder.nix
     ./casks.nix
   ];

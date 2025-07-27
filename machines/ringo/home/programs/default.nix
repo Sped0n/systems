@@ -1,7 +1,8 @@
 {
   imports = [
-    ./ssh.nix
+    ./git.nix
     ./neovim.nix
+    ./ssh.nix
   ];
 
   programs.uv.enable = true;
