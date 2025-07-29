@@ -8,6 +8,6 @@
   programs.uv.enable = true;
   programs.codegpt = {
     enable = true;
-    model = "moonshotai/kimi-k2";
+    model = "qwen/qwen3-235b-a22b-2507";
   };
 }
