@@ -38,14 +38,12 @@
         }
         // basicTmpl;
 
-      "gitea" =
+      "git.sped0n.com" =
         {
           hostname = "tennousei";
           port = 22222;
+          identityFile = [config.age.secrets."github-ssh-key".path];
           user = "git";
-          identityFile = [
-            config.age.secrets."github-ssh-key".path
-          ];
         }
         // basicTmpl;
 
