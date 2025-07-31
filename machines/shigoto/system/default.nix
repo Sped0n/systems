@@ -6,13 +6,14 @@
 
   boot = {
     initrd.availableKernelModules = [
-      "virtio_pci"
-      "virtio_blk"
+      "ata_piix"
+      "ohci_pci"
+      "ehci_pci"
       "xhci_pci"
       "ahci"
+      "sd_mod"
       "sr_mod"
     ];
-    kernelModules = ["kvm-intel"];
   };
 
   # Enable CUPS to print documents
@@ -26,8 +27,8 @@
     }
   ];
 
-  # virt-manager
-  services.spice-vdagentd.enable = true;
+  # virtualbox
+  virtualisation.virtualbox.guest.enable = true;
 
   # nix-ld
   programs.nix-ld.enable = true;
