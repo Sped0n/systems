@@ -15,5 +15,7 @@
 
       teams-for-linux
       obsidian
+      gimp3-with-plugins
+      libreoffice-qt6-fresh
     ]);
 }
