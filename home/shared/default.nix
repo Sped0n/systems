@@ -5,4 +5,6 @@
 
     ./agenix.nix
   ];
+
+  xdg.enable = true;
 }
