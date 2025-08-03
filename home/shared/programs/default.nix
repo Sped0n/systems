@@ -11,6 +11,7 @@
     ./direnv.nix
     ./codegpt.nix
     ./tmux.nix
+    ./aichat.nix
   ];
 
   programs.eza = {
