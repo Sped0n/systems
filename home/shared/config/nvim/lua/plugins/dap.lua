@@ -4,22 +4,16 @@ return {
     "mfussenegger/nvim-dap",
     config = function()
       local dap = require "dap"
-      -- configure codelldb adapter
-      dap.adapters.codelldb = {
-        type = "server",
-        port = "${port}",
-        executable = {
-          command = vim.fn.stdpath "data" .. "/mason/bin/codelldb",
-          args = { "--port", "${port}" },
-          cwd = vim.fn.getcwd(),
-        },
+      dap.adapters.lldb = {
+        type = "executable",
+        command = "lldb-dap",
+        name = "lldb",
       }
 
-      -- setup a debugger config for zig projects
       dap.configurations.zig = {
         {
           name = "Launch",
-          type = "codelldb",
+          type = "lldb",
           request = "launch",
           program = function() return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/zig-out/", "file") end,
           cwd = "${workspaceFolder}",
@@ -27,8 +21,8 @@ return {
           args = {},
         },
         {
-          name = "Launch with GDB remote target on localhost:3333",
-          type = "codelldb",
+          name = "Attach to remote GDB server on localhost:3333",
+          type = "lldb",
           request = "launch",
           program = function() return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/zig-out/", "file") end,
           processCreateCommands = {

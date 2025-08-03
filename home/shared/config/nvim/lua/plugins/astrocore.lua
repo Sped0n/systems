@@ -42,8 +42,6 @@ return {
           desc = "Close buffer from tabline",
         },
         ["<Leader>b"] = { desc = "Buffers" },
-
-        ["<Leader>gB"] = { "<cmd>GitBlameToggle<cr>", desc = "Toggle Git Glame Virtual Text" },
       },
     },
     autocmds = {

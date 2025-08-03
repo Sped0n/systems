@@ -17,6 +17,15 @@ return {
       },
     },
   },
+  {
+    "nvim-treesitter/nvim-treesitter",
+    opts = {
+      ensure_installed = {
+        "lua",
+        "vim",
+      },
+    },
+  },
 
   { "nvimtools/none-ls.nvim", enabled = false },
   { "williamboman/mason.nvim", enabled = false },
