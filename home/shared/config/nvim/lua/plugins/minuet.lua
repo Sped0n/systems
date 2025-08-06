@@ -3,20 +3,17 @@ return {
   {
     "milanglacier/minuet-ai.nvim",
     opts = {
-      provider = "openai_fim_compatible",
+      provider = "codestral",
       request_timeout = 3.0,
       provider_options = {
-        openai_fim_compatible = {
-          api_key = "OPENAI_API_KEY",
-          end_point = "https://openrouter.ai/api/v1/completions",
-          model = "mistralai/codestral-2501",
-          name = "Openrouter",
+        codestral = {
+          api_key = "CODESTRAL_API_KEY",
+          end_point = "https://codestral.mistral.ai/v1/fim/completions",
+          model = "codestral-latest",
+          stream = true,
           optional = {
             max_tokens = 256,
-            top_p = 0.9,
-            provider = {
-              sort = "throughput",
-            },
+            stop = { "\n\n" },
           },
         },
       },

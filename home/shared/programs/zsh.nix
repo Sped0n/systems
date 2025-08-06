@@ -5,9 +5,15 @@
   secrets,
   ...
 }: {
-  age.secrets."openai-api-key" = {
-    file = "${secrets}/ages/openai-api-key.age";
-    mode = "0400";
+  age.secrets = {
+    "openai-api-key" = {
+      file = "${secrets}/ages/openai-api-key.age";
+      mode = "0400";
+    };
+    "codestral-api-key" = {
+      file = "${secrets}/ages/codestral-api-key.age";
+      mode = "0400";
+    };
   };
 
   programs.zsh = {
@@ -29,9 +35,6 @@
         ''
       )
       (lib.mkOrder 1500 "fastfetch")
-      (lib.mkOrder 1550 ''
-        export OPENAI_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."openai-api-key".path})"
-      '')
     ];
     shellAliases = {
       "gis" = "git status";
@@ -47,5 +50,9 @@
         file = "share/zsh-vi-mode/zsh-vi-mode.plugin.zsh";
       }
     ];
+    sessionVariables = {
+      OPENAI_API_KEY = "$(${pkgs.coreutils}/bin/cat ${config.age.secrets."openai-api-key".path})";
+      CODESTRAL_API_KEY = "$(${pkgs.coreutils}/bin/cat ${config.age.secrets."codestral-api-key".path})";
+    };
   };
 }
