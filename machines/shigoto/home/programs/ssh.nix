@@ -24,13 +24,22 @@
         {
           port = 12222;
           user = "${username}";
-          identityFile = [config.age.secrets."server-ssh-key".path];
+          identityFile = config.age.secrets."server-ssh-key".path;
         }
         // basicTmpl;
     in {
       "gitlab.com" =
         {
-          identityFile = "${home}/.ssh/id_github";
+          identityFile = config.age.secrets."github-ssh-key".path;
+          user = "git";
+        }
+        // basicTmpl;
+
+      "git.sped0n.com" =
+        {
+          hostname = "tennousei";
+          port = 22222;
+          identityFile = config.age.secrets."github-ssh-key".path;
           user = "git";
         }
         // basicTmpl;
