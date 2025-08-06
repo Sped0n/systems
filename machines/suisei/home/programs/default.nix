@@ -1,5 +1,1 @@
-{
-  imports = [
-    ./awscli.nix
-  ];
-}
+{}
