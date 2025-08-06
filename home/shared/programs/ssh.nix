@@ -4,9 +4,9 @@
   secrets,
   ...
 }: {
-  age.secrets."github-ssh-key" = {
-    path = "${home}/.ssh/id_github";
-    file = "${secrets}/ages/github-ssh-key.age";
+  age.secrets."git-ssh-key" = {
+    path = "${home}/.ssh/id_git";
+    file = "${secrets}/ages/git-ssh-key.age";
     mode = "0400";
   };
 
@@ -16,7 +16,7 @@
       "github.com" = {
         hostname = "ssh.github.com";
         port = 443;
-        identityFile = config.age.secrets."github-ssh-key".path;
+        identityFile = config.age.secrets."git-ssh-key".path;
         user = "git";
         extraOptions = {
           "TCPKeepAlive" = "yes";

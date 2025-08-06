@@ -33,7 +33,7 @@
     in {
       "gitlab.com" =
         {
-          identityFile = config.age.secrets."github-ssh-key".path;
+          identityFile = config.age.secrets."git-ssh-key".path;
           user = "git";
         }
         // basicTmpl;
@@ -42,7 +42,7 @@
         {
           hostname = "tennousei";
           port = 22222;
-          identityFile = config.age.secrets."github-ssh-key".path;
+          identityFile = config.age.secrets."git-ssh-key".path;
           user = "git";
         }
         // basicTmpl;
