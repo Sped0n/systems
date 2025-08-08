@@ -1,7 +1,6 @@
 {...}: {
   imports = [
     ./usb.nix
-    ./waydroid.nix
   ];
 
   boot = {
