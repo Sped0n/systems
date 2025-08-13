@@ -43,8 +43,8 @@
 5. Repeat step 2 to 4 of [macOS](#macos).
 6. Clone the repo with `git clone git@github.com:Sped0n/systems.git`.
    - Run the command under `/tmp`.
-7. Find where the target configuration's `disko.nix` located.
-8. Run `sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount <path to disko.nix>`
+7. Find where the target configuration's `disko.nix` located and run `sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount <path to disko.nix>`
+8. Run `nixos-generate-config --no-filesystems --root /mnt`
 9. Move the repo to with `mv /tmp/systems /mnt/etc/nixos`.
 10. Place the agenix identity key to `/mnt/etc/nixos/id_agenix`.
     - `chmod` the key to 0500.
