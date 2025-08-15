@@ -4,7 +4,7 @@
 
     ./system.nix
     ./disko.nix
-    ./deployer.nix
+    ./builder.nix
 
     ./networking
     ./services

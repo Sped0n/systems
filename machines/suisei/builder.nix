@@ -1,16 +1,16 @@
 {
-  pkgs-qemu8,
+  # pkgs-qemu8,
   secrets,
   vars,
   ...
 }: {
   # see https://github.com/golang/go/issues/69255
-  nixpkgs.overlays = [
-    # NOTE: as for the naming, see
-    # - https://github.com/NixOS/nixpkgs/blob/a59eb7800787c926045d51b70982ae285faa2346/pkgs/applications/virtualization/qemu/default.nix#L140C3-L147C21
-    # - https://github.com/NixOS/nixpkgs/blob/b134951a4c9f3c995fd7be05f3243f8ecd65d798/pkgs/applications/virtualization/qemu/default.nix#L53C3-L57C45
-    (self: super: {qemu-user = pkgs-qemu8.qemu;})
-  ];
+  # nixpkgs.overlays = [
+  #   # NOTE: as for the naming, see
+  #   # - https://github.com/NixOS/nixpkgs/blob/a59eb7800787c926045d51b70982ae285faa2346/pkgs/applications/virtualization/qemu/default.nix#L140C3-L147C21
+  #   # - https://github.com/NixOS/nixpkgs/blob/b134951a4c9f3c995fd7be05f3243f8ecd65d798/pkgs/applications/virtualization/qemu/default.nix#L53C3-L57C45
+  #   (self: super: {qemu-user = pkgs-qemu8.qemu;})
+  # ];
 
   age.secrets = {
     "server-ssh-key" = {
