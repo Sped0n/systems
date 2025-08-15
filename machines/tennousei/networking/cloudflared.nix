@@ -1,8 +1,8 @@
 {
-  pkgs-unstable,
-  vars,
   config,
+  pkgs-unstable,
   secrets,
+  vars,
   ...
 }: {
   age.secrets."tennousei-cf-tunnel-json" = {
@@ -22,4 +22,10 @@
       };
     };
   };
+
+  # FIXME: https://github.com/cloudflare/cloudflared/issues/1485
+  #        cloudflared drops HTTP request body when Content-Length is missing
+  systemd.services."cloudflared-tunnel-${vars.tennousei.cfTunnelId}"
+    .environment
+    .TUNNEL_TRANSPORT_PROTOCOL = "http2";
 }
