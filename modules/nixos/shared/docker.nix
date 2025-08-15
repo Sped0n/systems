@@ -23,7 +23,6 @@
       # Need to MASQUERADE after we set docker's iptables to false
       ''
         iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-        iptables -t nat -A POSTROUTING -o tailscale0 -j MASQUERADE
       '';
     extraStopCommands =
       # For docker.host.internal
@@ -35,9 +34,7 @@
       # Need to MASQUERADE after we set docker's iptables to false
       ''
         iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE || true
-        iptables -t nat -D POSTROUTING -o tailscale0 -j MASQUERADE || true
       '';
     trustedInterfaces = ["docker0"];
-    checkReversePath = false;
   };
 }

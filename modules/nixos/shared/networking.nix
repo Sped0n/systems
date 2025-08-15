@@ -1,8 +1,8 @@
 {...}: {
-  # Security
   networking.firewall = {
     enable = true;
     pingLimit = "--limit 10/minute --limit-burst 5";
+    checkReversePath = false;
   };
   services.fail2ban = {
     enable = true;
