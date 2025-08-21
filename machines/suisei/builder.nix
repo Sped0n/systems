@@ -12,6 +12,19 @@
   #   (self: super: {qemu-user = pkgs-qemu8.qemu;})
   # ];
 
+  boot.binfmt.emulatedSystems = ["x86_64-linux"];
+
+  nix = {
+    gc = {
+      dates = "monthly";
+      options = "--delete-older-than 30d";
+    };
+    settings = {
+      keep-outputs = true;
+      keep-derivations = true;
+    };
+  };
+
   age.secrets = {
     "server-ssh-key" = {
       path = "/root/.ssh/id_server";
