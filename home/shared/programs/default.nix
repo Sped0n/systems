@@ -1,4 +1,5 @@
-{pkgs-unstable, ...}: {
+{ pkgs-unstable, ... }:
+{
   imports = [
     ./zsh.nix
     ./starship.nix
@@ -29,7 +30,10 @@
   programs.zoxide = {
     enable = true;
     enableZshIntegration = true;
-    options = ["--cmd cd" "--hook pwd"];
+    options = [
+      "--cmd cd"
+      "--hook pwd"
+    ];
   };
 
   programs.atuin = {

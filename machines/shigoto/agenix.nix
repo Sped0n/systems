@@ -3,7 +3,8 @@
   pkgs,
   secrets,
   ...
-}: {
+}:
+{
   age.secrets."espressif-signing-key" = {
     file = "${secrets}/ages/espressif-signing-key.age";
     owner = "root";

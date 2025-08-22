@@ -4,11 +4,13 @@
   pkgs,
   pkgs-unstable,
   ...
-}: let
+}:
+let
   cfg = config.programs.aichat;
   inherit (lib) mkEnableOption mkIf types;
-  yamlFormat = pkgs.formats.yaml {};
-in {
+  yamlFormat = pkgs.formats.yaml { };
+in
+{
   options.programs.aichat = {
     enable = mkEnableOption "aichat";
 
@@ -21,7 +23,7 @@ in {
   };
 
   config = mkIf cfg.enable {
-    home.packages = [pkgs-unstable.aichat];
+    home.packages = [ pkgs-unstable.aichat ];
 
     xdg.configFile = {
       "aichat/config.yaml" = {

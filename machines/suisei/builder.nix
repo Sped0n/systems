@@ -3,7 +3,8 @@
   secrets,
   vars,
   ...
-}: {
+}:
+{
   # see https://github.com/golang/go/issues/69255
   # nixpkgs.overlays = [
   #   # NOTE: as for the naming, see
@@ -12,7 +13,7 @@
   #   (self: super: {qemu-user = pkgs-qemu8.qemu;})
   # ];
 
-  boot.binfmt.emulatedSystems = ["x86_64-linux"];
+  boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
 
   nix = {
     gc = {
@@ -35,41 +36,51 @@
   };
 
   home-manager = {
-    users.root = {...}: {
-      home = {
-        enableNixpkgsReleaseCheck = false;
-        stateVersion = "24.11";
-      };
-      programs.ssh = let
-        serverTmpl = {
-          port = 12222;
-          user = "root";
-          identityFile = ["/root/.ssh/id_server"];
-          extraOptions = {
-            "TCPKeepAlive" = "yes";
-            "AddKeysToAgent" = "yes";
-          };
+    users.root =
+      { ... }:
+      {
+        home = {
+          enableNixpkgsReleaseCheck = false;
+          stateVersion = "24.11";
         };
-      in {
-        enable = true;
-        matchBlocks = {
-          "tennousei" = {hostname = vars.tennousei.ipv4;} // serverTmpl;
-          "_tennousei" = {
-            match = ''
-              host tennousei exec "tailscale status"
-            '';
-            hostname = "tennousei";
-          };
+        programs.ssh =
+          let
+            serverTmpl = {
+              port = 12222;
+              user = "root";
+              identityFile = [ "/root/.ssh/id_server" ];
+              extraOptions = {
+                "TCPKeepAlive" = "yes";
+                "AddKeysToAgent" = "yes";
+              };
+            };
+          in
+          {
+            enable = true;
+            matchBlocks = {
+              "tennousei" = {
+                hostname = vars.tennousei.ipv4;
+              }
+              // serverTmpl;
+              "_tennousei" = {
+                match = ''
+                  host tennousei exec "tailscale status"
+                '';
+                hostname = "tennousei";
+              };
 
-          "tsuki" = {hostname = vars.tsuki.ipv4;} // serverTmpl;
-          "_tsuki" = {
-            match = ''
-              host tsuki exec "tailscale status"
-            '';
-            hostname = "tsuki";
+              "tsuki" = {
+                hostname = vars.tsuki.ipv4;
+              }
+              // serverTmpl;
+              "_tsuki" = {
+                match = ''
+                  host tsuki exec "tailscale status"
+                '';
+                hostname = "tsuki";
+              };
+            };
           };
-        };
       };
-    };
   };
 }

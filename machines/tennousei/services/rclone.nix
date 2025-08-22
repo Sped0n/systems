@@ -5,12 +5,13 @@
   secrets,
   username,
   ...
-}: {
+}:
+{
   users.users.rclone-webdav = {
     isSystemUser = true;
     group = "rclone-webdav";
   };
-  users.groups.rclone-webdav = {};
+  users.groups.rclone-webdav = { };
 
   age.secrets."rclone-webdav-htpasswd" = {
     file = "${secrets}/ages/tennousei-rclone-webdav-htpasswd.age";
@@ -26,9 +27,9 @@
 
     services.qb-webdav = {
       description = "WebDAV server for qbittorrent media";
-      after = ["network.target"];
-      wants = ["network-online.target"];
-      wantedBy = ["multi-user.target"];
+      after = [ "network.target" ];
+      wants = [ "network-online.target" ];
+      wantedBy = [ "multi-user.target" ];
       environment.RCLONE_CONFIG = "/tmp/rclone.conf";
       serviceConfig = {
         User = "rclone-webdav";
@@ -48,7 +49,7 @@
         ProtectSystem = "strict";
         ProtectHome = "tmpfs";
         PrivateTmp = true;
-        BindReadOnlyPaths = ["${home}/storage/qb"];
+        BindReadOnlyPaths = [ "${home}/storage/qb" ];
 
         NoNewPrivileges = true;
         LockPersonality = true;

@@ -2,7 +2,8 @@
   lib,
   pkgs-unstable,
   ...
-}: {
+}:
+{
   programs.ghostty = {
     enable = lib.mkDefault false;
     enableZshIntegration = true;
@@ -80,5 +81,5 @@
     };
   };
 
-  home.packages = [pkgs-unstable.lilex];
+  home.packages = [ pkgs-unstable.lilex ];
 }

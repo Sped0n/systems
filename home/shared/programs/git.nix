@@ -1,4 +1,5 @@
-{...}: {
+{ ... }:
+{
   programs.git = {
     enable = true;
     lfs.enable = true;
@@ -20,7 +21,11 @@
       signByDefault = true;
     };
 
-    ignores = [".DS_Store" "*.swp" ".direnv"];
+    ignores = [
+      ".DS_Store"
+      "*.swp"
+      ".direnv"
+    ];
 
     delta = {
       enable = true;

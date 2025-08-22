@@ -4,7 +4,8 @@
   pkgs,
   username,
   ...
-}: {
+}:
+{
   imports = [
     ../shared
     ./system

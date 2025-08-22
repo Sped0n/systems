@@ -2,7 +2,8 @@
   agenix-darwin,
   pkgs,
   ...
-}: {
+}:
+{
   imports = [
     agenix-darwin.homeManagerModules.default
 

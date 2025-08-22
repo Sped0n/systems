@@ -29,13 +29,13 @@ buildGoModule rec {
   ];
 
   # Add git as a dependency needed during the test phase
-  nativeBuildInputs = [git];
+  nativeBuildInputs = [ git ];
 
   meta = with lib; {
     description = "CLI to generate git commit messages or code reviews using ChatGPT AI";
     homepage = "https://github.com/appleboy/CodeGPT";
     license = licenses.mit;
-    maintainers = with maintainers; [Sped0n];
+    maintainers = with maintainers; [ Sped0n ];
     platforms = platforms.unix;
   };
 }

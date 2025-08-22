@@ -1,4 +1,5 @@
-{...}: {
+{ ... }:
+{
   homebrew.casks = [
     # Development Tools
     "beekeeper-studio"

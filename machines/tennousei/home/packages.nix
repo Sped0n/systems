@@ -1,5 +1,6 @@
-{pkgs, ...}:
-with pkgs; {
+{ pkgs, ... }:
+with pkgs;
+{
   home.packages = [
     rclone
 

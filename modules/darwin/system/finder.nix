@@ -1,4 +1,5 @@
-{...}: {
+{ ... }:
+{
   system.defaults = {
     finder = {
       ShowPathbar = true; # Show path bar

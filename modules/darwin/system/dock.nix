@@ -1,4 +1,5 @@
-{...}: {
+{ ... }:
+{
   system.defaults = {
     dock = {
       autohide = true;
@@ -15,8 +16,6 @@
       appswitcher-all-displays = true; # Show app switcher on all displays
     };
 
-    CustomUserPreferences.
-      ".GlobalPreferences"
-      .AppleSpacesSwitchOnActivate = true; # Automatically switch to a new space when switching to the application
+    CustomUserPreferences.".GlobalPreferences".AppleSpacesSwitchOnActivate = true; # Automatically switch to a new space when switching to the application
   };
 }

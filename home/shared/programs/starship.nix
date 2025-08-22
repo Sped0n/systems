@@ -1,4 +1,5 @@
-{lib, ...}: {
+{ lib, ... }:
+{
   programs.starship = {
     enable = true;
     enableZshIntegration = true;
@@ -42,65 +43,183 @@
         symbol = "aws ";
         disabled = true;
       };
-      azure = {symbol = "az ";};
-      buf = {symbol = "buf ";};
-      bun = {symbol = "bun ";};
-      cobol = {symbol = "cobol ";};
-      conda = {symbol = "conda ";};
-      container = {symbol = "container ";};
-      crystal = {symbol = "cr ";};
-      cmake = {symbol = "cmake ";};
-      daml = {symbol = "daml ";};
-      dart = {symbol = "dart ";};
-      deno = {symbol = "deno ";};
-      dotnet = {symbol = ".NET ";};
-      docker_context = {symbol = "docker ";};
-      elixir = {symbol = "exs ";};
-      elm = {symbol = "elm ";};
-      fennel = {symbol = "fnl ";};
-      fossil_branch = {symbol = "fossil ";};
-      gcloud = {symbol = "gcp ";};
-      git_branch = {symbol = "git ";};
-      gleam = {symbol = "gleam ";};
-      golang = {symbol = "go ";};
-      gradle = {symbol = "gradle ";};
-      guix_shell = {symbol = "guix ";};
-      haskell = {symbol = "haskell ";};
-      helm = {symbol = "helm ";};
-      hg_branch = {symbol = "hg ";};
-      java = {symbol = "java ";};
-      julia = {symbol = "jl ";};
-      kotlin = {symbol = "kt ";};
-      lua = {symbol = "lua ";};
-      nodejs = {symbol = "nodejs ";};
-      memory_usage = {symbol = "memory ";};
-      meson = {symbol = "meson ";};
-      nats = {symbol = "nats ";};
-      nim = {symbol = "nim ";};
-      nix_shell = {symbol = "nix ";};
-      ocaml = {symbol = "ml ";};
-      opa = {symbol = "opa ";};
-      package = {symbol = "pkg ";};
-      perl = {symbol = "pl ";};
-      php = {symbol = "php ";};
-      pijul_channel = {symbol = "pijul ";};
-      pulumi = {symbol = "pulumi ";};
-      purescript = {symbol = "purs ";};
-      python = {symbol = "py ";};
-      quarto = {symbol = "quarto ";};
-      raku = {symbol = "raku ";};
-      rlang = {symbol = "r ";};
-      ruby = {symbol = "rb ";};
-      rust = {symbol = "rs ";};
-      scala = {symbol = "scala ";};
-      spack = {symbol = "spack ";};
-      solidity = {symbol = "solidity ";};
-      status = {symbol = "[x](bold red) ";};
-      sudo = {symbol = "sudo ";};
-      swift = {symbol = "swift ";};
-      typst = {symbol = "typst ";};
-      terraform = {symbol = "terraform ";};
-      zig = {symbol = "zig ";};
+      azure = {
+        symbol = "az ";
+      };
+      buf = {
+        symbol = "buf ";
+      };
+      bun = {
+        symbol = "bun ";
+      };
+      cobol = {
+        symbol = "cobol ";
+      };
+      conda = {
+        symbol = "conda ";
+      };
+      container = {
+        symbol = "container ";
+      };
+      crystal = {
+        symbol = "cr ";
+      };
+      cmake = {
+        symbol = "cmake ";
+      };
+      daml = {
+        symbol = "daml ";
+      };
+      dart = {
+        symbol = "dart ";
+      };
+      deno = {
+        symbol = "deno ";
+      };
+      dotnet = {
+        symbol = ".NET ";
+      };
+      docker_context = {
+        symbol = "docker ";
+      };
+      elixir = {
+        symbol = "exs ";
+      };
+      elm = {
+        symbol = "elm ";
+      };
+      fennel = {
+        symbol = "fnl ";
+      };
+      fossil_branch = {
+        symbol = "fossil ";
+      };
+      gcloud = {
+        symbol = "gcp ";
+      };
+      git_branch = {
+        symbol = "git ";
+      };
+      gleam = {
+        symbol = "gleam ";
+      };
+      golang = {
+        symbol = "go ";
+      };
+      gradle = {
+        symbol = "gradle ";
+      };
+      guix_shell = {
+        symbol = "guix ";
+      };
+      haskell = {
+        symbol = "haskell ";
+      };
+      helm = {
+        symbol = "helm ";
+      };
+      hg_branch = {
+        symbol = "hg ";
+      };
+      java = {
+        symbol = "java ";
+      };
+      julia = {
+        symbol = "jl ";
+      };
+      kotlin = {
+        symbol = "kt ";
+      };
+      lua = {
+        symbol = "lua ";
+      };
+      nodejs = {
+        symbol = "nodejs ";
+      };
+      memory_usage = {
+        symbol = "memory ";
+      };
+      meson = {
+        symbol = "meson ";
+      };
+      nats = {
+        symbol = "nats ";
+      };
+      nim = {
+        symbol = "nim ";
+      };
+      nix_shell = {
+        symbol = "nix ";
+      };
+      ocaml = {
+        symbol = "ml ";
+      };
+      opa = {
+        symbol = "opa ";
+      };
+      package = {
+        symbol = "pkg ";
+      };
+      perl = {
+        symbol = "pl ";
+      };
+      php = {
+        symbol = "php ";
+      };
+      pijul_channel = {
+        symbol = "pijul ";
+      };
+      pulumi = {
+        symbol = "pulumi ";
+      };
+      purescript = {
+        symbol = "purs ";
+      };
+      python = {
+        symbol = "py ";
+      };
+      quarto = {
+        symbol = "quarto ";
+      };
+      raku = {
+        symbol = "raku ";
+      };
+      rlang = {
+        symbol = "r ";
+      };
+      ruby = {
+        symbol = "rb ";
+      };
+      rust = {
+        symbol = "rs ";
+      };
+      scala = {
+        symbol = "scala ";
+      };
+      spack = {
+        symbol = "spack ";
+      };
+      solidity = {
+        symbol = "solidity ";
+      };
+      status = {
+        symbol = "[x](bold red) ";
+      };
+      sudo = {
+        symbol = "sudo ";
+      };
+      swift = {
+        symbol = "swift ";
+      };
+      typst = {
+        symbol = "typst ";
+      };
+      terraform = {
+        symbol = "terraform ";
+      };
+      zig = {
+        symbol = "zig ";
+      };
 
       os = {
         symbols = {

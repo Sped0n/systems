@@ -2,10 +2,11 @@
   pkgs,
   username,
   ...
-}: {
+}:
+{
   users.groups = {
-    dialout = {};
-    plugdev = {};
+    dialout = { };
+    plugdev = { };
   };
 
   users.users."${username}" = {
@@ -16,7 +17,7 @@
   };
 
   services.udev = {
-    packages = [pkgs.openocd];
+    packages = [ pkgs.openocd ];
     extraRules =
       # Espressif USB JTAG/serial debug units
       ''

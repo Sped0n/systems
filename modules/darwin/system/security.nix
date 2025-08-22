@@ -1,4 +1,5 @@
-{...}: {
+{ ... }:
+{
   security.pam.services.sudo_local.touchIdAuth = true; # Add ability to used TouchID for sudo authentication
 
   system.defaults = {

@@ -1,15 +1,16 @@
-{...}: {
+{ ... }:
+{
   services.telegraf = {
     extraConfig = {
       inputs = {
-        wireguard.devices = ["wg0"];
+        wireguard.devices = [ "wg0" ];
       };
 
       outputs = {
-        influxdb.namepass = ["wireguard*"];
+        influxdb.namepass = [ "wireguard*" ];
       };
     };
   };
 
-  systemd.services.telegraf.serviceConfig.AmbientCapabilities = ["CAP_NET_ADMIN"];
+  systemd.services.telegraf.serviceConfig.AmbientCapabilities = [ "CAP_NET_ADMIN" ];
 }

@@ -3,7 +3,8 @@
   home,
   secrets,
   ...
-}: {
+}:
+{
   age.secrets."git-ssh-key" = {
     path = "${home}/.ssh/id_git";
     file = "${secrets}/ages/git-ssh-key.age";

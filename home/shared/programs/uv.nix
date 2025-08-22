@@ -2,7 +2,8 @@
   lib,
   pkgs-unstable,
   ...
-}: {
+}:
+{
   programs.uv = {
     enable = lib.mkDefault false;
     package = pkgs-unstable.uv;

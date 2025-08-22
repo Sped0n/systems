@@ -1,4 +1,5 @@
-{pkgs-unstable, ...}: {
+{ pkgs-unstable, ... }:
+{
   networking.firewall = {
     extraCommands = ''
       iptables -t nat -A POSTROUTING -o tailscale0 -j MASQUERADE
@@ -6,7 +7,7 @@
     extraStopCommands = ''
       iptables -t nat -D POSTROUTING -o tailscale0 -j MASQUERADE || true
     '';
-    trustedInterfaces = ["tailscale0"];
+    trustedInterfaces = [ "tailscale0" ];
   };
 
   services.tailscale = {

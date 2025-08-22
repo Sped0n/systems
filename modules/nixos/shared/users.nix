@@ -4,11 +4,12 @@
   username,
   vars,
   ...
-}: {
+}:
+{
   users.mutableUsers = false; # Don't allow mutation of users outside the config.
 
   users.groups = {
-    docker = {};
+    docker = { };
   };
 
   users.users."${username}" = {

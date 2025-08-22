@@ -1,11 +1,12 @@
-{pkgs-unstable, ...}: {
-  home.packages = with pkgs-unstable; [albert];
+{ pkgs-unstable, ... }:
+{
+  home.packages = with pkgs-unstable; [ albert ];
 
   systemd.user.services.albert = {
     Unit = {
       Description = "Albert Launcher";
-      After = ["graphical-session.target"];
-      PartOf = ["graphical-session.target"];
+      After = [ "graphical-session.target" ];
+      PartOf = [ "graphical-session.target" ];
     };
 
     Service = {
@@ -15,7 +16,7 @@
     };
 
     Install = {
-      WantedBy = ["graphical-session.target"];
+      WantedBy = [ "graphical-session.target" ];
     };
   };
 }

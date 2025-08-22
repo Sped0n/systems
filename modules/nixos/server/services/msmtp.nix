@@ -4,8 +4,9 @@
   secrets,
   vars,
   ...
-}: {
-  users.groups.smtp-auth-users = {};
+}:
+{
+  users.groups.smtp-auth-users = { };
 
   age.secrets."smtp-password" = {
     file = "${secrets}/ages/smtp-password.age";

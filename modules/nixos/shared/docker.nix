@@ -1,4 +1,5 @@
-{...}: {
+{ ... }:
+{
   virtualisation.docker = {
     enable = true;
     enableOnBoot = true;
@@ -35,6 +36,6 @@
       ''
         iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE || true
       '';
-    trustedInterfaces = ["docker0"];
+    trustedInterfaces = [ "docker0" ];
   };
 }

@@ -1,4 +1,5 @@
-{pkgs, ...}: {
+{ pkgs, ... }:
+{
   programs.zsh = {
     shellAliases = {
       pbcopy = "${pkgs.wl-clipboard}/bin/wl-copy";
@@ -7,5 +8,5 @@
     };
   };
 
-  home.packages = [pkgs.wl-clipboard];
+  home.packages = [ pkgs.wl-clipboard ];
 }

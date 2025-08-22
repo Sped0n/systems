@@ -3,7 +3,8 @@
   pkgs-unstable,
   username,
   ...
-}: {
+}:
+{
   systemd.tmpfiles.rules = [
     "d ${home}/Documents 0755 ${username} users -"
     "d ${home}/Documents/syncthing 0755 ${username} users -"

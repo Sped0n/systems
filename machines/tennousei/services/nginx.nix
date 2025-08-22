@@ -1,4 +1,5 @@
-{...}: {
+{ ... }:
+{
   systemd.tmpfiles.rules = [
     "d /srv/eyes 0755 root root -"
   ];

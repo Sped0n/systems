@@ -1,11 +1,12 @@
-{...}: {
+{ ... }:
+{
   services.telegraf = {
     extraConfig = {
       inputs = {
         tail = [
           {
             name_override = "traefik_access_log";
-            files = ["/var/log/traefik/access.log"];
+            files = [ "/var/log/traefik/access.log" ];
             watch_method = "inotify";
             initial_read_offset = "saved-or-end";
             data_format = "json";
@@ -39,13 +40,13 @@
             endpoint = "/insert/loki/api/v1/push";
             gzip_request = true;
             sanitize_label_names = true;
-            namepass = ["traefik_access_log"];
+            namepass = [ "traefik_access_log" ];
           }
         ];
       };
     };
   };
 
-  users.users.telegraf.extraGroups = ["docker"];
-  systemd.services.telegraf.after = ["tailscaled.service"];
+  users.users.telegraf.extraGroups = [ "docker" ];
+  systemd.services.telegraf.after = [ "tailscaled.service" ];
 }

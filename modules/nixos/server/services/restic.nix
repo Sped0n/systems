@@ -5,26 +5,29 @@
   secrets,
   vars,
   ...
-}: {
+}:
+{
   options._services.restic = {
     enable = lib.mkEnableOption "a custom Restic backup configuration with daily backups, weekly checks, and failure notifications";
   };
 
   config = lib.mkIf config._services.restic.enable {
-    age.secrets = let
-      owner = "root";
-      mode = "0400";
-    in {
-      "restic-env" = {
-        inherit owner mode;
-        file = "${secrets}/ages/restic-env.age";
-      };
+    age.secrets =
+      let
+        owner = "root";
+        mode = "0400";
+      in
+      {
+        "restic-env" = {
+          inherit owner mode;
+          file = "${secrets}/ages/restic-env.age";
+        };
 
-      "restic-password" = {
-        inherit owner mode;
-        file = "${secrets}/ages/restic-password.age";
+        "restic-password" = {
+          inherit owner mode;
+          file = "${secrets}/ages/restic-password.age";
+        };
       };
-    };
 
     services.restic.backups = {
       "main" = {
@@ -55,13 +58,17 @@
         "smtp-auth-users"
       ];
     };
-    users.groups.restic-notify = {};
+    users.groups.restic-notify = { };
 
     systemd.services = {
-      "restic-backups-main".onFailure = ["restic-failure-notify.service"];
+      "restic-backups-main".onFailure = [ "restic-failure-notify.service" ];
       "restic-failure-notify" = {
         description = "Notify on Restic backup failure";
-        path = with pkgs; [coreutils systemd msmtp];
+        path = with pkgs; [
+          coreutils
+          systemd
+          msmtp
+        ];
         script = ''
           {
             echo "From: Infrastructure <${vars.infraEmail}>"

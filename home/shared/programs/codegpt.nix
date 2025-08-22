@@ -4,11 +4,18 @@
   lib,
   pkgs,
   ...
-}: let
+}:
+let
   cfg = config.programs.codegpt;
-  inherit (lib) mkEnableOption mkIf mkOption types;
-  yamlFormat = pkgs.formats.yaml {};
-in {
+  inherit (lib)
+    mkEnableOption
+    mkIf
+    mkOption
+    types
+    ;
+  yamlFormat = pkgs.formats.yaml { };
+in
+{
   options.programs.codegpt = {
     enable = mkEnableOption "CodeGPT";
 
@@ -36,7 +43,7 @@ in {
 
   config = mkIf cfg.enable {
     home.packages = [
-      (pkgs.callPackage ../../../pkgs/codegpt.nix {})
+      (pkgs.callPackage ../../../pkgs/codegpt.nix { })
     ];
 
     xdg.configFile = {
@@ -73,8 +80,10 @@ in {
         };
       };
 
-      "codegpt/prompt/conventional_commit.tmpl".source = ../../shared/config/codegpt/conventional_commit.tmpl;
-      "codegpt/prompt/summarize_file_diff.tmpl".source = ../../shared/config/codegpt/summarize_file_diff.tmpl;
+      "codegpt/prompt/conventional_commit.tmpl".source =
+        ../../shared/config/codegpt/conventional_commit.tmpl;
+      "codegpt/prompt/summarize_file_diff.tmpl".source =
+        ../../shared/config/codegpt/summarize_file_diff.tmpl;
     };
   };
 }

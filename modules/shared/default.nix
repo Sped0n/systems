@@ -5,7 +5,8 @@
   specialArgs,
   username,
   ...
-}: {
+}:
+{
   imports = [
     ./agenix.nix
   ];
@@ -21,23 +22,25 @@
       let
         path = ../../overlays;
       in
-        with builtins;
-          map (n: import (path + ("/" + n)))
-          (filter (n:
-            match ".*\\.nix" n
-            != null
-            || pathExists (path + ("/" + n + "/default.nix")))
-          (attrNames (readDir path)))
-          ++ [];
+      with builtins;
+      map (n: import (path + ("/" + n))) (
+        filter (n: match ".*\\.nix" n != null || pathExists (path + ("/" + n + "/default.nix"))) (
+          attrNames (readDir path)
+        )
+      )
+      ++ [ ];
   };
 
   # Nix
   nix = {
     package = pkgs.nix;
     settings = {
-      trusted-users = ["${username}" "@admin"];
+      trusted-users = [
+        "${username}"
+        "@admin"
+      ];
       experimental-features = "nix-command flakes";
-      nix-path = ["nixpkgs=${pkgs.path}"];
+      nix-path = [ "nixpkgs=${pkgs.path}" ];
       download-buffer-size = 524288000;
       substituters = [
         "https://cache.nixos.org"
@@ -63,7 +66,7 @@
   # Zsh
   programs.zsh.enable = true;
   environment = {
-    shells = with pkgs; [zsh];
+    shells = with pkgs; [ zsh ];
   };
 
   # System Packages

@@ -2,7 +2,8 @@
   lib,
   pkgs,
   ...
-}: {
+}:
+{
   home.packages = with pkgs; [
     gnomeExtensions.appindicator
   ];
@@ -24,14 +25,32 @@
       };
 
       "org/gnome/desktop/input-sources" = {
-        mru-sources = [(mkTuple ["xkb" "us"]) (mkTuple ["ibus" "rime"])];
-        sources = [(mkTuple ["xkb" "us"]) (mkTuple ["ibus" "rime"])];
-        xkb-options = ["grp:caps_toggle"];
+        mru-sources = [
+          (mkTuple [
+            "xkb"
+            "us"
+          ])
+          (mkTuple [
+            "ibus"
+            "rime"
+          ])
+        ];
+        sources = [
+          (mkTuple [
+            "xkb"
+            "us"
+          ])
+          (mkTuple [
+            "ibus"
+            "rime"
+          ])
+        ];
+        xkb-options = [ "grp:caps_toggle" ];
       };
 
       "org/gnome/desktop/wm/keybindings" = {
-        switch-input-source = [];
-        switch-input-source-backward = [];
+        switch-input-source = [ ];
+        switch-input-source-backward = [ ];
       };
 
       "org/gnome/settings-daemon/plugins/media-keys" = {

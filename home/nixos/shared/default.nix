@@ -2,7 +2,8 @@
   agenix,
   pkgs,
   ...
-}: {
+}:
+{
   imports = [
     agenix.homeManagerModules.default
 

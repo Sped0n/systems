@@ -2,7 +2,8 @@
   modulesPath,
   # pkgs-qemu8,
   ...
-}: {
+}:
+{
   imports = [
     (modulesPath + "/profiles/qemu-guest.nix")
   ];

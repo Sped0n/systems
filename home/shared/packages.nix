@@ -1,6 +1,8 @@
-{pkgs, ...}: {
-  home.packages = with pkgs;
-  # Core
+{ pkgs, ... }:
+{
+  home.packages =
+    with pkgs;
+    # Core
     [
       gcc
       coreutils

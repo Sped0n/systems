@@ -2,7 +2,8 @@
   home,
   username,
   ...
-}: {
+}:
+{
   systemd.tmpfiles.rules = [
     "d ${home}/others 0755 ${username} users -"
     "d ${home}/sharing 0755 ${username} users -"
@@ -12,8 +13,11 @@
   ];
 
   networking.firewall = {
-    allowedTCPPorts = [22000];
-    allowedUDPPorts = [22000 21027];
+    allowedTCPPorts = [ 22000 ];
+    allowedUDPPorts = [
+      22000
+      21027
+    ];
   };
 
   services = {

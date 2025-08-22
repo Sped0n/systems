@@ -1,4 +1,5 @@
-{modulesPath, ...}: {
+{ modulesPath, ... }:
+{
   imports = [
     (modulesPath + "/profiles/qemu-guest.nix")
   ];
@@ -13,6 +14,6 @@
       "xen_blkfront"
       "vmw_pvscsi"
     ];
-    kernelModules = ["kvm-amd"];
+    kernelModules = [ "kvm-amd" ];
   };
 }

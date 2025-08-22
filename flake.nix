@@ -45,126 +45,130 @@
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
   };
 
-  outputs = inputs @ {
-    self,
-    nixpkgs,
-    nixpkgs-unstable,
-    nixpkgs-qemu8,
-    nixpkgs-darwin,
-    nixpkgs-darwin-unstable,
-    secrets,
-    home-manager,
-    agenix,
-    disko,
-    home-manager-darwin,
-    agenix-darwin,
-    nix-darwin,
-    nix-homebrew,
-  }: let
-    lib = nixpkgs.lib;
-    vars = import "${inputs.secrets}/vars";
-    username = "spedon";
-
-    genSpecialArgs = {
-      system,
-      unstablePkgsInput,
-      unstableConfigOverrides ? {},
-      extraArgs ? {},
+  outputs =
+    inputs@{
+      self,
+      nixpkgs,
+      nixpkgs-unstable,
+      nixpkgs-qemu8,
+      nixpkgs-darwin,
+      nixpkgs-darwin-unstable,
+      secrets,
+      home-manager,
+      agenix,
+      disko,
+      home-manager-darwin,
+      agenix-darwin,
+      nix-darwin,
+      nix-homebrew,
     }:
-      {
-        inherit vars username;
-        home =
-          if lib.strings.hasSuffix "darwin" system
-          then "/Users/${username}"
-          else "/home/${username}";
+    let
+      lib = nixpkgs.lib;
+      vars = import "${inputs.secrets}/vars";
+      username = "spedon";
 
-        pkgs-unstable = import unstablePkgsInput {
-          inherit system;
-          config = {allowUnfree = true;} // unstableConfigOverrides;
-          overlays =
-            # Apply each overlay found in the /overlays directory
-            let
-              path = ./overlays;
-            in
+      genSpecialArgs =
+        {
+          system,
+          unstablePkgsInput,
+          unstableConfigOverrides ? { },
+          extraArgs ? { },
+        }:
+        {
+          inherit vars username;
+          home = if lib.strings.hasSuffix "darwin" system then "/Users/${username}" else "/home/${username}";
+
+          pkgs-unstable = import unstablePkgsInput {
+            inherit system;
+            config = {
+              allowUnfree = true;
+            }
+            // unstableConfigOverrides;
+            overlays =
+              # Apply each overlay found in the /overlays directory
+              let
+                path = ./overlays;
+              in
               with builtins;
-                map (n: import (path + ("/" + n)))
-                (filter (n:
-                  match ".*\\.nix" n
-                  != null
-                  || pathExists (path + ("/" + n + "/default.nix")))
-                (attrNames (readDir path)))
-                ++ [];
-        };
-      }
-      // extraArgs // inputs;
-
-    commonNixosModules = [
-      disko.nixosModules.disko
-      agenix.nixosModules.default
-      home-manager.nixosModules.home-manager
-    ];
-
-    commonDarwinModules = [
-      home-manager-darwin.darwinModules.home-manager
-      agenix-darwin.darwinModules.default
-      nix-homebrew.darwinModules.nix-homebrew
-    ];
-  in {
-    darwinConfigurations = {
-      "ringo" = nix-darwin.lib.darwinSystem {
-        system = "aarch64-darwin";
-        specialArgs = genSpecialArgs {
-          system = "aarch64-darwin";
-          unstablePkgsInput = nixpkgs-darwin-unstable;
-        };
-        modules = commonDarwinModules ++ [./machines/ringo];
-      };
-    };
-
-    nixosConfigurations = {
-      "tsuki" = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        specialArgs = genSpecialArgs {
-          system = "x86_64-linux";
-          unstablePkgsInput = nixpkgs-unstable;
-        };
-        modules = commonNixosModules ++ [./machines/tsuki];
-      };
-
-      "tennousei" = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        specialArgs = genSpecialArgs {
-          system = "x86_64-linux";
-          unstablePkgsInput = nixpkgs-unstable;
-        };
-        modules = commonNixosModules ++ [./machines/tennousei];
-      };
-
-      "shigoto" = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        specialArgs = genSpecialArgs {
-          system = "x86_64-linux";
-          unstablePkgsInput = nixpkgs-unstable;
-          unstableConfigOverrides = {
-            permittedInsecurePackages = ["beekeeper-studio-5.2.12"];
+              map (n: import (path + ("/" + n))) (
+                filter (n: match ".*\\.nix" n != null || pathExists (path + ("/" + n + "/default.nix"))) (
+                  attrNames (readDir path)
+                )
+              )
+              ++ [ ];
           };
+        }
+        // extraArgs
+        // inputs;
+
+      commonNixosModules = [
+        disko.nixosModules.disko
+        agenix.nixosModules.default
+        home-manager.nixosModules.home-manager
+      ];
+
+      commonDarwinModules = [
+        home-manager-darwin.darwinModules.home-manager
+        agenix-darwin.darwinModules.default
+        nix-homebrew.darwinModules.nix-homebrew
+      ];
+    in
+    {
+      darwinConfigurations = {
+        "ringo" = nix-darwin.lib.darwinSystem {
+          system = "aarch64-darwin";
+          specialArgs = genSpecialArgs {
+            system = "aarch64-darwin";
+            unstablePkgsInput = nixpkgs-darwin-unstable;
+          };
+          modules = commonDarwinModules ++ [ ./machines/ringo ];
         };
-        modules = commonNixosModules ++ [./machines/shigoto];
       };
 
-      "suisei" = nixpkgs.lib.nixosSystem rec {
-        system = "aarch64-linux";
-        specialArgs = genSpecialArgs {
-          system = "aarch64-linux";
-          unstablePkgsInput = nixpkgs-unstable;
-          extraArgs = {
-            pkgs-qemu8 = import inputs.nixpkgs-qemu8 {
-              inherit system;
+      nixosConfigurations = {
+        "tsuki" = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = genSpecialArgs {
+            system = "x86_64-linux";
+            unstablePkgsInput = nixpkgs-unstable;
+          };
+          modules = commonNixosModules ++ [ ./machines/tsuki ];
+        };
+
+        "tennousei" = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = genSpecialArgs {
+            system = "x86_64-linux";
+            unstablePkgsInput = nixpkgs-unstable;
+          };
+          modules = commonNixosModules ++ [ ./machines/tennousei ];
+        };
+
+        "shigoto" = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = genSpecialArgs {
+            system = "x86_64-linux";
+            unstablePkgsInput = nixpkgs-unstable;
+            unstableConfigOverrides = {
+              permittedInsecurePackages = [ "beekeeper-studio-5.2.12" ];
             };
           };
+          modules = commonNixosModules ++ [ ./machines/shigoto ];
         };
-        modules = commonNixosModules ++ [./machines/suisei];
+
+        "suisei" = nixpkgs.lib.nixosSystem rec {
+          system = "aarch64-linux";
+          specialArgs = genSpecialArgs {
+            system = "aarch64-linux";
+            unstablePkgsInput = nixpkgs-unstable;
+            extraArgs = {
+              pkgs-qemu8 = import inputs.nixpkgs-qemu8 {
+                inherit system;
+              };
+            };
+          };
+          modules = commonNixosModules ++ [ ./machines/suisei ];
+        };
       };
     };
-  };
 }

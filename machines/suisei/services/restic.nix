@@ -2,11 +2,12 @@
   home,
   pkgs,
   ...
-}: {
+}:
+{
   _services.restic.enable = true;
 
   services.restic.backups."main" = {
-    paths = ["${home}/infra"];
+    paths = [ "${home}/infra" ];
     exclude = [
       "*.log"
     ];

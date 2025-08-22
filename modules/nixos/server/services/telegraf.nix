@@ -3,21 +3,22 @@
   pkgs,
   pkgs-unstable,
   ...
-}: {
+}:
+{
   users = {
     users.nixos-info-updater = {
       isSystemUser = true;
       group = "nixos-info-updater";
     };
-    groups.nixos-info-updater = {};
+    groups.nixos-info-updater = { };
   };
 
   systemd = {
-    tmpfiles.rules = ["d /var/log/nixos-info 0755 nixos-info-updater nixos-info-updater -"];
+    tmpfiles.rules = [ "d /var/log/nixos-info 0755 nixos-info-updater nixos-info-updater -" ];
 
     services.nixos-info-update = {
       description = "Generate a unified system info file for Telegraf";
-      wantedBy = ["multi-user.target"];
+      wantedBy = [ "multi-user.target" ];
       path = with pkgs; [
         fastfetch
         jq
@@ -60,7 +61,7 @@
         ProtectSystem = "strict";
         ProtectHome = true;
         PrivateTmp = true;
-        ReadWritePaths = ["/var/log/nixos-info"];
+        ReadWritePaths = [ "/var/log/nixos-info" ];
 
         NoNewPrivileges = true;
         LockPersonality = true;
@@ -101,71 +102,79 @@
           omit_hostname = false;
         };
 
-        inputs = let
-          logTags = {
-            metric_type = "logs";
-            log_source = "telegraf";
-          };
-        in {
-          system = {};
-          kernel.collect = ["psi"];
-          cpu.fieldexclude = ["time_*"];
-          mem = {};
-          swap = {};
-          disk = {
-            mount_points = ["/"];
-          };
-          diskio = {
-            devices = ["sda" "vda"];
-          };
-          net = {
-            interfaces = ["eth0" "tailscale0"];
-            fieldexclude = ["speed"];
-            ignore_protocol_stats = true;
-          };
-          netstat = {};
-          docker = {
-            timeout = "10s";
-            source_tag = true;
-            docker_label_exclude = [
-              "traefik.*"
-              "com.*"
-              "org.*"
-              "io.*"
-              "summary"
-              "description"
-            ];
-          };
-          processes = {};
-          syslog = {
-            server = "tcp://127.0.0.1:6514";
-            tagexclude = [
-              "source"
-              "hostname"
-            ];
-            fieldexclude = [
-              "version"
-              "severity_code"
-              "facility_code"
-              "timestamp"
-            ];
-            tags = logTags;
-          };
-          tail = [
-            {
-              files = ["/var/log/nixos-info/nixos-info.log"];
-              name_override = "info_system";
-              initial_read_offset = "beginning";
-              watch_method = "inotify";
-              data_format = "logfmt";
+        inputs =
+          let
+            logTags = {
+              metric_type = "logs";
+              log_source = "telegraf";
+            };
+          in
+          {
+            system = { };
+            kernel.collect = [ "psi" ];
+            cpu.fieldexclude = [ "time_*" ];
+            mem = { };
+            swap = { };
+            disk = {
+              mount_points = [ "/" ];
+            };
+            diskio = {
+              devices = [
+                "sda"
+                "vda"
+              ];
+            };
+            net = {
+              interfaces = [
+                "eth0"
+                "tailscale0"
+              ];
+              fieldexclude = [ "speed" ];
+              ignore_protocol_stats = true;
+            };
+            netstat = { };
+            docker = {
+              timeout = "10s";
+              source_tag = true;
+              docker_label_exclude = [
+                "traefik.*"
+                "com.*"
+                "org.*"
+                "io.*"
+                "summary"
+                "description"
+              ];
+            };
+            processes = { };
+            syslog = {
+              server = "tcp://127.0.0.1:6514";
+              tagexclude = [
+                "source"
+                "hostname"
+              ];
+              fieldexclude = [
+                "version"
+                "severity_code"
+                "facility_code"
+                "timestamp"
+              ];
               tags = logTags;
-            }
-          ];
-        };
+            };
+            tail = [
+              {
+                files = [ "/var/log/nixos-info/nixos-info.log" ];
+                name_override = "info_system";
+                initial_read_offset = "beginning";
+                watch_method = "inotify";
+                data_format = "logfmt";
+                tags = logTags;
+              }
+            ];
+          };
 
         outputs = {
           influxdb = {
-            urls = ["http://tsuki:8428"];
+            urls = [ "http://tsuki:8428" ];
             database = "victoriametrics";
             skip_database_creation = true;
             exclude_retention_policy_tag = true;
@@ -257,12 +266,18 @@
     };
   };
 
-  users.users.telegraf.extraGroups = ["docker" "nixos-info-updater"];
+  users.users.telegraf.extraGroups = [
+    "docker"
+    "nixos-info-updater"
+  ];
   systemd.services = {
     telegraf = {
-      requires = ["nixos-info-update.service"];
-      after = ["tailscaled.service" "nixos-info-update.service"];
+      requires = [ "nixos-info-update.service" ];
+      after = [
+        "tailscaled.service"
+        "nixos-info-update.service"
+      ];
     };
-    syslog-ng.after = ["telegraf.service"];
+    syslog-ng.after = [ "telegraf.service" ];
   };
 }

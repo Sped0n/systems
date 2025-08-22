@@ -1,4 +1,5 @@
-{username, ...}: {
+{ username, ... }:
+{
   imports = [
     ../../modules/darwin
 
@@ -20,13 +21,15 @@
   };
 
   home-manager = {
-    users.${username} = {...}: {
-      imports = [./home];
-      home = {
-        enableNixpkgsReleaseCheck = false;
-        stateVersion = "24.11";
+    users.${username} =
+      { ... }:
+      {
+        imports = [ ./home ];
+        home = {
+          enableNixpkgsReleaseCheck = false;
+          stateVersion = "24.11";
+        };
       };
-    };
   };
 
   homebrew.masApps = {

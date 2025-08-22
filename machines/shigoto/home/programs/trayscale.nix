@@ -1,11 +1,12 @@
-{pkgs-unstable, ...}: {
-  home.packages = with pkgs-unstable; [trayscale];
+{ pkgs-unstable, ... }:
+{
+  home.packages = with pkgs-unstable; [ trayscale ];
 
   systemd.user.services.trayscale = {
     Unit = {
       Description = "Unofficial GUI wrapper around the Tailscale CLI client";
-      After = ["graphical-session.target"];
-      PartOf = ["graphical-session.target"];
+      After = [ "graphical-session.target" ];
+      PartOf = [ "graphical-session.target" ];
     };
 
     Service = {
@@ -15,7 +16,7 @@
     };
 
     Install = {
-      WantedBy = ["graphical-session.target"];
+      WantedBy = [ "graphical-session.target" ];
     };
   };
 }

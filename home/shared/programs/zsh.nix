@@ -4,7 +4,8 @@
   pkgs,
   secrets,
   ...
-}: {
+}:
+{
   age.secrets = {
     "openai-api-key" = {
       file = "${secrets}/ages/openai-api-key.age";
@@ -22,18 +23,19 @@
     enableCompletion = true;
     autosuggestion = {
       enable = true;
-      strategy = ["history" "completion"];
+      strategy = [
+        "history"
+        "completion"
+      ];
     };
     syntaxHighlighting = {
       enable = true;
     };
     initContent = lib.mkMerge [
-      (
-        lib.mkOrder 500 ''
-          source ${../config/zsh/extras.zsh}
-          source ${../config/zsh/functions.zsh}
-        ''
-      )
+      (lib.mkOrder 500 ''
+        source ${../config/zsh/extras.zsh}
+        source ${../config/zsh/functions.zsh}
+      '')
       (lib.mkOrder 1500 "fastfetch")
     ];
     shellAliases = {

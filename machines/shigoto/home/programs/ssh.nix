@@ -5,7 +5,8 @@
   secrets,
   vars,
   ...
-}: {
+}:
+{
   age.secrets."server-ssh-key" = {
     path = "${home}/.ssh/id_server";
     file = "${secrets}/ages/server-ssh-key.age";
@@ -13,30 +14,29 @@
   };
 
   programs.ssh = {
-    matchBlocks = let
-      basicTmpl = {
-        extraOptions = {
-          "TCPKeepAlive" = "yes";
-          "AddKeysToAgent" = "yes";
+    matchBlocks =
+      let
+        basicTmpl = {
+          extraOptions = {
+            "TCPKeepAlive" = "yes";
+            "AddKeysToAgent" = "yes";
+          };
         };
-      };
-      serverTmpl =
-        {
+        serverTmpl = {
           port = 12222;
           user = "${username}";
           identityFile = config.age.secrets."server-ssh-key".path;
         }
         // basicTmpl;
-    in {
-      "gitlab.com" =
-        {
+      in
+      {
+        "gitlab.com" = {
           identityFile = config.age.secrets."git-ssh-key".path;
           user = "git";
         }
         // basicTmpl;
 
-      "git.sped0n.com" =
-        {
+        "git.sped0n.com" = {
           hostname = "tennousei";
           port = 22222;
           identityFile = config.age.secrets."git-ssh-key".path;
@@ -44,8 +44,7 @@
         }
         // basicTmpl;
 
-      "orangepi" =
-        {
+        "orangepi" = {
           hostname = "10.10.2.183";
           port = 22;
           user = "orangepi";
@@ -55,29 +54,38 @@
         }
         // basicTmpl;
 
-      "tennousei" = {hostname = vars.tennousei.ipv4;} // serverTmpl;
-      "_tennousei" = {
-        match = ''
-          host tennousei exec "tailscale status"
-        '';
-        hostname = "tennousei";
-      };
+        "tennousei" = {
+          hostname = vars.tennousei.ipv4;
+        }
+        // serverTmpl;
+        "_tennousei" = {
+          match = ''
+            host tennousei exec "tailscale status"
+          '';
+          hostname = "tennousei";
+        };
 
-      "tsuki" = {hostname = vars.tsuki.ipv4;} // serverTmpl;
-      "_tsuki" = {
-        match = ''
-          host tsuki exec "tailscale status"
-        '';
-        hostname = "tsuki";
-      };
+        "tsuki" = {
+          hostname = vars.tsuki.ipv4;
+        }
+        // serverTmpl;
+        "_tsuki" = {
+          match = ''
+            host tsuki exec "tailscale status"
+          '';
+          hostname = "tsuki";
+        };
 
-      "suisei" = {hostname = vars.suisei.ipv4Public;} // serverTmpl;
-      "_suisei" = {
-        match = ''
-          host suisei exec "tailscale status"
-        '';
-        hostname = "suisei";
+        "suisei" = {
+          hostname = vars.suisei.ipv4Public;
+        }
+        // serverTmpl;
+        "_suisei" = {
+          match = ''
+            host suisei exec "tailscale status"
+          '';
+          hostname = "suisei";
+        };
       };
-    };
   };
 }

@@ -1,4 +1,5 @@
-{username, ...}: {
+{ username, ... }:
+{
   imports = [
     ../../modules/nixos/server
 
@@ -10,13 +11,15 @@
   ];
 
   home-manager = {
-    users.${username} = {...}: {
-      imports = [./home];
-      home = {
-        enableNixpkgsReleaseCheck = false;
-        stateVersion = "24.11";
+    users.${username} =
+      { ... }:
+      {
+        imports = [ ./home ];
+        home = {
+          enableNixpkgsReleaseCheck = false;
+          stateVersion = "24.11";
+        };
       };
-    };
   };
 
   system.stateVersion = "24.11";

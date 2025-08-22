@@ -1,4 +1,5 @@
-{...}: {
+{ ... }:
+{
   disko = {
     devices = {
       disk = {
@@ -22,7 +23,10 @@
                   type = "filesystem";
                   format = "vfat";
                   mountpoint = "/boot";
-                  mountOptions = ["fmask=0077" "dmask=0077"];
+                  mountOptions = [
+                    "fmask=0077"
+                    "dmask=0077"
+                  ];
                 };
               };
 
@@ -32,7 +36,11 @@
                   type = "filesystem";
                   format = "btrfs";
                   mountpoint = "/";
-                  mountOptions = ["compress-force=zstd" "nosuid" "nodev"];
+                  mountOptions = [
+                    "compress-force=zstd"
+                    "nosuid"
+                    "nodev"
+                  ];
                 };
               };
             };

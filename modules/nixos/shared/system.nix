@@ -1,4 +1,5 @@
-{lib, ...}: {
+{ lib, ... }:
+{
   boot.loader = {
     timeout = 8; # Wait for x seconds to select the boot entry
     grub = {

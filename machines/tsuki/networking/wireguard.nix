@@ -2,7 +2,8 @@
   config,
   secrets,
   ...
-}: {
+}:
+{
   age.secrets."wg0-conf" = {
     file = "${secrets}/ages/tsuki-wg0-conf.age";
     owner = "root";
@@ -16,12 +17,15 @@
     };
 
     firewall = {
-      allowedTCPPorts = [55555];
-      allowedUDPPorts = [55555 51820];
+      allowedTCPPorts = [ 55555 ];
+      allowedUDPPorts = [
+        55555
+        51820
+      ];
       checkReversePath = false;
     };
   };
 
   # https://rakhesh.com/linux-bsd/tailscale-wireguard-co-existing-or-i-love-policy-based-routing
-  systemd.services.tailscaled.after = ["wg-quick-wg0.service"];
+  systemd.services.tailscaled.after = [ "wg-quick-wg0.service" ];
 }
