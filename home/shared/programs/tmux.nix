@@ -25,17 +25,17 @@
     ];
     extraConfig =
       ''
-        # -- Remap Prefix ---------------------------------------------------------------
+        # --- Remap Prefix -----------------------------------------------------
         unbind C-b
         set -g prefix C-a
         bind-key C-a send-prefix
 
-        # -- Window Management ----------------------------------------------------------
+        # --- Window Management ------------------------------------------------
         set -g renumber-windows on
         set -g allow-rename off
         bind c new-window -c '#{pane_current_path}'
 
-        # -- Pane Management -----------------------------------------------------------
+        # --- Pane Management --------------------------------------------------
         bind b break-pane -d
         bind '\' split-window -h -c '#{pane_current_path}'
         bind - split-window -v -c '#{pane_current_path}'
@@ -46,30 +46,30 @@
         bind -n M-k select-pane -U
         bind -n M-j select-pane -D
 
-        # -- Easy Reload ---------------------------------------------------------------
+        # --- Easy Reload ------------------------------------------------------
         bind r source-file ~/.config/tmux/tmux.conf \; display "Config reloaded!"
 
-        # -- Modifier Keys -------------------------------------------------------------
+        # --- Modifier Keys ----------------------------------------------------
         set -s extended-keys off
         bind-key -T root C-\; send-keys Escape "[59;5u"
       ''
       + ''
-        # -- General -------------------------------------------------------------------
+        # --- General ----------------------------------------------------------
         set -g status on                  # Turn the status bar on
         set -g status-interval 1          # Refresh status bar every 1 second
         set -g status-justify left        # Center the window list
         set -g status-position bottom     # Position the status bar at the bottom
 
-        # -- Colors --------------------------------------------------------------------
+        # --- Colors ------------------------------------------------------------
         set -g status-style fg=white,bg=black
         setw -g window-status-current-style fg=black,bg=green
         setw -g window-status-style fg=white,bg=black
 
-        # -- Pane Styling --------------------------------------------------------------
+        # --- Pane Styling -----------------------------------------------------
         set -g pane-border-style 'fg=green'
         set -g pane-active-border-style 'fg=green'
 
-        # -- Content -------------------------------------------------------------------
+        # --- Content ----------------------------------------------------------
         set -g status-left-length 20
         set -g status-left "[#{S}] " # Session name
 
