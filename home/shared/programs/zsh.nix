@@ -36,7 +36,11 @@
         source ${../config/zsh/extras.zsh}
         source ${../config/zsh/functions.zsh}
       '')
-      (lib.mkOrder 1500 "fastfetch")
+      (lib.mkOrder 1500 ''
+        export OPENAI_API_KEY=$(${pkgs.coreutils}/bin/cat ${config.age.secrets."openai-api-key".path})
+        export CODESTRAL_API_KEY=$(${pkgs.coreutils}/bin/cat ${config.age.secrets."codestral-api-key".path})
+      '')
+      (lib.mkOrder 1550 "fastfetch")
     ];
     shellAliases = {
       "gis" = "git status";
@@ -52,9 +56,5 @@
         file = "share/zsh-vi-mode/zsh-vi-mode.plugin.zsh";
       }
     ];
-    sessionVariables = {
-      OPENAI_API_KEY = "$(${pkgs.coreutils}/bin/cat ${config.age.secrets."openai-api-key".path})";
-      CODESTRAL_API_KEY = "$(${pkgs.coreutils}/bin/cat ${config.age.secrets."codestral-api-key".path})";
-    };
   };
 }
