@@ -5,7 +5,7 @@
       iptables -t nat -A POSTROUTING -o tailscale0 -j MASQUERADE
     '';
     extraStopCommands = ''
-      iptables -t nat -D POSTROUTING -o tailscale0 -j MASQUERADE || true
+      iptables -t nat -D POSTROUTING -o tailscale0 -j MASQUERADE
     '';
     trustedInterfaces = [ "tailscale0" ];
   };

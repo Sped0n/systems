@@ -10,6 +10,12 @@
       log-opts = {
         tag = "docker#{{.Name}}({{.ID}})";
       };
+      default-address-pools = [
+        {
+          base = "172.16.0.0/12";
+          size = 24;
+        }
+      ];
     };
   };
 
@@ -17,8 +23,7 @@
     extraCommands =
       # For docker.host.internal
       ''
-        iptables -I INPUT 1 -s 172.16.0.0/12 -p tcp -d 172.17.0.1 -j ACCEPT
-        iptables -I INPUT 2 -s 172.16.0.0/12 -p udp -d 172.17.0.1 -j ACCEPT
+        iptables -I nixos-fw 1 -i br+ -j ACCEPT
       ''
       +
       # Need to MASQUERADE after we set docker's iptables to false
@@ -28,13 +33,12 @@
     extraStopCommands =
       # For docker.host.internal
       ''
-        iptables -D INPUT -s 172.16.0.0/12 -p tcp -d 172.17.0.1 -j ACCEPT || true
-        iptables -D INPUT -s 172.16.0.0/12 -p udp -d 172.17.0.1 -j ACCEPT || true
+        iptables -D nixos-fw -i br+ -j ACCEPT
       ''
       +
       # Need to MASQUERADE after we set docker's iptables to false
       ''
-        iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE || true
+        iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
       '';
     trustedInterfaces = [ "docker0" ];
   };
