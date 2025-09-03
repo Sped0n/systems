@@ -5,10 +5,14 @@
     pingLimit = "--limit 10/minute --limit-burst 5";
     checkReversePath = false;
   };
+
   services.fail2ban = {
     enable = true;
-    bantime = "1h";
-    bantime-increment.enable = true;
+    bantime = "12h";
+    bantime-increment = {
+      enable = true;
+      rndtime = "30m";
+    };
   };
 
   # BBR
