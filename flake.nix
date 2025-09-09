@@ -150,7 +150,7 @@
             system = "x86_64-linux";
             unstablePkgsInput = nixpkgs-unstable;
             unstableConfigOverrides = {
-              permittedInsecurePackages = [ "beekeeper-studio-5.2.12" ];
+              permittedInsecurePackages = [ "beekeeper-studio-5.3.4" ];
             };
           };
           modules = commonNixosModules ++ [ ./machines/shigoto ];
