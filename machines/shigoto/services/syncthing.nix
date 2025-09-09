@@ -1,6 +1,5 @@
 {
   home,
-  pkgs-unstable,
   username,
   ...
 }:
@@ -15,7 +14,6 @@
   services = {
     syncthing = {
       enable = true;
-      package = pkgs-unstable.syncthing;
       group = "users";
       user = username;
       dataDir = "${home}/Documents/syncthing/data";
