@@ -15,6 +15,8 @@ return {
       -- c/cpp
       "clangd",
       "neocmake",
+      -- zig
+      "zls",
       -- typescript
       "vtsls",
       "eslint",
