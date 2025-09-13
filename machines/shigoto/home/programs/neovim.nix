@@ -9,6 +9,6 @@
     neocmakelsp
 
     # zig
-    zls
+    zls_0_15
   ];
 }

@@ -14,6 +14,6 @@
     pnpm
 
     # zig
-    zls-darwin
+    zls_0_15
   ];
 }
