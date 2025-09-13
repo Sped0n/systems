@@ -12,7 +12,8 @@
 
   services.tailscale = {
     enable = true;
-    package = pkgs-unstable.tailscale;
+    # FIXME: see https://github.com/NixOS/nixpkgs/issues/438765
+    package = pkgs-unstable.tailscale.overrideAttrs { doCheck = false; };
     interfaceName = "tailscale0";
     openFirewall = true;
   };
