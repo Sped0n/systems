@@ -28,22 +28,7 @@ return {
         mouse = "a",
       },
     },
-    mappings = {
-      n = { -- normal mode
-        -- buffer navigation
-        ["]b"] = { function() require("astrocore.buffer").nav(vim.v.count1) end, desc = "Next buffer" },
-        ["[b"] = { function() require("astrocore.buffer").nav(-vim.v.count1) end, desc = "Previous buffer" },
-        ["<Leader>bd"] = {
-          function()
-            require("astroui.status.heirline").buffer_picker(
-              function(bufnr) require("astrocore.buffer").close(bufnr) end
-            )
-          end,
-          desc = "Close buffer from tabline",
-        },
-        ["<Leader>b"] = { desc = "Buffers" },
-      },
-    },
+    mappings = {},
     autocmds = {
       indent = {
         {

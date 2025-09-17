@@ -9,7 +9,6 @@ return {
   { import = "astrocommunity.colorscheme.kanagawa-nvim" },
   -- editor
   { import = "astrocommunity.editing-support.conform-nvim" },
-  { import = "astrocommunity.recipes.disable-tabline" },
   { import = "astrocommunity.git.git-blame-nvim" },
   { import = "astrocommunity.completion.minuet-ai-nvim" },
   { import = "astrocommunity.recipes.heirline-vscode-winbar" },
