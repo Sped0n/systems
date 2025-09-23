@@ -44,8 +44,13 @@
     ];
     shellAliases = {
       "gis" = "git status";
-      "gilo" = "git log --oneline";
+      "glo" =
+        "git log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --branches";
+      "grsh1" = "git reset --soft HEAD~1";
+      "gai" = "git add -i && git status";
+      "gsu" = "git submodule update --init --recursive --progress";
       "exl" = "exa -l";
+      "exaa" = "exa -a";
       ".." = "cd ..";
       "..." = "cd ../..";
     };
