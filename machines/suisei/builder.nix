@@ -18,8 +18,8 @@
 
   nix = {
     gc = {
-      dates = "monthly";
-      options = "--delete-older-than 30d";
+      dates = "*-01/2-01 00:00";
+      options = "--delete-older-than 60d";
     };
     settings = {
       keep-outputs = true;
