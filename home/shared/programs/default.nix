@@ -10,7 +10,6 @@
     ./ghostty.nix
     ./uv.nix
     ./direnv.nix
-    ./codegpt.nix
     ./tmux.nix
     ./aichat.nix
     ./eza.nix
