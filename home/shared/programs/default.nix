@@ -13,12 +13,8 @@
     ./codegpt.nix
     ./tmux.nix
     ./aichat.nix
+    ./eza.nix
   ];
-
-  programs.eza = {
-    enable = true;
-    enableZshIntegration = true;
-  };
 
   programs.bat = {
     enable = true;
