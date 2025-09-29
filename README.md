@@ -10,7 +10,7 @@
 ├── machines   # per device configurations
 ├── modules    # reuseable nix modules
 ├── overlays   # nixpkgs overlays
-└── pkgs       # custom nix packages
+└── packages   # custom nix packages
 ```
 
 ### [Machines](https://github.com/Sped0n/systems/tree/main/machines)
