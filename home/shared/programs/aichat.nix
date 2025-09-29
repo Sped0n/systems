@@ -26,20 +26,22 @@ in
     home.packages = [ pkgs-unstable.aichat ];
 
     xdg.configFile = {
-      "aichat/config.yaml" = {
-        source = yamlFormat.generate "aichat-config" {
-          model = "openai:${cfg.model}";
-          keybinding = "vi";
-          highlight = true;
-          light_theme = false;
-          clients = [
-            {
-              type = "openai";
-              api_base = "https://openrouter.ai/api/v1";
-            }
-          ];
-        };
+      "aichat/config.yaml".source = yamlFormat.generate "aichat-config" {
+        model = "openai:${cfg.model}";
+        keybinding = "vi";
+        highlight = true;
+        light_theme = false;
+        clients = [
+          {
+            type = "openai";
+            api_base = "https://openrouter.ai/api/v1";
+          }
+        ];
       };
+      "aichat/roles/aicommit.md".source = ../config/aichat/roles/aicommit.md;
     };
+
+    programs.zsh.shellAliases."aicommit" =
+      "git diff --cached --quiet && echo 'No staged changes.' || git diff --cached | aichat -r aicommit | git commit -s -e -F -";
   };
 }
