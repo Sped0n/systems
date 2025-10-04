@@ -9,6 +9,7 @@
         "$fill"
         "$cmd_duration"
         "$line_break"
+        "$status"
         "$character"
       ];
       command_timeout = 1000;
@@ -203,7 +204,12 @@
         symbol = "solidity ";
       };
       status = {
-        symbol = "[x](bold red) ";
+        disabled = false;
+        symbol = "";
+        pipestatus = true;
+        pipestatus_format = "$pipestatus [\\($status\\)]($style) ";
+        pipestatus_separator = "[,]($style)";
+        pipestatus_segment_format = "[$symbol$status]($style)";
       };
       sudo = {
         symbol = "sudo ";
