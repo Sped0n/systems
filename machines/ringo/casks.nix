@@ -17,9 +17,6 @@
     # Browsers
     "brave-browser"
 
-    # AI
-    "chatwise"
-
     # Creativity
     "affinity-photo"
     "affinity-designer"
