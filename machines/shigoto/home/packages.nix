@@ -11,9 +11,6 @@
       cdecl
     ])
     ++ (with pkgs-unstable; [
-      imhex
-      beekeeper-studio
-
       teams-for-linux
       obsidian
       gimp3-with-plugins
