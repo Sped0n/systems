@@ -1,6 +1,5 @@
 {
   home,
-  lib,
   pkgs,
   username,
   ...
@@ -13,10 +12,7 @@
     ./casks.nix
   ];
 
-  nix.gc.interval = lib.mkDefault {
-    Hour = 0;
-    Minute = 0;
-  };
+  nix.enable = false; # determinate
 
   users.users.${username} = {
     inherit home;

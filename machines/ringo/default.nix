@@ -4,15 +4,8 @@
     ../../modules/darwin
 
     ./agenix.nix
-    ./builder.nix
     ./casks.nix
   ];
-
-  nix.gc.interval = {
-    Weekday = 0;
-    Hour = 4;
-    Minute = 30;
-  };
 
   nix-homebrew = {
     enable = true;

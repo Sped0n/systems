@@ -1,5 +1,4 @@
 {
-  lib,
   pkgs,
   pkgs-unstable,
   specialArgs,
@@ -32,28 +31,22 @@
   };
 
   # Nix
-  nix = {
-    package = pkgs.nix;
-    settings = {
-      trusted-users = [
-        "${username}"
-        "@admin"
-      ];
-      experimental-features = "nix-command flakes";
-      nix-path = [ "nixpkgs=${pkgs.path}" ];
-      download-buffer-size = 524288000;
-      substituters = [
-        "https://cache.nixos.org"
-        "https://nix-community.cachix.org"
-      ];
-      trusted-public-keys = [
-        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-      ];
-    };
-    gc = {
-      automatic = true;
-      options = lib.mkDefault "--delete-older-than 21d";
-    };
+  nix.settings = {
+    trusted-users = [
+      "${username}"
+      "@admin"
+    ];
+    experimental-features = "nix-command flakes";
+    download-buffer-size = 524288000;
+    substituters = [
+      "https://cache.nixos.org"
+      "https://nix-community.cachix.org"
+      "https://install.determinate.systems"
+    ];
+    trusted-public-keys = [
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM="
+    ];
   };
 
   # Home Manager

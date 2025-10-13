@@ -16,6 +16,10 @@
     };
 
     # NixOS
+    determinate = {
+      url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     home-manager = {
       url = "github:nix-community/home-manager/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -54,6 +58,7 @@
       nixpkgs-darwin,
       nixpkgs-darwin-unstable,
       secrets,
+      determinate,
       home-manager,
       agenix,
       disko,
@@ -102,6 +107,7 @@
         // inputs;
 
       commonNixosModules = [
+        determinate.nixosModules.default
         disko.nixosModules.disko
         agenix.nixosModules.default
         home-manager.nixosModules.home-manager
