@@ -1,0 +1,43 @@
+{
+  config,
+  pkgs-unstable,
+  secrets,
+  ...
+}:
+{
+  age.secrets."suisei-forgejo-runner-token" = {
+    file = "${secrets}/ages/suisei-forgejo-runner-token.age";
+    owner = "root";
+    mode = "0400";
+  };
+
+  services.gitea-actions-runner = {
+    package = pkgs-unstable.forgejo-runner;
+    instances.alfa = {
+      enable = true;
+      name = "suisei-alfa";
+      tokenFile = config.age.secrets."suisei-forgejo-runner-token".path;
+      url = "https://git.sped0n.com/";
+      labels = [
+        "docker-aarch64:docker://node:lts-trixie"
+        "nixos-aarch64:docker://nixos/nix"
+      ];
+      settings = {
+        runner = {
+          capacity = 2;
+          fetch_interval = "30s";
+        };
+        container = {
+          docker_host = "automount";
+          options = builtins.concatStringsSep " " [
+            "--memory=6g"
+            "--memory-swap=10g"
+            "--cpus=2"
+          ];
+        };
+      };
+    };
+  };
+
+  networking.firewall.trustedInterfaces = [ "br-+" ];
+}
