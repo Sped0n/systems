@@ -4,7 +4,6 @@
     with pkgs;
     # Core
     [
-      gcc
       coreutils
       findutils
       diffutils
@@ -30,7 +29,6 @@
       nali
       hyperfine
       ast-grep
-      act
       bfg-repo-cleaner
       yek
 

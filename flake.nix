@@ -10,16 +10,14 @@
     nixpkgs-darwin-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     # Misc
+    dix.url = "https://flakehub.com/f/DeterminateSystems/nix-src/*";
     secrets = {
       url = "git+ssh://git@github.com/Sped0n/secrets";
       flake = false;
     };
 
     # NixOS
-    determinate = {
-      url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
     home-manager = {
       url = "github:nix-community/home-manager/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -57,6 +55,7 @@
       nixpkgs-qemu8,
       nixpkgs-darwin,
       nixpkgs-darwin-unstable,
+      dix,
       secrets,
       determinate,
       home-manager,

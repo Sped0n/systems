@@ -1,6 +1,8 @@
 {
+  dix,
   home,
   pkgs,
+  pkgs-unstable,
   username,
   ...
 }:
@@ -13,6 +15,12 @@
   ];
 
   nix.enable = false; # determinate
+
+  environment.systemPackages = [
+    (pkgs-unstable.nixos-rebuild-ng.override {
+      nix = dix.packages."${pkgs.stdenv.system}".default;
+    })
+  ];
 
   users.users.${username} = {
     inherit home;

@@ -14,10 +14,16 @@ pkgs_unstable := if os() == "macos" { "nixpkgs-darwin-unstable" } else { "nixpkg
 pkgs_all := if os() == "macos" { "nixpkgs-darwin nixpkgs-darwin-unstable" } else { "nixpkgs nixpkgs-unstable" }
 
 # Platform-specific flake inputs
-flakes := if os() == "macos" { "home-manager-darwin agenix-darwin nix-darwin nix-homebrew" } else { "home-manager agenix disko" }
+flakes := (
+    if os() == "macos" { 
+        "dix home-manager-darwin agenix-darwin nix-darwin nix-homebrew" 
+    } else { 
+        "dix determinate home-manager agenix disko"
+    }
+)
 
 # Deploy-specific inputs (always Linux)
-deploy_flakes := "home-manager agenix disko"
+deploy_flakes := "home-manager agenix disko determinate"
 deploy_pkgs_unstable := "nixpkgs-unstable"
 deploy_pkgs_all := "nixpkgs nixpkgs-unstable"
 

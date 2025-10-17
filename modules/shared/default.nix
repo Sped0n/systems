@@ -1,4 +1,5 @@
 {
+  dix,
   pkgs,
   pkgs-unstable,
   specialArgs,
@@ -65,6 +66,5 @@
   # System Packages
   environment.systemPackages = [
     pkgs.vim
-    pkgs-unstable.nixos-rebuild-ng
   ];
 }

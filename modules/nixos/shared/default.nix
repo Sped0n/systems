@@ -1,4 +1,8 @@
-{ lib, ... }:
+{
+  lib,
+  pkgs-unstable,
+  ...
+}:
 {
   imports = [
     ../../shared
@@ -14,4 +18,8 @@
     dates = lib.mkDefault "daily";
     options = lib.mkDefault "--delete-older-than 21d";
   };
+
+  environment.systemPackages = [
+    pkgs-unstable.nixos-rebuild-ng
+  ];
 }
