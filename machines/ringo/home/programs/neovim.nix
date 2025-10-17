@@ -2,7 +2,7 @@
 {
   home.packages = with pkgs-unstable; [
     # rust
-    rustup
+    rust-analyzer
 
     # c/cpp
     clang-tools
