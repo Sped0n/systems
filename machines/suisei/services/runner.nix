@@ -34,6 +34,7 @@
             "--memory-swap=10g"
             "--cpus=2"
           ];
+          force_pull = true;
         };
       };
     };
