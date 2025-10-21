@@ -6,12 +6,46 @@
   vars,
   ...
 }:
+
+let
+  cfg = config.services.my-restic;
+in
 {
-  options._services.restic = {
+  options.services.my-restic = {
     enable = lib.mkEnableOption "a custom Restic backup configuration with daily backups, weekly checks, and failure notifications";
+
+    paths = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Directories that should be included in the Restic backup.";
+    };
+
+    exclude = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Exclude rules applied to the Restic backup.";
+    };
+
+    pruneOpts = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Additional prune options passed to Restic.";
+    };
+
+    backupPrepareCommand = lib.mkOption {
+      type = lib.types.nullOr lib.types.lines;
+      default = null;
+      description = "Command executed before the backup runs.";
+    };
+
+    backupCleanupCommand = lib.mkOption {
+      type = lib.types.nullOr lib.types.lines;
+      default = null;
+      description = "Command executed after the backup finishes.";
+    };
   };
 
-  config = lib.mkIf config._services.restic.enable {
+  config = lib.mkIf cfg.enable {
     age.secrets =
       let
         owner = "root";
@@ -22,7 +56,6 @@
           inherit owner mode;
           file = "${secrets}/ages/restic-env.age";
         };
-
         "restic-password" = {
           inherit owner mode;
           file = "${secrets}/ages/restic-password.age";
@@ -47,6 +80,15 @@
           OnCalendar = "*-*-* 03:00:00";
           Persistent = true;
         };
+        paths = cfg.paths;
+        exclude = cfg.exclude;
+        pruneOpts = cfg.pruneOpts;
+      }
+      // lib.optionalAttrs (cfg.backupPrepareCommand != null) {
+        backupPrepareCommand = cfg.backupPrepareCommand;
+      }
+      // lib.optionalAttrs (cfg.backupCleanupCommand != null) {
+        backupCleanupCommand = cfg.backupCleanupCommand;
       };
     };
 

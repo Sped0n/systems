@@ -4,9 +4,8 @@
   ...
 }:
 {
-  _services.restic.enable = true;
-
-  services.restic.backups."main" = {
+  services.my-restic = {
+    enable = true;
     paths = [ "${home}/infra" ];
     exclude = [
       "*.log"
