@@ -7,7 +7,6 @@
 }:
 let
   cfg = config.programs.aichat;
-  inherit (lib) mkEnableOption mkIf types;
   yamlFormat = pkgs.formats.yaml { };
 
   aicommitScript = pkgs.writeShellApplication {
@@ -49,17 +48,17 @@ let
 in
 {
   options.programs.aichat = {
-    enable = mkEnableOption "aichat";
+    enable = lib.mkEnableOption "aichat";
 
     model = lib.mkOption {
-      type = types.str;
+      type = lib.types.str;
       default = "openai/gpt-4.1-mini";
       description = "The OpenAI model to use.";
       example = "openai/gpt-4.1-mini";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     home.packages = [
       pkgs-unstable.aichat
       aicommitScript
