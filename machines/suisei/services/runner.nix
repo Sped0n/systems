@@ -5,8 +5,8 @@
   ...
 }:
 {
-  age.secrets."suisei-forgejo-runner-token" = {
-    file = "${secrets}/ages/suisei-forgejo-runner-token.age";
+  age.secrets."forgejo-runner-token" = {
+    file = "${secrets}/ages/forgejo-runner-token.age";
     owner = "root";
     mode = "0400";
   };
@@ -16,11 +16,11 @@
     instances.alfa = {
       enable = true;
       name = "suisei-alfa";
-      tokenFile = config.age.secrets."suisei-forgejo-runner-token".path;
+      tokenFile = config.age.secrets."forgejo-runner-token".path;
       url = "https://git.sped0n.com/";
       labels = [
+        "docker:docker://node:lts-trixie"
         "docker-aarch64:docker://node:lts-trixie"
-        "nixos-aarch64:docker://nixos/nix"
       ];
       settings = {
         runner = {
