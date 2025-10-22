@@ -33,20 +33,15 @@
         ];
       };
 
-      outputs = {
-        loki = [
-          {
-            domain = "http://tsuki:9428";
-            endpoint = "/insert/loki/api/v1/push";
-            gzip_request = true;
-            sanitize_label_names = true;
-            namepass = [ "traefik_access_log" ];
-          }
-        ];
-      };
+      outputs.loki = [
+        {
+          domain = "http://tsuki:9428";
+          endpoint = "/insert/loki/api/v1/push";
+          gzip_request = true;
+          sanitize_label_names = true;
+          namepass = [ "traefik_access_log" ];
+        }
+      ];
     };
   };
-
-  users.users.telegraf.extraGroups = [ "docker" ];
-  systemd.services.telegraf.after = [ "tailscaled.service" ];
 }

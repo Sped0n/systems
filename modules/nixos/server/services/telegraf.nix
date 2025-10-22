@@ -1,5 +1,6 @@
 {
   config,
+  lib,
   pkgs,
   pkgs-unstable,
   ...
@@ -83,7 +84,7 @@
 
   services = {
     telegraf = {
-      enable = true;
+      enable = lib.mkDefault true;
       package = pkgs-unstable.telegraf;
       extraConfig = {
         agent = {
