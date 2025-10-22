@@ -12,7 +12,6 @@
     "xhci_pci"
     "virtio_scsi"
     "usbhid"
-    "sd_mod"
     "virtio_pci"
   ];
 }
