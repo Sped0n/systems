@@ -22,4 +22,11 @@
       };
     };
   };
+
+  # FIXME: weird routing issue (perhaps something wrong on the singtel side)
+  systemd.services."cloudflared-tunnel-${vars.tennousei.cfTunnelId}" = {
+    environment = {
+      TUNNEL_REGION = "us";
+    };
+  };
 }
