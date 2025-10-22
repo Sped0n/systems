@@ -6,8 +6,7 @@
     ./system.nix
     ./disko.nix
     ./builder.nix
-
-    ./networking
+    ./networking.nix
     ./services
   ];
 

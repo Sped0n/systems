@@ -1,32 +1,28 @@
 { vars, ... }:
 {
-  imports = [
-    ./wireguard.nix
-  ];
-
   networking = {
-    hostName = "tsuki";
+    hostName = "suisei";
     interfaces.eth0 = {
       ipv4.addresses = [
         {
-          address = vars.tsuki.ipv4;
+          address = vars.suisei.ipv4;
           prefixLength = 24;
         }
       ];
       ipv6.addresses = [
         {
-          address = vars.tsuki.ipv6;
-          prefixLength = 64;
+          address = vars.suisei.ipv6;
+          prefixLength = 128;
         }
       ];
     };
 
     defaultGateway = {
-      address = vars.tsuki.ipv4Gateway;
+      address = vars.suisei.ipv4Gateway;
       interface = "eth0";
     };
     defaultGateway6 = {
-      address = vars.tsuki.ipv6Gateway;
+      address = vars.suisei.ipv6Gateway;
       interface = "eth0";
     };
   };

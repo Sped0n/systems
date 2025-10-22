@@ -10,8 +10,8 @@
 
     ./system.nix
     ./users.nix
-    ./networking.nix
     ./docker.nix
+    ./networking
   ];
 
   # system wide gc

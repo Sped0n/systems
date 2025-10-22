@@ -4,8 +4,8 @@
     ../../modules/nixos/desktop
 
     ./system
-    ./networking
     ./services
+    ./networking.nix
     ./disko.nix
     ./agenix.nix
   ];
