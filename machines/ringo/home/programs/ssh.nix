@@ -79,6 +79,11 @@
           '';
           hostname = "suisei";
         };
+
+        "kinsei" = {
+          hostname = vars.kinsei.ipv4;
+        }
+        // serverTmpl;
       };
   };
 }

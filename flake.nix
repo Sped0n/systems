@@ -174,6 +174,15 @@
           };
           modules = commonNixosModules ++ [ ./machines/suisei ];
         };
+
+        "kinsei" = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = genSpecialArgs {
+            system = "x86_64-linux";
+            unstablePkgsInput = nixpkgs-unstable;
+          };
+          modules = commonNixosModules ++ [ ./machines/kinsei ];
+        };
       };
     };
 }

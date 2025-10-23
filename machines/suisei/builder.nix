@@ -80,6 +80,11 @@
                 '';
                 hostname = "tsuki";
               };
+
+              "kinsei" = {
+                hostname = vars.kinsei.ipv4;
+              }
+              // serverTmpl;
             };
           };
       };
