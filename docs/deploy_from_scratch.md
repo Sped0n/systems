@@ -1,6 +1,26 @@
-# Machines
+# Deploy from Scratch
 
-## Deploy from scratch
+## How-tos
+
+### Get Hardware Configuration from Non-NixOS Host
+
+First install Nix on the host with:
+
+```bash
+sh <(curl -L https://nixos.org/nix/install) --daemon
+```
+
+Then exit the terminal and open a new one. Run:
+
+```bash
+nix-env -iE "_: with import <nixpkgs/nixos> { configuration = {}; }; \
+  with config.system.build; [ nixos-generate-config ]"
+nixos-generate-config --no-filesystems --root /tmp
+```
+
+You will find the hardware configuration file under `/tmp/etc/nixos/hardware-configuration.nix`.
+
+## Steps
 
 ### macOS
 
@@ -31,8 +51,8 @@
    - User need to have a nix environment to run this command.
    - Run the command under `/Users/spedon/.config/systems`.
 4. Key in the password of the VPS if prompted.
-5. You are good to go!
-6. Remove the temporary key from the GitHub.
+5. Wait for the command to finish.
+6. You are good to go!
 
 ### NixOS (desktop)
 
