@@ -120,36 +120,18 @@
     in
     {
       darwinConfigurations = {
-        "ringo" = nix-darwin.lib.darwinSystem {
+        "dendrobium" = nix-darwin.lib.darwinSystem {
           system = "aarch64-darwin";
           specialArgs = genSpecialArgs {
             system = "aarch64-darwin";
             unstablePkgsInput = nixpkgs-darwin-unstable;
           };
-          modules = commonDarwinModules ++ [ ./machines/ringo ];
+          modules = commonDarwinModules ++ [ ./machines/dendrobium ];
         };
       };
 
       nixosConfigurations = {
-        "tsuki" = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = genSpecialArgs {
-            system = "x86_64-linux";
-            unstablePkgsInput = nixpkgs-unstable;
-          };
-          modules = commonNixosModules ++ [ ./machines/tsuki ];
-        };
-
-        "tennousei" = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = genSpecialArgs {
-            system = "x86_64-linux";
-            unstablePkgsInput = nixpkgs-unstable;
-          };
-          modules = commonNixosModules ++ [ ./machines/tennousei ];
-        };
-
-        "shigoto" = nixpkgs.lib.nixosSystem {
+        "stargazer" = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
             system = "x86_64-linux";
@@ -158,10 +140,28 @@
               permittedInsecurePackages = [ "beekeeper-studio-5.3.4" ];
             };
           };
-          modules = commonNixosModules ++ [ ./machines/shigoto ];
+          modules = commonNixosModules ++ [ ./machines/stargazer ];
         };
 
-        "suisei" = nixpkgs.lib.nixosSystem rec {
+        "unicorn" = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = genSpecialArgs {
+            system = "x86_64-linux";
+            unstablePkgsInput = nixpkgs-unstable;
+          };
+          modules = commonNixosModules ++ [ ./machines/unicorn ];
+        };
+
+        "banshee" = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = genSpecialArgs {
+            system = "x86_64-linux";
+            unstablePkgsInput = nixpkgs-unstable;
+          };
+          modules = commonNixosModules ++ [ ./machines/banshee ];
+        };
+
+        "calibarn" = nixpkgs.lib.nixosSystem rec {
           system = "aarch64-linux";
           specialArgs = genSpecialArgs {
             system = "aarch64-linux";
@@ -172,16 +172,16 @@
               };
             };
           };
-          modules = commonNixosModules ++ [ ./machines/suisei ];
+          modules = commonNixosModules ++ [ ./machines/calibarn ];
         };
 
-        "kinsei" = nixpkgs.lib.nixosSystem {
+        "exia" = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
             system = "x86_64-linux";
             unstablePkgsInput = nixpkgs-unstable;
           };
-          modules = commonNixosModules ++ [ ./machines/kinsei ];
+          modules = commonNixosModules ++ [ ./machines/exia ];
         };
       };
     };

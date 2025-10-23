@@ -1,5 +1,6 @@
 { lib, ... }:
 {
+  # grub
   boot.loader = {
     timeout = 8; # Wait for x seconds to select the boot entry
     grub = {
@@ -11,10 +12,10 @@
     };
   };
 
-  # Timezone
+  # timezone
   time.timeZone = "Asia/Singapore";
 
-  # Power management
+  # power management
   services = {
     power-profiles-daemon = {
       enable = true;
@@ -31,14 +32,13 @@
     };
   };
 
-  # Swap
+  # swap
   zramSwap = {
     enable = true;
     algorithm = "lz4";
     memoryPercent = 50;
     priority = 100;
   };
-
   swapDevices = [
     {
       device = "/swapfile";
@@ -46,4 +46,7 @@
       priority = 10;
     }
   ];
+
+  # logrotate
+  services.logrotate.enable = true;
 }

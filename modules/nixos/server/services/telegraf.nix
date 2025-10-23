@@ -175,7 +175,7 @@
 
         outputs = {
           influxdb = {
-            urls = [ "http://tsuki:8428" ];
+            urls = [ "http://unicorn:8428" ];
             database = "victoriametrics";
             skip_database_creation = true;
             exclude_retention_policy_tag = true;
@@ -196,7 +196,7 @@
           };
           loki = [
             {
-              domain = "http://tsuki:9428";
+              domain = "http://unicorn:9428";
               endpoint = "/insert/loki/api/v1/push";
               gzip_request = true;
               sanitize_label_names = true;

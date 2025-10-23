@@ -21,7 +21,7 @@
     ./security.nix
   ];
 
-  networking.hostName = "ringo";
+  networking.hostName = "dendrobium";
 
   system = {
     stateVersion = 6;

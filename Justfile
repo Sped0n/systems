@@ -190,8 +190,8 @@ deploy target_host:
     #!/bin/sh -e
     export NIX_SSHOPTS="-o ControlMaster=no"
     echo "Deploying configuration to {{target_host}}..."
-    echo "Running: {{deploy_rebuild_cmd}} switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}} --use-substitutes"
-    {{deploy_rebuild_cmd}} switch --flake .#{{target_host}} --build-host root@suisei --target-host root@{{target_host}} --use-substitutes
+    echo "Running: {{deploy_rebuild_cmd}} switch --flake .#{{target_host}} --build-host root@calibarn --target-host root@{{target_host}} --use-substitutes"
+    {{deploy_rebuild_cmd}} switch --flake .#{{target_host}} --build-host root@calibarn --target-host root@{{target_host}} --use-substitutes
 
 # Update unstable packages for deployment targets
 deploy-update-pkgs:

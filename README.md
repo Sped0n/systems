@@ -6,6 +6,7 @@
 
 ```
 .
+├── docs       # documentation
 ├── home       # home manager configurations
 ├── machines   # per device configurations
 ├── modules    # reuseable nix modules
@@ -13,15 +14,16 @@
 └── packages   # custom nix packages
 ```
 
-### [Machines](https://github.com/Sped0n/systems/tree/main/machines)
+### Machines
 
 ```
 machines
-├── ringo       # macOS (arm64)
-├── shigoto     # NixOS desktop (x86)
-├── suisei      # NixOS server (aarch64)
-├── tennousei   # NixOS server (x86)
-└── tsuki       # NixOS server (x86)
+├── dendrobium    # macOS (aarch64)
+├── stargazer     # NixOS desktop (x86_64)
+├── unicorn       # NixOS server (x86_64)
+├── banshee       # NixOS server (x86_64)
+├── calibarn      # NixOS server (aarch64)
+└── exia          # NixOS server (x86_64)
 ```
 
 ## Usage (Justfile)
