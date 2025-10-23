@@ -1,5 +1,9 @@
 { ... }:
 {
+  systemd.tmpfiles.rules = [
+    "f /var/log/traefik/access.log 0755 root root -"
+  ];
+
   services = {
     logrotate.settings = {
       "/var/log/traefik/access.log" = {
