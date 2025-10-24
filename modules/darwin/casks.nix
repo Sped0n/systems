@@ -12,6 +12,7 @@
     "localsend"
     "rectangle"
     "appcleaner"
+    "keka"
 
     # entertainment
     "iina"

@@ -39,7 +39,6 @@
     # nix run nixpkgs#mas search XXX
     masApps = {
       "Bitwarden" = 1352778147;
-      "FastZip Pro" = 6740171321;
     };
   };
 }
