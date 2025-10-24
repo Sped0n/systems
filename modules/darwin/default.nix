@@ -39,9 +39,7 @@
     # nix run nixpkgs#mas search XXX
     masApps = {
       "Bitwarden" = 1352778147;
-      "Dropover" = 1355679052;
       "FastZip Pro" = 6740171321;
-      "Microsoft Outlook" = 985367838;
     };
   };
 }

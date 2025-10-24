@@ -1,28 +1,43 @@
 { ... }:
 {
   homebrew.casks = [
-    # Development Tools
+    # dev
     "beekeeper-studio"
     "virtualbuddy"
-    "netron"
     "httpie-desktop"
 
-    # Communication Tools
-    "discord"
+    # utility
+    "syncthing-app"
+    "soundsource"
+    "bettermouse"
+    "betterdisplay"
+    "aldente"
+    "shottr"
+    "windows-app"
+    "onedrive"
 
-    # Productivity Tools
+    # communication
+    "telegram"
+    "wechat"
+    "whatsapp"
+
+    # productivity
     "mactex"
     "drawio"
+    "typora"
+    "microsoft-word"
+    "microsoft-excel"
+    "microsoft-powerpoint"
 
-    # Browsers
-    "brave-browser"
+    # ai
+    "chatwise"
 
-    # Creativity
+    # creativity
     "affinity-photo"
     "affinity-designer"
     "handbrake-app"
 
-    # Others
+    # entertainment
     "moonlight"
   ];
 }

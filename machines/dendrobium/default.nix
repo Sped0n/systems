@@ -26,15 +26,9 @@
   };
 
   homebrew.masApps = {
-    "WeChat" = 836500024;
-    "WhatsApp Messenger" = 310633997;
+    "Dropover" = 1355679052;
     "Endel" = 1346247457;
     "VidHub" = 1659622164;
-    "Windows App" = 1295203466;
-    "Microsoft Word" = 462054704;
-    "Microsoft Excel" = 462058435;
-    "Microsoft PowerPoint" = 462062816;
-    "Microsoft OneDrive" = 823766827;
     "PDFgear" = 6469021132;
   };
 }

@@ -1,38 +1,28 @@
 { ... }:
 {
   homebrew.casks = [
-    # Development Tools
+    # dev
     "tailscale-app"
     "ghostty"
     "orbstack"
 
-    # Communication Tools
-    "telegram"
-
-    # Utility Tools
-    "syncthing-app"
+    # utility
     "stats"
-    "soundsource"
-    "bettermouse"
-    "aldente"
-    "betterdisplay"
     "jordanbaird-ice"
     "localsend"
-    "one-switch"
     "rectangle"
-    "shottr"
-    "pearcleaner"
+    "appcleaner"
 
-    # Entertainment Tools
+    # entertainment
     "iina"
 
-    # Productivity Tools
+    # productivity
     "raycast"
     "obsidian"
-    "typora"
     "fantastical"
+    "microsoft-outlook"
 
-    # Browsers
+    # browsers
     "brave-browser"
   ];
 }
