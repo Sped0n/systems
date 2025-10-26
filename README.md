@@ -20,7 +20,6 @@
 ```
 machines
 ├── dendrobium    # macOS (aarch64)
-├── stargazer     # NixOS desktop (x86_64)
 ├── unicorn       # NixOS server (x86_64)
 ├── banshee       # NixOS server (x86_64)
 ├── calibarn      # NixOS server (aarch64)

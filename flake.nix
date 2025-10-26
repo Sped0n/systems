@@ -119,18 +119,6 @@
       };
 
       nixosConfigurations = {
-        "stargazer" = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-          specialArgs = genSpecialArgs {
-            system = "x86_64-linux";
-            unstableConfigOverrides = {
-              permittedInsecurePackages = [ "beekeeper-studio-5.3.4" ];
-            };
-            extraArgs = commonExtraArgs;
-          };
-          modules = commonNixosModules ++ [ ./machines/stargazer ];
-        };
-
         "unicorn" = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
