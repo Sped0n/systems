@@ -1,6 +1,6 @@
-{ home, ... }:
+{ libutils, vars, ... }:
 {
-  home.file."${home}/.hushlogin" = {
-    source = ../config/hushlogin;
+  home.file."${vars.home}/.hushlogin" = {
+    source = (libutils.fromRoot "/home/darwin/config/hushlogin");
   };
 }

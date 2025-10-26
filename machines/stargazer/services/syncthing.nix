@@ -1,10 +1,6 @@
+{ vars, ... }:
 {
-  home,
-  username,
-  ...
-}:
-{
-  systemd.tmpfiles.rules = [
+  systemd.tmpfiles.rules = with vars; [
     "d ${home}/Documents 0755 ${username} users -"
     "d ${home}/Documents/syncthing 0755 ${username} users -"
     "d ${home}/Documents/syncthing/data 0755 ${username} users -"
@@ -12,7 +8,7 @@
   ];
 
   services = {
-    syncthing = {
+    syncthing = with vars; {
       enable = true;
       group = "users";
       user = username;

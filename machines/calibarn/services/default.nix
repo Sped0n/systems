@@ -1,4 +1,4 @@
-{ home, username, ... }:
+{ vars, ... }:
 {
   imports = [
     ./docker.nix
@@ -6,7 +6,7 @@
     ./runner.nix
   ];
 
-  systemd.tmpfiles.rules = [
+  systemd.tmpfiles.rules = with vars; [
     "d ${home}/others 0755 ${username} users -"
   ];
 }

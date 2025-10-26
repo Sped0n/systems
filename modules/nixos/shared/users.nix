@@ -1,20 +1,14 @@
+{ pkgs, vars, ... }:
 {
-  home,
-  pkgs,
-  username,
-  vars,
-  ...
-}:
-{
-  users.mutableUsers = false; # Don't allow mutation of users outside the config.
+  users.mutableUsers = false;
 
   users.groups = {
     docker = { };
     users.gid = 100;
   };
 
-  users.users."${username}" = {
-    inherit home;
+  users.users."${vars.username}" = {
+    home = vars.home;
     hashedPassword = vars.hashedPassword;
     isNormalUser = true;
     extraGroups = [

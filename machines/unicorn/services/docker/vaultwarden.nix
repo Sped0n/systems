@@ -1,6 +1,6 @@
-{ home, ... }:
+{ vars, ... }:
 {
-  services.logrotate.settings."${home}/infra/data/vaultwarden/vaultwarden.log" = {
+  services.logrotate.settings."${vars.home}/infra/data/vaultwarden/vaultwarden.log" = {
     copytruncate = true;
     frequency = "daily";
     size = "10M";

@@ -1,4 +1,4 @@
-{ home, username, ... }:
+{ vars, ... }:
 {
   imports = [
     ./nginx.nix
@@ -7,7 +7,7 @@
     ./docker
   ];
 
-  systemd.tmpfiles.rules = [
+  systemd.tmpfiles.rules = with vars; [
     "d ${home}/others 0755 ${username} users -"
   ];
 }

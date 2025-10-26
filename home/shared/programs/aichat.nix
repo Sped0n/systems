@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  libutils,
   pkgs,
   pkgs-unstable,
   ...
@@ -73,11 +74,13 @@ in
         clients = [
           {
             type = "openai";
-            api_base = "https://openrouter.ai/api/v1";
+            api_base = "https://llmproxy.sped0n.com/openrouter/v1";
           }
         ];
       };
-      "aichat/roles/aicommit.md".source = ../config/aichat/roles/aicommit.md;
+      "aichat/roles/aicommit.md".source = (
+        libutils.fromRoot "/home/shared/config/aichat/roles/aicommit.md"
+      );
     };
 
     programs.zsh.shellAliases."aicommit" = "${aicommitScript}/bin/aicommit";

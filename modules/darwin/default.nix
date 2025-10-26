@@ -1,31 +1,39 @@
 {
-  dix,
-  home,
+  config,
+  determinate-nix-src,
+  libutils,
   pkgs,
   pkgs-unstable,
-  username,
+  vars,
   ...
 }:
 {
   imports = [
-    ../shared
+    (libutils.fromRoot "/modules/shared")
+
     ./system
 
     ./casks.nix
+    ./diff.nix
   ];
 
-  nix.enable = false; # determinate
+  nix.enable = false;
+  determinate-nix.customSettings = config.nix.settings // {
+    builders-use-substitutes = true;
+  };
 
   environment.systemPackages = [
     (pkgs-unstable.nixos-rebuild-ng.override {
-      nix = dix.packages."${pkgs.stdenv.system}".default;
+      nix = determinate-nix-src.packages."${pkgs.stdenv.system}".default;
     })
   ];
 
-  users.users.${username} = {
-    inherit home;
-    name = "${username}";
-    shell = pkgs.zsh;
+  users.users = {
+    ${vars.username} = {
+      home = vars.home;
+      name = "${vars.username}";
+      shell = pkgs.zsh;
+    };
   };
 
   homebrew = {

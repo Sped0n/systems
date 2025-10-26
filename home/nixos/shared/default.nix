@@ -1,16 +1,6 @@
-{
-  agenix,
-  pkgs,
-  ...
-}:
+{ libutils, ... }:
 {
   imports = [
-    agenix.homeManagerModules.default
-
-    ../../shared
-  ];
-
-  home.packages = [
-    agenix.packages."${pkgs.system}".default
+    (libutils.fromRoot "/home/shared")
   ];
 }

@@ -1,29 +1,36 @@
-{ username, ... }:
+{ libutils, vars, ... }:
 {
   imports = [
-    ../../modules/darwin
+    (libutils.fromRoot "/modules/darwin")
 
     ./agenix.nix
     ./casks.nix
   ];
 
+  networking.hostName = "dendrobium";
+
+  determinate-nix.customSettings = {
+    extra-experimental-features = "external-builders";
+    external-builders = ''
+      [{"systems":["aarch64-linux","x86_64-linux"],"program":"/usr/local/bin/determinate-nixd","args":["builder"]}]
+    '';
+  };
+
   nix-homebrew = {
     enable = true;
     enableRosetta = true;
-    user = "${username}";
+    user = "${vars.username}";
   };
 
-  home-manager = {
-    users.${username} =
-      { ... }:
-      {
-        imports = [ ./home ];
-        home = {
-          enableNixpkgsReleaseCheck = false;
-          stateVersion = "24.11";
-        };
+  home-manager.users.${vars.username} =
+    { ... }:
+    {
+      imports = [ ./home ];
+      home = {
+        enableNixpkgsReleaseCheck = false;
+        stateVersion = "24.11";
       };
-  };
+    };
 
   homebrew.masApps = {
     "Dropover" = 1355679052;

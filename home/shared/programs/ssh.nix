@@ -1,14 +1,14 @@
 {
   config,
-  home,
   secrets,
+  vars,
   ...
 }:
 {
   age.secrets."git-ssh-key" = {
-    path = "${home}/.ssh/id_git";
-    file = "${secrets}/ages/git-ssh-key.age";
+    path = "${vars.home}/.ssh/id_git";
     mode = "0400";
+    file = "${secrets}/ages/git-ssh-key.age";
   };
 
   programs.ssh = {

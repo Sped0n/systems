@@ -1,9 +1,10 @@
-{ ... }:
+{ libutils, ... }:
 {
   imports = [
-    ../shared
+    (libutils.fromRoot "/home/nixos/shared")
+
+    ./programs
 
     ./packages.nix
-    ./programs
   ];
 }

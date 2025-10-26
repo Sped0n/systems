@@ -1,10 +1,10 @@
 { ... }:
 {
   imports = [
-    ./packages.nix
     ./programs
 
     ./agenix.nix
+    ./packages.nix
   ];
 
   xdg.enable = true;

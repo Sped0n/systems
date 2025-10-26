@@ -1,17 +1,18 @@
 {
   config,
-  home,
   pkgs,
   secrets,
-  username,
+  vars,
   ...
 }:
 {
-  users.users.rclone-webdav = {
-    isSystemUser = true;
-    group = "rclone-webdav";
+  users = {
+    users.rclone-webdav = {
+      isSystemUser = true;
+      group = "rclone-webdav";
+    };
+    groups.rclone-webdav = { };
   };
-  users.groups.rclone-webdav = { };
 
   age.secrets."unicorn-rclone-webdav-htpasswd" = {
     file = "${secrets}/ages/unicorn-rclone-webdav-htpasswd.age";
@@ -20,7 +21,7 @@
   };
 
   systemd = {
-    tmpfiles.rules = [
+    tmpfiles.rules = with vars; [
       "d ${home}/storage 0755 ${username} users -"
       "d ${home}/storage/qb 0755 ${username} users -"
     ];
@@ -43,13 +44,13 @@
             --htpasswd ${config.age.secrets."unicorn-rclone-webdav-htpasswd".path} \
             --read-only \
             --dir-cache-time 10s \
-            ${home}/storage/qb
+            ${vars.home}/storage/qb
         '';
 
         ProtectSystem = "strict";
         ProtectHome = "tmpfs";
         PrivateTmp = true;
-        BindReadOnlyPaths = [ "${home}/storage/qb" ];
+        BindReadOnlyPaths = [ "${vars.home}/storage/qb" ];
 
         NoNewPrivileges = true;
         LockPersonality = true;

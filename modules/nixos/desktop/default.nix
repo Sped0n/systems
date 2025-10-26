@@ -1,7 +1,10 @@
+{ libutils, ... }:
 {
   imports = [
-    ../shared
+    (libutils.fromRoot "/modules/nixos/shared")
+
     ./services
+
     ./agenix.nix
   ];
 }

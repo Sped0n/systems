@@ -1,6 +1,7 @@
+{ libutils, ... }:
 {
   imports = [
-    ../shared
+    (libutils.fromRoot "/modules/nixos/shared")
 
     ./networking
     ./services

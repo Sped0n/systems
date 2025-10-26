@@ -1,7 +1,7 @@
-{ ... }:
+{ libutils, ... }:
 {
   imports = [
-    ../../../home/darwin
+    (libutils.fromRoot "/home/darwin")
 
     ./programs
     ./packages.nix

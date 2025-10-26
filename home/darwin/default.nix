@@ -1,19 +1,9 @@
-{
-  agenix-darwin,
-  pkgs,
-  ...
-}:
+{ libutils, ... }:
 {
   imports = [
-    agenix-darwin.homeManagerModules.default
-
-    ../shared
+    (libutils.fromRoot "/home/shared")
 
     ./packages.nix
     ./programs
-  ];
-
-  home.packages = [
-    agenix-darwin.packages."${pkgs.system}".default
   ];
 }

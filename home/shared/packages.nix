@@ -1,9 +1,8 @@
-{ pkgs, ... }:
+{ pkgs, pkgs-unstable, ... }:
 {
   home.packages =
-    with pkgs;
-    # Core
-    [
+    (with pkgs; [
+      # Core
       coreutils
       findutils
       diffutils
@@ -19,8 +18,8 @@
       zip
       unzip
       inetutils
-    ]
-    ++ [
+    ])
+    ++ (with pkgs-unstable; [
       # General packages for development and system management
       just
       openssh
@@ -30,7 +29,7 @@
       hyperfine
       ast-grep
       bfg-repo-cleaner
-      yek
+      repomix
 
       # Encryption and security tools
       age
@@ -45,8 +44,7 @@
       ripgrep
       tree
       less
-      yazi
       tokei
       tlrc
-    ];
+    ]);
 }

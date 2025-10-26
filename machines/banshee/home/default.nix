@@ -1,7 +1,7 @@
-{ ... }:
+{ libutils, ... }:
 {
   imports = [
-    ../../../home/nixos/server
+    (libutils.fromRoot "/home/nixos/server")
 
     ./programs
     ./packages.nix

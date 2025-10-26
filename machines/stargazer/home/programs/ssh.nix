@@ -1,14 +1,12 @@
 {
   config,
-  home,
-  username,
   secrets,
   vars,
   ...
 }:
 {
   age.secrets."server-ssh-key" = {
-    path = "${home}/.ssh/id_server";
+    path = "${vars.home}/.ssh/id_server";
     file = "${secrets}/ages/server-ssh-key.age";
     mode = "0400";
   };
@@ -24,7 +22,7 @@
         };
         serverTmpl = {
           port = 12222;
-          user = "${username}";
+          user = "${vars.username}";
           identityFile = config.age.secrets."server-ssh-key".path;
         }
         // basicTmpl;

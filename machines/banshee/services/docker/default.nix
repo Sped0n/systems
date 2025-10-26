@@ -1,14 +1,10 @@
-{
-  home,
-  username,
-  ...
-}:
+{ vars, ... }:
 {
   imports = [
     ./traefik.nix
   ];
 
-  systemd.tmpfiles.rules = [
+  systemd.tmpfiles.rules = with vars; [
     "d ${home}/storage 0755 ${username} users -"
   ];
 

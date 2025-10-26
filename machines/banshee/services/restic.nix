@@ -1,12 +1,8 @@
-{
-  home,
-  pkgs,
-  ...
-}:
+{ pkgs, vars, ... }:
 {
   services.my-restic = {
     enable = true;
-    paths = [ "${home}/infra" ];
+    paths = [ "${vars.home}/infra" ];
     exclude = [
       "*.log"
     ];
@@ -15,10 +11,10 @@
       "--keep-weekly 2"
     ];
     backupPrepareCommand = ''
-      ${pkgs.docker}/bin/docker compose -f ${home}/infra/docker-compose.yml stop
+      ${pkgs.docker}/bin/docker compose -f ${vars.home}/infra/docker-compose.yml stop
     '';
     backupCleanupCommand = ''
-      ${pkgs.docker}/bin/docker compose -f ${home}/infra/docker-compose.yml start
+      ${pkgs.docker}/bin/docker compose -f ${vars.home}/infra/docker-compose.yml start
     '';
   };
 }

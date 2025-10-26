@@ -25,5 +25,6 @@
 
     # browsers
     "brave-browser"
+    "chromium"
   ];
 }

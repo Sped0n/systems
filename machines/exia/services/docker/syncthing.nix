@@ -1,6 +1,6 @@
-{ home, username, ... }:
+{ vars, ... }:
 {
-  systemd.tmpfiles.rules = [
+  systemd.tmpfiles.rules = with vars; [
     "d ${home}/storage 0755 ${username} users -"
     "d ${home}/storage/syncthing 0755 ${username} users -"
   ];

@@ -92,15 +92,17 @@ in
       };
     };
 
-    users.users.restic-notify = {
-      isSystemUser = true;
-      group = "restic-notify";
-      extraGroups = [
-        "systemd-journal"
-        "smtp-auth-users"
-      ];
+    users = {
+      users.restic-notify = {
+        isSystemUser = true;
+        group = "restic-notify";
+        extraGroups = [
+          "systemd-journal"
+          "smtp-auth-users"
+        ];
+      };
+      groups.restic-notify = { };
     };
-    users.groups.restic-notify = { };
 
     systemd.services = {
       "restic-backups-main".onFailure = [ "restic-failure-notify.service" ];

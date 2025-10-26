@@ -1,8 +1,4 @@
-{
-  home,
-  username,
-  ...
-}:
+{ vars, ... }:
 {
   imports = [
     ./traefik.nix
@@ -11,7 +7,7 @@
     ./qb.nix
   ];
 
-  systemd.tmpfiles.rules = [
+  systemd.tmpfiles.rules = with vars; [
     "d ${home}/sharing 0755 ${username} users -"
     "d ${home}/storage 0755 ${username} users -"
   ];

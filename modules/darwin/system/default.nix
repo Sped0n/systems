@@ -1,4 +1,4 @@
-{ username, ... }:
+{ vars, ... }:
 ###################################################################################
 #
 #  macOS's System configuration
@@ -21,17 +21,15 @@
     ./security.nix
   ];
 
-  networking.hostName = "dendrobium";
-
-  system = {
+  system = rec {
     stateVersion = 6;
-    primaryUser = username;
+    primaryUser = vars.username;
     activationScripts.postActivation.text = ''
       # activationScripts are executed every time you boot the system or run `darwin-rebuild`.
       #
       # activateSettings -u will reload the settings from the database and apply them to the current session,
       # so we do not need to logout and login again to make the changes take effect.
-      sudo -i -u ${username} /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
+      sudo -i -u ${primaryUser} /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
     '';
 
     defaults = {

@@ -1,18 +1,19 @@
 { pkgs-unstable, ... }:
 {
   imports = [
-    ./zsh.nix
-    ./starship.nix
-    ./neovim.nix
-    ./git.nix
-    ./ssh.nix
+    ./aichat.nix
+    ./direnv.nix
+    ./eza.nix
     ./fastfetch.nix
     ./ghostty.nix
-    ./uv.nix
-    ./direnv.nix
+    ./git.nix
+    ./neovim.nix
+    ./ssh.nix
+    ./starship.nix
     ./tmux.nix
-    ./aichat.nix
-    ./eza.nix
+    ./uv.nix
+    ./yazi.nix
+    ./zsh.nix
   ];
 
   programs.bat = {

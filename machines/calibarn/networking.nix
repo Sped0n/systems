@@ -5,7 +5,7 @@
     interfaces.eth0 = {
       ipv4.addresses = [
         {
-          address = vars.calibarn.ipv4;
+          address = "10.0.0.93";
           prefixLength = 24;
         }
       ];
@@ -18,7 +18,7 @@
     };
 
     defaultGateway = {
-      address = vars.calibarn.ipv4Gateway;
+      address = "10.0.0.1";
       interface = "eth0";
     };
     defaultGateway6 = {

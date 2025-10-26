@@ -1,22 +1,10 @@
 {
-  config,
   lib,
+  libutils,
   pkgs,
-  secrets,
   ...
 }:
 {
-  age.secrets = {
-    "openai-api-key" = {
-      file = "${secrets}/ages/openai-api-key.age";
-      mode = "0400";
-    };
-    "codestral-api-key" = {
-      file = "${secrets}/ages/codestral-api-key.age";
-      mode = "0400";
-    };
-  };
-
   programs.zsh = {
     enable = true;
     completionInit = "autoload -Uz compinit && compinit";
@@ -33,12 +21,8 @@
     };
     initContent = lib.mkMerge [
       (lib.mkOrder 500 ''
-        source ${../config/zsh/extras.zsh}
-        source ${../config/zsh/functions.zsh}
-      '')
-      (lib.mkOrder 1500 ''
-        export OPENAI_API_KEY=$(${pkgs.coreutils}/bin/cat ${config.age.secrets."openai-api-key".path})
-        export CODESTRAL_API_KEY=$(${pkgs.coreutils}/bin/cat ${config.age.secrets."codestral-api-key".path})
+        source ${(libutils.fromRoot "/home/shared/config/zsh/extras.zsh")}
+        source ${(libutils.fromRoot "/home/shared/config/zsh/functions.zsh")}
       '')
       (lib.mkOrder 1550 "fastfetch")
     ];

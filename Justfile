@@ -65,13 +65,13 @@ _brew_update:
 _brew_update:
     @echo "Skipping brew update (macOS only)"
 
-# Generic build command with diff-closures
+# Generic build command with nvd
 _build_with_diff:
     @echo "Running: {{rebuild_cmd}} build --flake ."
     @{{rebuild_cmd}} build --flake .
     @echo "--------------------------------------------------"
-    @echo "Complete! Below is the diff-closures result:"
-    @nix store diff-closures {{current_system}} {{result_link}}
+    @echo "Comparing..."
+    @nix run nixpkgs#nvd -- diff {{current_system}} {{result_link}}
     @echo "--------------------------------------------------"
     @echo "Removing {{result_link}} symlink..."
     @unlink {{result_link}}
@@ -130,7 +130,7 @@ update-flakes:
 # Build and Switch Operations
 # =============================================================================
 
-# Build the configuration and show diff-closures
+# Build the configuration and show differences
 build:
     @just _build_with_diff
 
@@ -188,10 +188,46 @@ _rollback_linux gen_num:
 # Deploy configuration to target host
 deploy target_host:
     #!/bin/sh -e
-    export NIX_SSHOPTS="-o ControlMaster=no"
+
+    target_expr=".#nixosConfigurations.{{target_host}}"
+
+    set +e
+    target_eval_output=$(nix eval --raw "${target_expr}.config.nixpkgs.system" 2>&1)
+    eval_status=$?
+    set -e
+
+    if [ "$eval_status" -ne 0 ]; then
+        echo "Error: could not determine system architecture for '{{target_host}}'."
+        printf '%s\n' "$target_eval_output"
+        exit "$eval_status"
+    fi
+
+    target_system=$(printf '%s\n' "$target_eval_output" | tail -n1 | tr -d '\r\n')
+
+    case "$target_system" in
+        x86_64-*)
+            build_host="builder-x86_64"
+            ;;
+        aarch64-*)
+            build_host="builder-aarch64"
+            ;;
+        *)
+            echo "Error: unsupported system architecture '$target_system' for '{{target_host}}'."
+            exit 1
+            ;;
+    esac
+
     echo "Deploying configuration to {{target_host}}..."
-    echo "Running: {{deploy_rebuild_cmd}} switch --flake .#{{target_host}} --build-host root@calibarn --target-host root@{{target_host}} --use-substitutes"
-    {{deploy_rebuild_cmd}} switch --flake .#{{target_host}} --build-host root@calibarn --target-host root@{{target_host}} --use-substitutes
+    echo "Detected target system: $target_system"
+    echo "Selected build host: $build_host"
+    echo "Running: {{deploy_rebuild_cmd}} switch --flake .#{{target_host}} --build-host $build_host --target-host {{target_host}} --sudo --ask-sudo-password --use-substitutes"
+
+    {{deploy_rebuild_cmd}} switch --flake .#{{target_host}} \
+        --build-host "$build_host" \
+        --target-host "{{target_host}}" \
+        --sudo \
+        --ask-sudo-password \
+        --use-substitutes
 
 # Update unstable packages for deployment targets
 deploy-update-pkgs:

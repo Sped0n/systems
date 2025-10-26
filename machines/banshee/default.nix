@@ -1,17 +1,18 @@
-{ username, ... }:
+{ libutils, vars, ... }:
 {
   imports = [
-    ../../modules/nixos/server
+    (libutils.fromRoot "/modules/nixos/server")
 
-    ./system.nix
-    ./disko.nix
-
+    ./builder
     ./networking
     ./services
+
+    ./disko.nix
+    ./system.nix
   ];
 
   home-manager = {
-    users.${username} =
+    users.${vars.username} =
       { ... }:
       {
         imports = [ ./home ];

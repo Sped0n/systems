@@ -1,6 +1,18 @@
-{ home, ... }:
 {
+  agenix,
+  pkgs,
+  ...
+}:
+{
+  imports = [
+    agenix.homeManagerModules.default
+  ];
+
+  home.packages = [
+    agenix.packages."${pkgs.system}".default
+  ];
+
   age.identityPaths = [
-    "${home}/.config/secrets/id_agenix"
+    "/etc/ssh/ssh_user_ed25519_key"
   ];
 }

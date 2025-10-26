@@ -2,9 +2,8 @@
 {
   # grub
   boot.loader = {
-    timeout = 8; # Wait for x seconds to select the boot entry
+    timeout = 8;
     grub = {
-      # Don't need to keep too many generations.
       configurationLimit = 10;
 
       efiSupport = true;
@@ -26,10 +25,8 @@
   # SUID Wrappers
   programs = {
     mtr.enable = true;
-    gnupg.agent = {
-      enable = true;
-      enableSSHSupport = true;
-    };
+    gnupg.agent.enable = true;
+    ssh.startAgent = true;
   };
 
   # swap

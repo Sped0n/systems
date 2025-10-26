@@ -2,22 +2,17 @@
   description = "systems";
 
   inputs = {
-    # Core
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
-    nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-    nixpkgs-qemu8.url = "github:NixOS/nixpkgs/3eebbc5fe26801ff612f2cdd4566e76651dc8106";
-    nixpkgs-darwin.url = "github:NixOS/nixpkgs/nixpkgs-25.05-darwin";
-    nixpkgs-darwin-unstable.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    # core
+    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2505";
+    nixpkgs-unstable.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0.1";
+    determinate-nix-src.url = "https://flakehub.com/f/DeterminateSystems/nix-src/*";
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
 
-    # Misc
-    dix.url = "https://flakehub.com/f/DeterminateSystems/nix-src/*";
+    # shared
     secrets = {
       url = "git+ssh://git@github.com/Sped0n/secrets";
       flake = false;
     };
-
-    # NixOS
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
     home-manager = {
       url = "github:nix-community/home-manager/release-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -26,84 +21,66 @@
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # NixOS
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Darwin
-    home-manager-darwin = {
-      url = "github:nix-community/home-manager/release-25.05";
-      inputs.nixpkgs.follows = "nixpkgs-darwin";
-    };
-    agenix-darwin = {
-      url = "github:ryantm/agenix";
-      inputs.nixpkgs.follows = "nixpkgs-darwin";
-    };
+    # macOS
     nix-darwin = {
       url = "github:nix-darwin/nix-darwin/nix-darwin-25.05";
-      inputs.nixpkgs.follows = "nixpkgs-darwin";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
   };
 
   outputs =
-    inputs@{
+    {
       self,
       nixpkgs,
       nixpkgs-unstable,
-      nixpkgs-qemu8,
-      nixpkgs-darwin,
-      nixpkgs-darwin-unstable,
-      dix,
-      secrets,
+      determinate-nix-src,
       determinate,
+      secrets,
       home-manager,
       agenix,
       disko,
-      home-manager-darwin,
-      agenix-darwin,
       nix-darwin,
       nix-homebrew,
     }:
     let
-      lib = nixpkgs.lib;
-      vars = import "${inputs.secrets}/vars";
-      username = "spedon";
-
       genSpecialArgs =
         {
           system,
-          unstablePkgsInput,
           unstableConfigOverrides ? { },
           extraArgs ? { },
         }:
-        {
-          inherit vars username;
-          home = if lib.strings.hasSuffix "darwin" system then "/Users/${username}" else "/home/${username}";
+        let
+        in
+        rec {
+          vars = import "${secrets}/vars" // rec {
+            username = "spedon";
+            home =
+              if builtins.match ".*darwin$" system != null then "/Users/${username}" else "/home/${username}";
+          };
 
-          pkgs-unstable = import unstablePkgsInput {
+          libutils = {
+            loadOverlays = import ./functions/loadOverlays.nix;
+            fromRoot = relPath: self.outPath + relPath;
+          };
+
+          pkgs-unstable = import nixpkgs-unstable {
             inherit system;
             config = {
               allowUnfree = true;
             }
             // unstableConfigOverrides;
-            overlays =
-              # Apply each overlay found in the /overlays directory
-              let
-                path = ./overlays;
-              in
-              with builtins;
-              map (n: import (path + ("/" + n))) (
-                filter (n: match ".*\\.nix" n != null || pathExists (path + ("/" + n + "/default.nix"))) (
-                  attrNames (readDir path)
-                )
-              )
-              ++ [ ];
+            overlays = libutils.loadOverlays ./overlays;
           };
         }
-        // extraArgs
-        // inputs;
+        // extraArgs;
 
       commonNixosModules = [
         determinate.nixosModules.default
@@ -113,10 +90,19 @@
       ];
 
       commonDarwinModules = [
-        home-manager-darwin.darwinModules.home-manager
-        agenix-darwin.darwinModules.default
+        determinate.darwinModules.default
+        agenix.darwinModules.default
+        home-manager.darwinModules.home-manager
         nix-homebrew.darwinModules.nix-homebrew
       ];
+
+      commonExtraArgs = {
+        inherit
+          self
+          secrets
+          agenix
+          ;
+      };
     in
     {
       darwinConfigurations = {
@@ -124,7 +110,9 @@
           system = "aarch64-darwin";
           specialArgs = genSpecialArgs {
             system = "aarch64-darwin";
-            unstablePkgsInput = nixpkgs-darwin-unstable;
+            extraArgs = commonExtraArgs // {
+              inherit determinate-nix-src;
+            };
           };
           modules = commonDarwinModules ++ [ ./machines/dendrobium ];
         };
@@ -135,10 +123,10 @@
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
             system = "x86_64-linux";
-            unstablePkgsInput = nixpkgs-unstable;
             unstableConfigOverrides = {
               permittedInsecurePackages = [ "beekeeper-studio-5.3.4" ];
             };
+            extraArgs = commonExtraArgs;
           };
           modules = commonNixosModules ++ [ ./machines/stargazer ];
         };
@@ -147,7 +135,7 @@
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
             system = "x86_64-linux";
-            unstablePkgsInput = nixpkgs-unstable;
+            extraArgs = commonExtraArgs;
           };
           modules = commonNixosModules ++ [ ./machines/unicorn ];
         };
@@ -156,21 +144,16 @@
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
             system = "x86_64-linux";
-            unstablePkgsInput = nixpkgs-unstable;
+            extraArgs = commonExtraArgs;
           };
           modules = commonNixosModules ++ [ ./machines/banshee ];
         };
 
-        "calibarn" = nixpkgs.lib.nixosSystem rec {
+        "calibarn" = nixpkgs.lib.nixosSystem {
           system = "aarch64-linux";
           specialArgs = genSpecialArgs {
             system = "aarch64-linux";
-            unstablePkgsInput = nixpkgs-unstable;
-            extraArgs = {
-              pkgs-qemu8 = import inputs.nixpkgs-qemu8 {
-                inherit system;
-              };
-            };
+            extraArgs = commonExtraArgs;
           };
           modules = commonNixosModules ++ [ ./machines/calibarn ];
         };
@@ -179,7 +162,7 @@
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
             system = "x86_64-linux";
-            unstablePkgsInput = nixpkgs-unstable;
+            extraArgs = commonExtraArgs;
           };
           modules = commonNixosModules ++ [ ./machines/exia ];
         };

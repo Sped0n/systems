@@ -1,15 +1,11 @@
-{
-  username,
-  vars,
-  ...
-}:
+{ config, vars, ... }:
 {
   services = {
     openssh = {
       enable = true;
       settings = {
         X11Forwarding = true;
-        PermitRootLogin = "prohibit-password";
+        PermitRootLogin = "no";
         PasswordAuthentication = false;
       };
       openFirewall = true;
@@ -22,8 +18,7 @@
   # https://github.com/NixOS/nixpkgs/blob/nixos-24.11/nixos/modules/config/terminfo.nix
   environment.enableAllTerminfo = true;
 
-  users.users = {
-    root.openssh.authorizedKeys.keys = [ vars.serverPublicKey ];
-    "${username}".openssh.authorizedKeys.keys = [ vars.serverPublicKey ];
-  };
+  users.users."${vars.username}".openssh.authorizedKeys.keys = [
+    vars."${config.networking.hostName}".sshPublicKey
+  ];
 }
