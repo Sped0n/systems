@@ -2,32 +2,27 @@
 # Configuration Variables
 # =============================================================================
 
-# Platform detection
-os := if os() == "macos" { "darwin" } else { "linux" }
+detected_os := os()
+os := if detected_os == "macos" { "darwin" } else { "linux" }
 
-# Platform-specific commands
-rebuild_cmd := if os() == "macos" { "darwin-rebuild" } else { "nixos-rebuild" }
+rebuild_cmd := if os == "darwin" { "darwin-rebuild" } else { "nixos-rebuild" }
 deploy_rebuild_cmd := "nixos-rebuild-ng"
 
-# Platform-specific package inputs
-pkgs_unstable := if os() == "macos" { "nixpkgs-darwin-unstable" } else { "nixpkgs-unstable" }
-pkgs_all := if os() == "macos" { "nixpkgs-darwin nixpkgs-darwin-unstable" } else { "nixpkgs nixpkgs-unstable" }
+stable_channel := "nixpkgs"
+unstable_channel := "nixpkgs-unstable"
+combined_channels := "nixpkgs nixpkgs-unstable"
 
-# Platform-specific flake inputs
-flakes := (
-    if os() == "macos" { 
-        "dix home-manager-darwin agenix-darwin nix-darwin nix-homebrew" 
-    } else { 
-        "dix determinate home-manager agenix disko"
-    }
-)
+pkgs_unstable := unstable_channel
+pkgs_all := combined_channels
 
-# Deploy-specific inputs (always Linux)
-deploy_flakes := "home-manager agenix disko determinate"
-deploy_pkgs_unstable := "nixpkgs-unstable"
-deploy_pkgs_all := "nixpkgs nixpkgs-unstable"
+flakes_darwin := "determinate-nix-src determinate home-manager agenix nix-darwin nix-homebrew"
+flakes_linux := "determinate home-manager agenix disko"
+flakes := if os == "darwin" { flakes_darwin } else { flakes_linux }
 
-# System paths
+deploy_flakes := flakes_linux
+deploy_pkgs_unstable := unstable_channel
+deploy_pkgs_all := combined_channels
+
 current_system := "/run/current-system"
 result_link := "./result"
 system_profile := "/nix/var/nix/profiles/system"
@@ -36,7 +31,6 @@ system_profile := "/nix/var/nix/profiles/system"
 # Default Recipe
 # =============================================================================
 
-# Default recipe to show available commands
 default:
     @just --list
 
@@ -44,7 +38,6 @@ default:
 # Core Helper Functions
 # =============================================================================
 
-# Execute nix flake update with optional arguments
 _nix_update *args:
     @if [ -z '{{args}}' ]; then \
         echo "Running: nix flake update"; \
@@ -54,34 +47,29 @@ _nix_update *args:
         nix flake update {{args}}; \
     fi
 
-# Update brew (macOS only, with error handling)
 [macos]
 _brew_update:
     @echo "Running: brew update"
     @brew update || (echo "Brew update failed, continuing..."; exit 0)
 
-# No-op for Linux
 [linux]
 _brew_update:
     @echo "Skipping brew update (macOS only)"
 
-# Generic build command with nvd
 _build_with_diff:
     @echo "Running: {{rebuild_cmd}} build --flake ."
     @{{rebuild_cmd}} build --flake .
     @echo "--------------------------------------------------"
     @echo "Comparing..."
-    @nix run nixpkgs#nvd -- diff {{current_system}} {{result_link}}
+    @nvd -- diff {{current_system}} {{result_link}}
     @echo "--------------------------------------------------"
     @echo "Removing {{result_link}} symlink..."
     @unlink {{result_link}}
 
-# Generic switch command
 _switch:
     @echo "Running: sudo {{rebuild_cmd}} switch --flake ."
     @sudo {{rebuild_cmd}} switch --flake .
 
-# Validate generation number
 _validate_generation gen_num:
     #!/bin/sh -e
     if [ -z "{{gen_num}}" ]; then
@@ -94,7 +82,6 @@ _validate_generation gen_num:
         exit 1
     fi
 
-# Check command availability and sudo privileges
 _check_rebuild_prereqs:
     #!/bin/sh -e
     if ! command -v {{rebuild_cmd}} > /dev/null; then
@@ -110,19 +97,15 @@ _check_rebuild_prereqs:
 # Package Management
 # =============================================================================
 
-# Update unstable packages
 update-pkgs: _brew_update
     @just _nix_update "{{pkgs_unstable}}"
 
-# Update all packages
 update-pkgs-all: _brew_update
     @just _nix_update "{{pkgs_all}}"
 
-# Update specific flake input
 update-specific input:
     @just _nix_update {{input}}
 
-# Update platform-specific flakes
 update-flakes:
     @just _nix_update "{{flakes}}"
 
@@ -130,11 +113,9 @@ update-flakes:
 # Build and Switch Operations
 # =============================================================================
 
-# Build the configuration and show differences
 build:
     @just _build_with_diff
 
-# Switch to the new configuration
 switch:
     @just _switch
 
@@ -142,19 +123,16 @@ switch:
 # Generation Management
 # =============================================================================
 
-# List available generations
 list-generations:
     @just _check_rebuild_prereqs
     @echo "Available {{os}} generations (requires sudo):"
     @sudo {{rebuild_cmd}} {{ if os() == "macos" { "--list-generations" } else { "list-generations" } }}
 
-# Rollback to a specific generation
 rollback gen_num:
     @just _validate_generation {{gen_num}}
     @just _check_rebuild_prereqs
     @just _rollback_{{os}} {{gen_num}}
 
-# macOS-specific rollback implementation
 [macos]
 _rollback_darwin gen_num:
     #!/bin/sh -e
@@ -167,7 +145,6 @@ _rollback_darwin gen_num:
     sudo darwin-rebuild switch -G "{{gen_num}}"
     echo "Rollback complete!"
 
-# Linux-specific rollback implementation
 [linux]
 _rollback_linux gen_num:
     #!/bin/sh -e
@@ -185,7 +162,6 @@ _rollback_linux gen_num:
 # Deployment (Remote Systems)
 # =============================================================================
 
-# Deploy configuration to target host
 deploy target_host:
     #!/bin/sh -e
 
@@ -229,15 +205,12 @@ deploy target_host:
         --ask-sudo-password \
         --use-substitutes
 
-# Update unstable packages for deployment targets
 deploy-update-pkgs:
     @just _nix_update "{{deploy_pkgs_unstable}}"
 
-# Update all packages for deployment targets
 deploy-update-pkgs-all:
     @just _nix_update "{{deploy_pkgs_all}}"
 
-# Update flakes for deployment targets
 deploy-update-flakes:
     @just _nix_update "{{deploy_flakes}}"
 
