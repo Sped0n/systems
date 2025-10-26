@@ -56,7 +56,7 @@ in
                 name = "_${hostName}";
                 value = {
                   match = ''
-                    host ${hostName} exec "tailscale status"
+                    host ${hostName} exec "tailscale ping -c 3 --timeout 2s ${hostName}"
                   '';
                   hostname = hostName;
                 };
