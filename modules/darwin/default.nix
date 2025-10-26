@@ -15,6 +15,7 @@
 
     ./casks.nix
     ./diff.nix
+    ./gc.nix
   ];
 
   nix.enable = false;
