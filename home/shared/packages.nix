@@ -28,8 +28,6 @@
       nali
       hyperfine
       ast-grep
-      bfg-repo-cleaner
-      repomix
 
       # Encryption and security tools
       age

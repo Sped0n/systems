@@ -10,6 +10,8 @@
       docker
       minicom
       cdecl
+      bfg-repo-cleaner
+      repomix
 
       smartmontools
 
