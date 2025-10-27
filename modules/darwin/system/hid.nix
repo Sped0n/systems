@@ -53,6 +53,7 @@
       "com.apple.symbolichotkeys" = {
         AppleSymbolicHotKeys = {
           "32".enabled = false; # Mission Control
+          "190".enabled = false; # Quick Note
           "163".enabled = false; # Show Notification Center
           "175".enabled = false; # Turn Do Not Disturb on/off
           "33".enabled = false; # Application windows
@@ -60,6 +61,12 @@
           "222".enabled = false; # Turn Stage Manager on/off
           "79".enabled = false; # Move left a space
           "81".enabled = false; # Move right a space
+
+          "118".enabled = true; # Switch to Desktop 1
+          "119".enabled = true; # Switch to Desktop 2
+          "120".enabled = true; # Switch to Desktop 3
+          "121".enabled = true; # Switch to Desktop 4
+          "122".enabled = true; # Switch to Desktop 5
 
           "60".enabled = false; # Select the previous input source
           "61".enabled = false; # Select next source in input menu
