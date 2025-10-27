@@ -1,12 +1,12 @@
 {
   config,
-  determinate-nix-src,
+  determinate,
   pkgs,
   ...
 }:
 let
   gcCommand = ''exec ${
-    determinate-nix-src.packages."${pkgs.stdenv.system}".default
+    determinate.inputs.nix.packages."${pkgs.stdenv.system}".default
   }/bin/nix-collect-garbage ${config.nix.gc.options}'';
 in
 {
@@ -32,7 +32,7 @@ in
 
     agents."custom.nix-gc.user" = {
       script = gcCommand;
-      path = [ determinate-nix-src.packages."${pkgs.stdenv.system}".default ];
+      path = [ determinate.inputs.nix.packages."${pkgs.stdenv.system}".default ];
       serviceConfig = {
         StartCalendarInterval = config.nix.gc.interval;
         RunAtLoad = false;

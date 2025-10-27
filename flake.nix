@@ -5,8 +5,10 @@
     # core
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2505";
     nixpkgs-unstable.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0.1";
-    determinate-nix-src.url = "https://flakehub.com/f/DeterminateSystems/nix-src/*";
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
+    determinate = {
+      url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
 
     # shared
     secrets = {
@@ -41,7 +43,6 @@
       self,
       nixpkgs,
       nixpkgs-unstable,
-      determinate-nix-src,
       determinate,
       secrets,
       home-manager,
@@ -57,9 +58,12 @@
           unstableConfigOverrides ? { },
           extraArgs ? { },
         }:
-        let
-        in
         rec {
+          inherit
+            agenix
+            determinate
+            secrets
+            ;
           vars = import "${secrets}/vars" // rec {
             username = "spedon";
             home =
@@ -95,62 +99,47 @@
         home-manager.darwinModules.home-manager
         nix-homebrew.darwinModules.nix-homebrew
       ];
-
-      commonExtraArgs = {
-        inherit
-          self
-          secrets
-          agenix
-          ;
-      };
     in
     {
       darwinConfigurations = {
-        "dendrobium" = nix-darwin.lib.darwinSystem {
+        "dendrobium" = nix-darwin.lib.darwinSystem rec {
           system = "aarch64-darwin";
           specialArgs = genSpecialArgs {
-            system = "aarch64-darwin";
-            extraArgs = commonExtraArgs // {
-              inherit determinate-nix-src;
-            };
+            inherit system;
           };
           modules = commonDarwinModules ++ [ ./machines/dendrobium ];
         };
       };
 
       nixosConfigurations = {
-        "unicorn" = nixpkgs.lib.nixosSystem {
+        "unicorn" = nixpkgs.lib.nixosSystem rec {
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
-            system = "x86_64-linux";
-            extraArgs = commonExtraArgs;
+            inherit system;
           };
           modules = commonNixosModules ++ [ ./machines/unicorn ];
         };
 
-        "banshee" = nixpkgs.lib.nixosSystem {
+        "banshee" = nixpkgs.lib.nixosSystem rec {
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
-            system = "x86_64-linux";
-            extraArgs = commonExtraArgs;
+            inherit system;
           };
           modules = commonNixosModules ++ [ ./machines/banshee ];
         };
 
-        "calibarn" = nixpkgs.lib.nixosSystem {
+        "calibarn" = nixpkgs.lib.nixosSystem rec {
           system = "aarch64-linux";
           specialArgs = genSpecialArgs {
-            system = "aarch64-linux";
-            extraArgs = commonExtraArgs;
+            inherit system;
           };
           modules = commonNixosModules ++ [ ./machines/calibarn ];
         };
 
-        "exia" = nixpkgs.lib.nixosSystem {
+        "exia" = nixpkgs.lib.nixosSystem rec {
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
-            system = "x86_64-linux";
-            extraArgs = commonExtraArgs;
+            inherit system;
           };
           modules = commonNixosModules ++ [ ./machines/exia ];
         };

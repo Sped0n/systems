@@ -1,6 +1,6 @@
 {
   config,
-  determinate-nix-src,
+  determinate,
   libutils,
   pkgs,
   pkgs-unstable,
@@ -25,7 +25,7 @@
 
   environment.systemPackages = [
     (pkgs-unstable.nixos-rebuild-ng.override {
-      nix = determinate-nix-src.packages."${pkgs.stdenv.system}".default;
+      nix = determinate.inputs.nix.packages."${pkgs.stdenv.system}".default;
     })
   ];
 

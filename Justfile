@@ -15,7 +15,7 @@ combined_channels := "nixpkgs nixpkgs-unstable"
 pkgs_unstable := unstable_channel
 pkgs_all := combined_channels
 
-flakes_darwin := "determinate-nix-src determinate home-manager agenix nix-darwin nix-homebrew"
+flakes_darwin := "determinate home-manager agenix nix-darwin nix-homebrew"
 flakes_linux := "determinate home-manager agenix disko"
 flakes := if os == "darwin" { flakes_darwin } else { flakes_linux }
 

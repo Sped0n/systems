@@ -1,5 +1,6 @@
 {
   agenix,
+  determinate,
   pkgs,
   ...
 }:
@@ -9,7 +10,9 @@
   ];
 
   home.packages = [
-    agenix.packages."${pkgs.system}".default
+    (agenix.packages."${pkgs.system}".default.override {
+      nix = determinate.inputs.nix.packages."${pkgs.stdenv.system}".default;
+    })
   ];
 
   age.identityPaths = [

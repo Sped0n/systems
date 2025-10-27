@@ -1,5 +1,5 @@
 {
-  determinate-nix-src,
+  determinate,
   pkgs,
   ...
 }:
@@ -11,7 +11,7 @@
       echo "--------------------------------------------------"
       echo "Comparing..."
       ${pkgs.nvd}/bin/nvd --nix-bin-dir=${
-        determinate-nix-src.packages."${pkgs.stdenv.system}".default
+        determinate.inputs.nix.packages."${pkgs.stdenv.system}".default
       }/bin diff /run/current-system "''${incoming-}"
       echo "--------------------------------------------------"
     fi
