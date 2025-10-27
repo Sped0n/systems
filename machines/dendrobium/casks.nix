@@ -22,7 +22,6 @@
     "whatsapp"
 
     # productivity
-    "mactex"
     "drawio"
     "typora"
     "microsoft-word"

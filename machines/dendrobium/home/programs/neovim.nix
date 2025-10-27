@@ -15,5 +15,9 @@
 
     # zig
     zls_0_15
+
+    # latex
+    zathura
+    bibtex-tidy
   ];
 }
