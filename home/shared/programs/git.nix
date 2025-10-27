@@ -35,6 +35,7 @@
           dark = true;
           navigate = true;
           syntax-theme = "ansi";
+          diff-so-fancy = true;
         };
       };
 
