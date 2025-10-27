@@ -13,6 +13,8 @@
 
       smartmontools
 
+      pandoc
+
       ffmpeg
       imagemagick
     ])
