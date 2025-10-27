@@ -11,6 +11,7 @@
     settings = {
       shell-integration = "zsh";
       macos-option-as-alt = true;
+      mouse-hide-while-typing = true;
 
       font-family = lib.mkDefault "Lilex";
       font-size = lib.mkDefault 14;
