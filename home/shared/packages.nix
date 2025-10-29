@@ -26,8 +26,6 @@
       wget
       curl
       nali
-      hyperfine
-      ast-grep
 
       # Encryption and security tools
       age
