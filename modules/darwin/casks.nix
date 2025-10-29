@@ -8,7 +8,7 @@
 
     # utility
     "stats"
-    "jordanbaird-ice"
+    "jordanbaird-ice@beta"
     "localsend"
     "rectangle"
     "appcleaner"

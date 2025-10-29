@@ -38,5 +38,6 @@
 
     # entertainment
     "moonlight"
+    "bluestacks"
   ];
 }
