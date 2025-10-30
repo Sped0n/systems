@@ -6,7 +6,7 @@ in
   config = lib.mkIf cfg.enable {
     services.telegraf.extraConfig.outputs = {
       influxdb = {
-        urls = [ "http://unicorn:8428" ];
+        urls = [ "http://phenex:8428" ];
         database = "victoriametrics";
         skip_database_creation = true;
         exclude_retention_policy_tag = true;
@@ -28,7 +28,7 @@ in
 
       loki = [
         {
-          domain = "http://unicorn:9428";
+          domain = "http://phenex:9428";
           endpoint = "/insert/loki/api/v1/push";
           gzip_request = true;
           sanitize_label_names = true;

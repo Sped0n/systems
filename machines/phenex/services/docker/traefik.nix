@@ -49,7 +49,7 @@
 
         outputs.loki = [
           {
-            domain = "http://unicorn:9428";
+            domain = "http://phenex:9428";
             endpoint = "/insert/loki/api/v1/push";
             gzip_request = true;
             sanitize_label_names = true;

@@ -5,7 +5,7 @@
     deployees = [
       "banshee"
       "exia"
-      "unicorn"
+      "phenex"
     ];
     authorizedKeys = [
       vars.calibarn.builderSshPublicKey

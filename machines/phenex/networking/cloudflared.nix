@@ -6,8 +6,8 @@
   ...
 }:
 {
-  age.secrets."unicorn-cf-tunnel-json" = {
-    file = "${secrets}/ages/unicorn-cf-tunnel-json.age";
+  age.secrets."phenex-cf-tunnel-json" = {
+    file = "${secrets}/ages/phenex-cf-tunnel-json.age";
     owner = "root";
     mode = "0400";
   };
@@ -16,15 +16,15 @@
     enable = true;
     package = pkgs-unstable.cloudflared;
     tunnels = {
-      "${vars.unicorn.cfTunnelId}" = {
+      "${vars.phenex.cfTunnelId}" = {
         default = "http_status:404";
-        credentialsFile = config.age.secrets."unicorn-cf-tunnel-json".path;
+        credentialsFile = config.age.secrets."phenex-cf-tunnel-json".path;
       };
     };
   };
 
   # FIXME: weird routing issue (perhaps something wrong on the singtel side)
-  systemd.services."cloudflared-tunnel-${vars.unicorn.cfTunnelId}" = {
+  systemd.services."cloudflared-tunnel-${vars.phenex.cfTunnelId}" = {
     environment = {
       TUNNEL_REGION = "us";
     };

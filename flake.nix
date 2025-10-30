@@ -112,12 +112,12 @@
       };
 
       nixosConfigurations = {
-        "unicorn" = nixpkgs.lib.nixosSystem rec {
+        "phenex" = nixpkgs.lib.nixosSystem rec {
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
             inherit system;
           };
-          modules = commonNixosModules ++ [ ./machines/unicorn ];
+          modules = commonNixosModules ++ [ ./machines/phenex ];
         };
 
         "banshee" = nixpkgs.lib.nixosSystem rec {

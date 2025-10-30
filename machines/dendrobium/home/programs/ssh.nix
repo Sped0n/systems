@@ -6,7 +6,7 @@
 }:
 let
   hostNames = [
-    "unicorn"
+    "phenex"
     "banshee"
     "exia"
     "calibarn"
@@ -67,7 +67,7 @@ in
       {
         "gitlab.com" = gitBlock;
         "git.sped0n.com" = {
-          hostname = "unicorn";
+          hostname = "phenex";
           port = 22222;
         }
         // gitBlock;
