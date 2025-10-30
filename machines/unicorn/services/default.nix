@@ -1,10 +1,12 @@
 { vars, ... }:
 {
   imports = [
+    ./docker
+
     ./nginx.nix
     ./restic.nix
     ./rclone.nix
-    ./docker
+    ./telegraf.nix
   ];
 
   systemd.tmpfiles.rules = with vars; [

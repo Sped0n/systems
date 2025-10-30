@@ -1,6 +1,8 @@
 {
   imports = [
-    ./restic.nix
     ./docker
+
+    ./restic.nix
+    ./telegraf.nix
   ];
 }

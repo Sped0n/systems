@@ -4,6 +4,7 @@
     ./docker.nix
     ./restic.nix
     ./runner.nix
+    ./telegraf.nix
   ];
 
   systemd.tmpfiles.rules = with vars; [
