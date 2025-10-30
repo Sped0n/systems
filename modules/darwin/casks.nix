@@ -8,7 +8,7 @@
 
     # utility
     "stats"
-    "jordanbaird-ice@beta"
+    "mac-mouse-fix"
     "localsend"
     "rectangle"
     "appcleaner"

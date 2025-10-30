@@ -9,7 +9,6 @@
     # utility
     "syncthing-app"
     "soundsource"
-    "bettermouse"
     "betterdisplay"
     "aldente"
     "shottr"
