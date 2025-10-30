@@ -1,8 +1,9 @@
 {
   imports = [
-    ./msmtp.nix
+    ./builder.nix
     ./docker.nix
-    ./telegraf.nix
+    ./msmtp.nix
     ./restic.nix
+    ./telegraf.nix
   ];
 }

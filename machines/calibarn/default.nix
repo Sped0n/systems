@@ -3,11 +3,12 @@
   imports = [
     (libutils.fromRoot "/modules/nixos/server")
 
-    ./system.nix
+    ./services
+
+    ./builder.nix
     ./disko.nix
     ./networking.nix
-    ./services
-    ./builder
+    ./system.nix
   ];
 
   home-manager.users."${vars.username}" =

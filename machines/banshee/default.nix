@@ -3,10 +3,10 @@
   imports = [
     (libutils.fromRoot "/modules/nixos/server")
 
-    ./builder
     ./networking
     ./services
 
+    ./builder.nix
     ./disko.nix
     ./system.nix
   ];
