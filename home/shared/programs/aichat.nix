@@ -29,7 +29,18 @@ let
       temp_message_file="$(mktemp -t aicommit-msg.XXXXXX)"
       trap 'rm -f "$temp_message_file"' EXIT
 
-      git diff --cached | aichat -r aicommit >"$temp_message_file"
+      recent_commits="$(
+        git log -n 5 --pretty=format:$'- %s%n%b%n' 2>/dev/null || true
+      )"
+      if [[ -z "$recent_commits" ]]; then
+        recent_commits="(no previous commits to learn from yet)"
+      fi
+
+      {
+        printf 'Recent commit messages (newest first):\n%s\n' "$recent_commits"
+        printf '\nStaged diff:\n'
+        git diff --cached
+      } | aichat -r aicommit >"$temp_message_file"
 
       echo "------------- Proposed commit message -------------"
       cat "$temp_message_file"
