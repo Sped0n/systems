@@ -31,8 +31,7 @@
     "chatwise"
 
     # creativity
-    "affinity-photo"
-    "affinity-designer"
+    "affinity"
     "handbrake-app"
 
     # entertainment
