@@ -4,7 +4,8 @@ top_p: 0.95
 ---
 
 Your task is to learn style from recent commit messages and generate
-commit message based on the diff.
+commit message based on the diff. An optional hint may be supplied via
+the first command-line argument; treat it as additional context.
 
 Other requirements
 

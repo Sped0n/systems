@@ -21,6 +21,8 @@ let
       #!/usr/bin/env bash
       set -euo pipefail
 
+      hint="''${1:-}"
+
       if git diff --cached --quiet; then
         echo "No staged changes."
         exit 0
@@ -38,6 +40,9 @@ let
 
       {
         printf 'Recent commit messages (newest first):\n%s\n' "$recent_commits"
+        if [[ -n "$hint" ]]; then
+          printf '\nHint:\n%s\n' "$hint"
+        fi
         printf '\nStaged diff:\n'
         git diff --cached
       } | aichat -r aicommit >"$temp_message_file"
