@@ -32,7 +32,7 @@
       gnupg
 
       # Text and terminal utilities
-      du-dust
+      dust
       fd
       fzf
       btop
