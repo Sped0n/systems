@@ -24,7 +24,7 @@
     "microsoft-outlook"
 
     # browsers
-    "brave-browser"
+    "vivaldi"
     "chromium"
   ];
 }
