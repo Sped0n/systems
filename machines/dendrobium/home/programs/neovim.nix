@@ -11,7 +11,6 @@
     # typescript
     vtsls
     eslint
-    pnpm
 
     # zig
     zls_0_15
