@@ -1,9 +1,8 @@
 { ... }:
 {
   imports = [
-    ./security.nix
     ./perf.nix
-
+    ./security.nix
     ./tailscale.nix
   ];
 
