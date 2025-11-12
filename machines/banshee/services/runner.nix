@@ -1,0 +1,44 @@
+{
+  config,
+  pkgs-unstable,
+  secrets,
+  ...
+}:
+{
+  age.secrets."forgejo-runner-token" = {
+    file = "${secrets}/ages/forgejo-runner-token.age";
+    owner = "root";
+    mode = "0400";
+  };
+
+  services.gitea-actions-runner = {
+    package = pkgs-unstable.forgejo-runner;
+    instances.alfa = {
+      enable = true;
+      name = "banshee-alfa";
+      tokenFile = config.age.secrets."forgejo-runner-token".path;
+      url = "https://git.sped0n.com/";
+      labels = [
+        "docker:docker://catthehacker/ubuntu:act-latest"
+        "docker-x86_64:docker://catthehacker/ubuntu:act-latest"
+      ];
+      settings = {
+        runner = {
+          capacity = 1;
+          fetch_interval = "30s";
+        };
+        container = {
+          docker_host = "automount";
+          options = builtins.concatStringsSep " " [
+            "--memory=4g"
+            "--memory-swap=8g"
+            "--cpus=3"
+          ];
+          force_pull = true;
+        };
+      };
+    };
+  };
+
+  networking.firewall.trustedInterfaces = [ "br-+" ];
+}
