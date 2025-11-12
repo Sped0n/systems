@@ -19,8 +19,8 @@
       tokenFile = config.age.secrets."forgejo-runner-token".path;
       url = "https://git.sped0n.com/";
       labels = [
-        "docker:docker://node:lts-trixie"
-        "docker-aarch64:docker://node:lts-trixie"
+        "docker:docker://catthehacker/ubuntu:act-latest"
+        "docker-aarch64:docker://catthehacker/ubuntu:act-latest"
       ];
       settings = {
         runner = {
