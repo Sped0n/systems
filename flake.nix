@@ -4,11 +4,8 @@
   inputs = {
     # core
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2505";
-    nixpkgs-unstable.url = "https://flakehub.com/f/DeterminateSystems/nixpkgs-weekly/0.1";
-    determinate = {
-      url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
+    nixpkgs-unstable.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1";
+    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
 
     # shared
     secrets = {
