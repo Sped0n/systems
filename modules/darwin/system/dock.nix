@@ -16,6 +16,7 @@
       wvous-bl-corner = 1; # bottom-left - Disabled
       wvous-br-corner = 4; # bottom-right - Desktop
       appswitcher-all-displays = true; # Show app switcher on all displays
+      mru-spaces = false; # Automatically rearrange Spaces based on most recent use
     };
 
     CustomUserPreferences.".GlobalPreferences".AppleSpacesSwitchOnActivate = true; # Automatically switch to a new space when switching to the application
