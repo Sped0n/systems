@@ -93,6 +93,7 @@ in
             api_base = "https://llmproxy.sped0n.com/openrouter/v1";
           }
         ];
+        user_agent = "auto";
       };
       "aichat/roles/aicommit.md".source = (
         libutils.fromRoot "/home/shared/config/aichat/roles/aicommit.md"
