@@ -5,6 +5,10 @@ let
 in
 {
   systemd = {
+    tmpfiles.rules = with vars; [
+      "d ${home}/.config 0755 ${username} users -"
+    ];
+
     services.my-cfgpull = {
       description = "Ensure ${targetDir} is synced with ${repoUrl}";
       wants = [ "network-online.target" ];
