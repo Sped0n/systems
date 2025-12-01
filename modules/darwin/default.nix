@@ -48,6 +48,7 @@
     # nix run nixpkgs#mas search XXX
     masApps = {
       "Bitwarden" = 1352778147;
+      "Quantumult X" = 1443988620;
     };
   };
 }
