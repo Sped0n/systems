@@ -1,9 +1,7 @@
 {
   config,
-  determinate,
   libutils,
   pkgs,
-  pkgs-unstable,
   vars,
   ...
 }:
@@ -22,12 +20,6 @@
   determinate-nix.customSettings = config.nix.settings // {
     builders-use-substitutes = true;
   };
-
-  environment.systemPackages = [
-    (pkgs-unstable.nixos-rebuild-ng.override {
-      nix = determinate.inputs.nix.packages."${pkgs.stdenv.system}".default;
-    })
-  ];
 
   users.users = {
     ${vars.username} = {

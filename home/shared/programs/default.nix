@@ -2,6 +2,8 @@
 {
   imports = [
     ./aichat.nix
+    ./aicommit.nix
+    ./delta.nix
     ./direnv.nix
     ./eza.nix
     ./fastfetch.nix

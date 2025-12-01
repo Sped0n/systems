@@ -109,6 +109,7 @@ in
         };
         programs.ssh = {
           enable = true;
+          enableDefaultConfig = false;
           matchBlocks = builtins.listToAttrs (lib.concatMap makeMatchBlockAttrs cfg.deployees);
         };
       };

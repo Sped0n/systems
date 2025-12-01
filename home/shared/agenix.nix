@@ -10,7 +10,7 @@
   ];
 
   home.packages = [
-    (agenix.packages."${pkgs.system}".default.override {
+    (agenix.packages."${pkgs.stdenv.hostPlatform.system}".default.override {
       nix = determinate.inputs.nix.packages."${pkgs.stdenv.system}".default;
     })
   ];

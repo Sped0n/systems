@@ -5,10 +5,14 @@
       enable = true;
       lfs.enable = true;
 
-      userName = "Sped0n";
-      userEmail = "hi@sped0n.com";
-
-      extraConfig = {
+      settings = {
+        user = {
+          name = "Sped0n";
+          email = "hi@sped0n.com";
+        };
+        alias = {
+          diff-side-by-side = "-c delta.features=side-by-side diff";
+        };
         init.defaultBranch = "main";
         pull.rebase = true;
         rebase.autoStash = true;
@@ -27,21 +31,6 @@
         "*.swp"
         ".direnv"
       ];
-
-      delta = {
-        enable = true;
-        options = {
-          line-number = true;
-          dark = true;
-          navigate = true;
-          syntax-theme = "ansi";
-          diff-so-fancy = true;
-        };
-      };
-
-      aliases = {
-        diff-side-by-side = "-c delta.features=side-by-side diff";
-      };
     };
 
     zsh.shellAliases = {

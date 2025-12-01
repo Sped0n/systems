@@ -1,7 +1,9 @@
 {
   config,
+  determinate,
   libutils,
   pkgs,
+  pkgs-unstable,
   secrets,
   specialArgs,
   vars,
@@ -54,6 +56,9 @@
 
   environment.systemPackages = [
     pkgs.vim
+    (pkgs-unstable.nixos-rebuild-ng.override {
+      nix = determinate.inputs.nix.packages."${pkgs.stdenv.system}".default;
+    })
   ];
 
   age = {

@@ -1,4 +1,4 @@
-{ pkgs-unstable, libutils, ... }:
+{ libutils, ... }:
 {
   imports = [
     (libutils.fromRoot "/modules/shared")
@@ -10,9 +10,5 @@
     ./gc.nix
     ./system.nix
     ./users.nix
-  ];
-
-  environment.systemPackages = [
-    pkgs-unstable.nixos-rebuild-ng
   ];
 }
