@@ -26,6 +26,12 @@ in
         mode = "0400";
         path = "${home}/.ssh/id_builder_x86_64";
       };
+
+      "openwrt-ssh-key" = {
+        file = "${secrets}/ages/openwrt-ssh-key.age";
+        mode = "0400";
+        path = "${home}/.ssh/id_openwrt";
+      };
     }
     // (
       let
@@ -63,6 +69,12 @@ in
           user = "builder";
         }
         // basicBlock;
+        openwrtBlock = {
+          port = 12222;
+          user = "root";
+          identityFile = config.age.secrets."openwrt-ssh-key".path;
+        }
+        // basicBlock;
       in
       {
         "gitlab.com" = gitBlock;
@@ -82,6 +94,15 @@ in
           identityFile = config.age.secrets."builder-x86_64-ssh-key".path;
         }
         // builderBlock;
+
+        "tonfa" = {
+          hostname = "tonfa";
+        }
+        // openwrtBlock;
+        "openwrt" = {
+          hostname = "192.168.31.1";
+        }
+        // openwrtBlock;
       }
       // (
         let
