@@ -20,18 +20,18 @@
       inetutils
     ])
     ++ (with pkgs-unstable; [
-      # General packages for development and system management
+      # general packages for development and system management
       just
       openssh
       wget
       curl
       nali
 
-      # Encryption and security tools
+      # encryption and security tools
       age
       gnupg
 
-      # Text and terminal utilities
+      # text and terminal utilities
       dust
       fd
       fzf
@@ -42,5 +42,8 @@
       less
       tokei
       tlrc
+
+      # file transfer and synchronization
+      croc
     ]);
 }
