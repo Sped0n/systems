@@ -1,4 +1,4 @@
-{ pkgs, vars, ... }:
+{ vars, ... }:
 {
   users.mutableUsers = false;
 
@@ -8,7 +8,6 @@
   };
 
   users.users."${vars.username}" = {
-    home = vars.home;
     hashedPassword = vars.hashedPassword;
     isNormalUser = true;
     extraGroups = [
@@ -16,7 +15,6 @@
       "wheel"
       "docker"
     ];
-    shell = pkgs.zsh;
     uid = 1000;
   };
 

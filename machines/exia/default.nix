@@ -1,24 +1,13 @@
-{ libutils, vars, ... }:
+{ libutils, ... }:
 {
   imports = [
     (libutils.fromRoot "/modules/nixos/server")
 
+    ./home
     ./networking
     ./services
 
     ./disko.nix
     ./system.nix
   ];
-
-  home-manager.users.${vars.username} =
-    { ... }:
-    {
-      imports = [ ./home ];
-      home = {
-        enableNixpkgsReleaseCheck = false;
-        stateVersion = "24.11";
-      };
-    };
-
-  system.stateVersion = "24.11";
 }

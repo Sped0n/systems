@@ -1,10 +1,12 @@
-{ libutils, ... }:
+{ libutils, vars, ... }:
 {
-  imports = [
-    (libutils.fromRoot "/home/nixos/server")
+  home-manager.users.${vars.username} = {
+    imports = [
+      (libutils.fromRoot "/home/nixos/server")
 
-    ./programs
+      ./programs
 
-    ./packages.nix
-  ];
+      ./packages.nix
+    ];
+  };
 }

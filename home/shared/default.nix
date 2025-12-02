@@ -3,7 +3,7 @@
   imports = [
     ./programs
 
-    ./agenix.nix
+    ./age.nix
     ./packages.nix
   ];
 

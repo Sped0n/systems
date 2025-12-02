@@ -1,9 +1,12 @@
-{ libutils, ... }:
+{ libutils, vars, ... }:
 {
-  imports = [
-    (libutils.fromRoot "/home/darwin")
+  home-manager.users.${vars.username} = {
+    imports = [
+      (libutils.fromRoot "/home/darwin")
 
-    ./programs
-    ./packages.nix
-  ];
+      ./programs
+
+      ./packages.nix
+    ];
+  };
 }
