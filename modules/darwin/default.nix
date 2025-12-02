@@ -14,6 +14,7 @@
     ./casks.nix
     ./diff.nix
     ./gc.nix
+    ./networking.nix
   ];
 
   nix.enable = false;
