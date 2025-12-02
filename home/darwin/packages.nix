@@ -1,19 +1,25 @@
-{ pkgs, ... }:
+{ pkgs, pkgs-unstable, ... }:
 {
-  home.packages = with pkgs; [
-    docker
-    minicom
-    cdecl
-    bfg-repo-cleaner
-    repomix
-    hyperfine
-    ast-grep
+  home.packages =
+    (with pkgs; [
+      docker
+      minicom
+      cdecl
+      bfg-repo-cleaner
 
-    smartmontools
-    restic
-    pandoc
+      smartmontools
+    ])
+    ++ (with pkgs-unstable; [
+      repomix
+      hyperfine
+      ast-grep
 
-    ffmpeg
-    imagemagick
-  ];
+      restic
+      pandoc
+
+      ffmpeg
+      imagemagick
+
+      mas
+    ]);
 }

@@ -2,7 +2,6 @@
 {
   home.packages =
     (with pkgs; [
-      # Core
       coreutils
       findutils
       diffutils
@@ -18,20 +17,18 @@
       zip
       unzip
       inetutils
+      tcptraceroute
     ])
     ++ (with pkgs-unstable; [
-      # general packages for development and system management
       just
       openssh
       wget
       curl
       nali
 
-      # encryption and security tools
       age
       gnupg
 
-      # text and terminal utilities
       dust
       fd
       fzf
@@ -43,7 +40,6 @@
       tokei
       tlrc
 
-      # file transfer and synchronization
       croc
     ]);
 }
