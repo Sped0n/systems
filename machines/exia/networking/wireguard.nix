@@ -28,12 +28,6 @@
     };
   };
 
-  system.activationScripts.fix-wireguard-activation = ''
-    if ${pkgs.iproute2}/bin/ip link show wg0 >/dev/null 2>&1; then
-      ${pkgs.iproute2}/bin/ip link delete wg0
-    fi
-  '';
-
   systemd.services = {
     fix-wireguard-interface = {
       description = "Ensure wg0 is absent before wg-quick starts";
