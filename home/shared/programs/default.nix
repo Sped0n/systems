@@ -1,4 +1,4 @@
-{ pkgs-unstable, ... }:
+{ pkgs-unstable, vars, ... }:
 {
   imports = [
     ./aichat.nix
@@ -41,7 +41,7 @@
     settings = {
       auto_sync = true;
       sync_frequency = "1m";
-      sync_address = "http://phenex:10004";
+      sync_address = "http://phenex.${vars.tailnet}:10004";
       style = "compact";
       inline_height = 10;
       invert = false;

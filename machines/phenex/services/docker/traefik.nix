@@ -1,4 +1,4 @@
-{ ... }:
+{ vars, ... }:
 {
   systemd.tmpfiles.rules = [
     "f /var/log/traefik/access.log 0755 root root -"
@@ -49,7 +49,7 @@
 
         outputs.loki = [
           {
-            domain = "http://phenex:9428";
+            domain = "http://phenex.${vars.tailnet}:9428";
             endpoint = "/insert/loki/api/v1/push";
             gzip_request = true;
             sanitize_label_names = true;

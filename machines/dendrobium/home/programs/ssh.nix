@@ -77,26 +77,41 @@ in
         // basicBlock;
       in
       {
+        # --- git servers ------------------------------------------------------
         "gitlab.com" = gitBlock;
         "git.sped0n.com" = {
-          hostname = "phenex";
+          hostname = "phenex.${vars.tailnet}";
           port = 22222;
         }
         // gitBlock;
 
+        # --- builders ---------------------------------------------------------
         "builder-aarch64" = {
-          hostname = "calibarn";
+          hostname = vars.calibarn.ipv4;
           identityFile = config.age.secrets."builder-aarch64-ssh-key".path;
         }
         // builderBlock;
+        "_builder-aarch64" = {
+          match = ''
+            host builder-aarch64 exec "tailscale ping -c 3 --timeout 2s calibarn"
+          '';
+          hostname = "calibarn.${vars.tailnet}";
+        };
         "builder-x86_64" = {
-          hostname = "banshee";
+          hostname = vars.banshee.ipv4;
           identityFile = config.age.secrets."builder-x86_64-ssh-key".path;
         }
         // builderBlock;
+        "_builder-x86_64" = {
+          match = ''
+            host builder-x86_64 exec "tailscale ping -c 3 --timeout 2s banshee"
+          '';
+          hostname = "banshee.${vars.tailnet}";
+        };
 
+        # --- routers ----------------------------------------------------------
         "tonfa" = {
-          hostname = "tonfa";
+          hostname = "tonfa.${vars.tailnet}";
         }
         // openwrtBlock;
         "openwrt" = {
@@ -104,6 +119,7 @@ in
         }
         // openwrtBlock;
       }
+      # --- servers ------------------------------------------------------------
       // (
         let
           mkMatchBlockAttrs = hostName: [
@@ -125,7 +141,7 @@ in
                 match = ''
                   host ${hostName} exec "tailscale ping -c 3 --timeout 2s ${hostName}"
                 '';
-                hostname = hostName;
+                hostname = "${hostName}.${vars.tailnet}";
               };
             }
           ];
