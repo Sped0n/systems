@@ -1,10 +1,10 @@
-{ libutils, pkgs-unstable, ... }:
+{ functions, pkgs-unstable, ... }:
 {
   programs.yazi = {
     enable = true;
     package = pkgs-unstable.yazi;
     theme = builtins.fromTOML (
-      builtins.readFile (libutils.fromRoot "/home/shared/config/yazi/theme.toml")
+      builtins.readFile (functions.fromRoot "/home/shared/config/yazi/theme.toml")
     );
   };
 }

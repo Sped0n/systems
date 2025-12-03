@@ -67,7 +67,7 @@
               if builtins.match ".*darwin$" system != null then "/Users/${username}" else "/home/${username}";
           };
 
-          libutils = {
+          functions = {
             loadOverlays = import ./functions/loadOverlays.nix;
             fromRoot = relPath: self.outPath + relPath;
           };
@@ -78,7 +78,7 @@
               allowUnfree = true;
             }
             // unstableConfigOverrides;
-            overlays = libutils.loadOverlays ./overlays;
+            overlays = functions.loadOverlays ./overlays;
           };
         }
         // extraArgs;

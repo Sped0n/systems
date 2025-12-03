@@ -1,7 +1,7 @@
-{ libutils, ... }:
+{ functions, ... }:
 {
   imports = [
-    (libutils.fromRoot "/modules/darwin")
+    (functions.fromRoot "/modules/darwin")
 
     ./brew
     ./home

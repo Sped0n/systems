@@ -1,7 +1,7 @@
-{ libutils, ... }:
+{ functions, ... }:
 {
   imports = [
-    (libutils.fromRoot "/modules/shared")
+    (functions.fromRoot "/modules/shared")
 
     ./brew
     ./system

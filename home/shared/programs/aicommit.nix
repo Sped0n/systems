@@ -1,7 +1,7 @@
 {
   config,
+  functions,
   lib,
-  libutils,
   pkgs,
   pkgs-unstable,
   ...
@@ -67,7 +67,7 @@ in
     ];
 
     xdg.configFile."aichat/roles/aicommit.md".source = (
-      libutils.fromRoot "/home/shared/config/aichat/roles/aicommit.md"
+      functions.fromRoot "/home/shared/config/aichat/roles/aicommit.md"
     );
   };
 }

@@ -1,6 +1,6 @@
-{ libutils, ... }:
+{ functions, ... }:
 {
   imports = [
-    (libutils.fromRoot "/home/shared")
+    (functions.fromRoot "/home/shared")
   ];
 }

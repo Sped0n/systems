@@ -1,8 +1,8 @@
-{ libutils, vars, ... }:
+{ functions, vars, ... }:
 {
   home-manager.users.${vars.username} = {
     imports = [
-      (libutils.fromRoot "/home/darwin")
+      (functions.fromRoot "/home/darwin")
 
       ./programs
 

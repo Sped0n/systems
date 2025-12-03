@@ -1,6 +1,6 @@
 {
   determinate,
-  libutils,
+  functions,
   pkgs,
   vars,
   ...
@@ -8,7 +8,7 @@
 {
   nixpkgs = {
     config.allowUnfree = true;
-    overlays = libutils.loadOverlays (libutils.fromRoot "/overlays");
+    overlays = functions.loadOverlays (functions.fromRoot "/overlays");
   };
 
   nix = {

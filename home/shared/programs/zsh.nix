@@ -1,6 +1,6 @@
 {
+  functions,
   lib,
-  libutils,
   pkgs,
   ...
 }:
@@ -21,8 +21,8 @@
     };
     initContent = lib.mkMerge [
       (lib.mkOrder 500 ''
-        source ${(libutils.fromRoot "/home/shared/config/zsh/extras.zsh")}
-        source ${(libutils.fromRoot "/home/shared/config/zsh/functions.zsh")}
+        source ${(functions.fromRoot "/home/shared/config/zsh/extras.zsh")}
+        source ${(functions.fromRoot "/home/shared/config/zsh/functions.zsh")}
       '')
       (lib.mkOrder 1550 "fastfetch")
     ];
