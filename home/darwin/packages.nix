@@ -19,7 +19,5 @@
 
       ffmpeg
       imagemagick
-
-      mas
     ]);
 }
