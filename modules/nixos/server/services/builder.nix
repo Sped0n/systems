@@ -27,10 +27,6 @@ let
         identityFile = [
           config.age.secrets."${hostName}-ssh-key".path
         ];
-        extraOptions = {
-          "TCPKeepAlive" = "yes";
-          "AddKeysToAgent" = "yes";
-        };
       };
     }
     {

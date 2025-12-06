@@ -53,28 +53,19 @@ in
     ];
     matchBlocks =
       let
-        basicBlock = {
-          extraOptions = {
-            "TCPKeepAlive" = "yes";
-            "AddKeysToAgent" = "yes";
-          };
-        };
         gitBlock = {
           user = "git";
           identityFile = config.age.secrets."git-ssh-key".path;
-        }
-        // basicBlock;
+        };
         builderBlock = {
           port = 12222;
           user = "builder";
-        }
-        // basicBlock;
+        };
         openwrtBlock = {
           port = 12222;
           user = "root";
           identityFile = config.age.secrets."openwrt-ssh-key".path;
-        }
-        // basicBlock;
+        };
       in
       {
         # --- git servers ------------------------------------------------------
@@ -132,8 +123,7 @@ in
                 identityFile = [
                   config.age.secrets."${hostName}-ssh-key".path
                 ];
-              }
-              // basicBlock;
+              };
             }
             {
               name = "_${hostName}";
