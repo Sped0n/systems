@@ -11,5 +11,4 @@
     ./disko.nix
     ./system.nix
   ];
-
 }

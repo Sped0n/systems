@@ -10,13 +10,13 @@
       ipv4.addresses = [
         {
           address = vars.banshee.ipv4;
-          prefixLength = 32;
+          prefixLength = 24;
         }
       ];
       ipv6.addresses = [
         {
           address = vars.banshee.ipv6;
-          prefixLength = 128;
+          prefixLength = 64;
         }
       ];
     };

@@ -8,7 +8,7 @@
       "phenex"
     ];
     authorizedKeys = [
-      vars.calibarn.builderSshPublicKey
+      vars.banshee.builderSshPublicKey
     ];
   };
 }
