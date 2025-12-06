@@ -14,7 +14,9 @@
       rndtime = "30m";
     };
     ignoreIP = [
-      "100.0.0.0/24" # tailscale
+      # tailscale
+      "100.64.0.0/10"
+      "fd7a:115c:a1e0::/48"
     ];
   };
 }
