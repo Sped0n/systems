@@ -8,7 +8,7 @@
     enable = lib.mkDefault false;
     package = pkgs-unstable.aichat;
     settings = {
-      model = lib.mkDefault "openai:x-ai/grok-4-fast";
+      model = lib.mkDefault "openai:x-ai/grok-4.1-fast";
       keybinding = "vi";
       highlight = true;
       light_theme = false;
