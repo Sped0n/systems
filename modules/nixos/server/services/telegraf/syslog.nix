@@ -29,10 +29,18 @@ in
               );
           };
 
-          filter f_ignore_veth {
+          filter f_ignore_kernel_veth {
               not (
                 program("kernel") and
                 level(info) and
+                message("veth")
+              );
+          };
+
+          filter f_ignore_dhcpcd_veth {
+              not (
+                program("dhcpcd") and
+                (level(notice) or level(warning) or level(err)) and
                 message("veth")
               );
           };
@@ -53,7 +61,8 @@ in
             source(s_src);
             filter(f_skip_docker_containers);
             filter(f_ignore_firewall);
-            filter(f_ignore_veth);
+            filter(f_ignore_kernel_veth);
+            filter(f_ignore_dhcpcd_veth);
             filter(f_basic);
             destination(d_telegraf);
           };
