@@ -20,7 +20,6 @@
     # productivity
     "raycast"
     "obsidian"
-    "fantastical"
     "microsoft-outlook"
 
     # browsers
