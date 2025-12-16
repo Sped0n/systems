@@ -96,18 +96,25 @@ in
 
     age.secrets = builtins.listToAttrs (map makeSecretAttr cfg.deployees);
 
-    home-manager.users.builder =
-      { ... }:
-      {
-        home = {
-          enableNixpkgsReleaseCheck = false;
-          stateVersion = "24.11";
-        };
-        programs.ssh = {
-          enable = true;
-          enableDefaultConfig = false;
-          matchBlocks = builtins.listToAttrs (lib.concatMap makeMatchBlockAttrs cfg.deployees);
-        };
+    home-manager.users.builder = {
+      home = {
+        enableNixpkgsReleaseCheck = false;
+        stateVersion = "24.11";
       };
+      programs.ssh = {
+        enable = true;
+        enableDefaultConfig = false;
+        matchBlocks = {
+          "*" = {
+            addKeysToAgent = "yes";
+            identitiesOnly = true;
+            extraOptions = {
+              "TCPKeepAlive" = "yes";
+            };
+          };
+        }
+        // builtins.listToAttrs (lib.concatMap makeMatchBlockAttrs cfg.deployees);
+      };
+    };
   };
 }
