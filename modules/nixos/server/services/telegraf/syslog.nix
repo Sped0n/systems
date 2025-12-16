@@ -45,6 +45,13 @@ in
               );
           };
 
+          filter f_ignore_restic {
+              not (
+                program("restic") and
+                level(info)
+              );
+          };
+
           filter f_basic {
               (
                   (program("tailscaled") or program("dhcpcd")) and
@@ -63,6 +70,7 @@ in
             filter(f_ignore_firewall);
             filter(f_ignore_kernel_veth);
             filter(f_ignore_dhcpcd_veth);
+            filter(f_ignore_restic);
             filter(f_basic);
             destination(d_telegraf);
           };
