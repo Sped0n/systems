@@ -4,6 +4,7 @@
     ./programs
 
     ./age.nix
+    ./gc.nix
     ./packages.nix
   ];
 
