@@ -7,5 +7,6 @@
     ./docker.nix
     ./msmtp.nix
     ./restic.nix
+    ./runner.nix
   ];
 }
