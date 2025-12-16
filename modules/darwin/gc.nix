@@ -1,6 +1,7 @@
 {
   config,
   determinate,
+  lib,
   pkgs,
   ...
 }:
@@ -11,14 +12,14 @@ let
 in
 {
   nix.gc = {
-    interval = [
+    interval = lib.mkDefault [
       {
-        Weekday = 7;
-        Hour = 0;
+        Day = 1;
+        Hour = 3;
         Minute = 0;
       }
     ];
-    options = "--delete-older-than 30d";
+    options = lib.mkDefault "--delete-older-than 30d";
   };
 
   launchd = {
