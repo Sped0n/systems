@@ -41,4 +41,9 @@
       nix = determinate.inputs.nix.packages."${pkgs.stdenv.system}".default;
     })
   ];
+
+  services.my-determinate = {
+    enable = true;
+    config.garbageCollector.strategy = "disabled";
+  };
 }
