@@ -5,6 +5,7 @@
     ./restic.nix
     ./runner.nix
     ./telegraf.nix
+    ./ss.nix
   ];
 
   systemd.tmpfiles.rules = with vars; [

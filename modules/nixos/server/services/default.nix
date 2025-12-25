@@ -8,5 +8,6 @@
     ./msmtp.nix
     ./restic.nix
     ./runner.nix
+    ./ss.nix
   ];
 }
