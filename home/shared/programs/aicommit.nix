@@ -47,7 +47,7 @@ in
             fi
             printf '\nStaged diff:\n'
             git diff --cached
-          } | aichat -r aicommit >"$temp_message_file"
+          } | aichat -r aicommit --code >"$temp_message_file"
 
           echo "------------- Proposed commit message -------------"
           cat "$temp_message_file"
