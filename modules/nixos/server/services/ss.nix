@@ -38,7 +38,7 @@ in
         Group = "my-ss";
         LimitNOFILE = 32768;
         ExecStart = ''
-          ${pkgs-unstable.shadowsocks-rust}/bin/ssserver -c ${ssConfigPath}
+          ${pkgs-unstable.shadowsocks-rust}/bin/ssserver -c ${ssConfigPath} -6 --log-without-time
         '';
         ExecStop = "${pkgs.coreutils}/bin/killall ssserver";
       };
