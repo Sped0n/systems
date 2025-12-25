@@ -16,12 +16,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    boot.kernel.sysctl = {
-      # https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes
-      "net.core.rmem_max" = 7500000;
-      "net.core.wmem_max" = 7500000;
-    };
-
     age.secrets."${host}-cf-tunnel-json" = {
       file = "${secrets}/ages/${host}-cf-tunnel-json.age";
       owner = "root";
