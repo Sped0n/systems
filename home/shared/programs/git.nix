@@ -1,5 +1,9 @@
-{ ... }:
+{ pkgs, ... }:
 {
+  home.packages = [
+    pkgs.git-extras
+  ];
+
   programs = {
     git = {
       enable = true;
