@@ -4,15 +4,18 @@ return {
     "folke/snacks.nvim",
     opts = {
       dashboard = {
-        preset = {
-          header = table.concat({
-            [[                               __                ]],
-            [[  ___     ___    ___   __  __ /\_\    ___ ___    ]],
-            [[ / _ `\  / __`\ / __`\/\ \/\ \\/\ \  / __` __`\  ]],
-            [[/\ \/\ \/\  __//\ \_\ \ \ \_/ |\ \ \/\ \/\ \/\ \ ]],
-            [[\ \_\ \_\ \____\ \____/\ \___/  \ \_\ \_\ \_\ \_\]],
-            [[ \/_/\/_/\/____/\/___/  \/__/    \/_/\/_/\/_/\/_/]],
-          }, "\n"),
+        formats = {
+          key = function(item) return { { "[", hl = "special" }, { item.key, hl = "key" }, { "]", hl = "special" } } end,
+        },
+        sections = {
+          { title = "MRU", padding = 1 },
+          { section = "recent_files", limit = 8, padding = 1 },
+          { title = "MRU ", file = vim.fn.fnamemodify(".", ":~"), padding = 1 },
+          { section = "recent_files", cwd = true, limit = 8, padding = 1 },
+          { title = "Sessions", padding = 1 },
+          { section = "projects", padding = 1 },
+          { title = "Bookmarks", padding = 1 },
+          { section = "keys" },
         },
       },
     },
