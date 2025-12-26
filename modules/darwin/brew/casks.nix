@@ -13,6 +13,7 @@
     "rectangle"
     "appcleaner"
     "keka"
+    "keyboardcleantool"
 
     # entertainment
     "iina"
