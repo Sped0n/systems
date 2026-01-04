@@ -99,46 +99,46 @@
     in
     {
       darwinConfigurations = {
-        "dendrobium" = nix-darwin.lib.darwinSystem rec {
+        "wks-0" = nix-darwin.lib.darwinSystem rec {
           system = "aarch64-darwin";
           specialArgs = genSpecialArgs {
             inherit system;
           };
-          modules = commonDarwinModules ++ [ ./machines/dendrobium ];
+          modules = commonDarwinModules ++ [ ./machines/wks-0 ];
         };
       };
 
       nixosConfigurations = {
-        "phenex" = nixpkgs.lib.nixosSystem rec {
+        "srv-de-0" = nixpkgs.lib.nixosSystem rec {
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
             inherit system;
           };
-          modules = commonNixosModules ++ [ ./machines/phenex ];
+          modules = commonNixosModules ++ [ ./machines/srv-de-0 ];
         };
 
-        "banshee" = nixpkgs.lib.nixosSystem rec {
+        "srv-sg-0" = nixpkgs.lib.nixosSystem rec {
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
             inherit system;
           };
-          modules = commonNixosModules ++ [ ./machines/banshee ];
+          modules = commonNixosModules ++ [ ./machines/srv-sg-0 ];
         };
 
-        "calibarn" = nixpkgs.lib.nixosSystem rec {
+        "srv-sg-1" = nixpkgs.lib.nixosSystem rec {
           system = "aarch64-linux";
           specialArgs = genSpecialArgs {
             inherit system;
           };
-          modules = commonNixosModules ++ [ ./machines/calibarn ];
+          modules = commonNixosModules ++ [ ./machines/srv-sg-1 ];
         };
 
-        "exia" = nixpkgs.lib.nixosSystem rec {
+        "srv-nl-0" = nixpkgs.lib.nixosSystem rec {
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
             inherit system;
           };
-          modules = commonNixosModules ++ [ ./machines/exia ];
+          modules = commonNixosModules ++ [ ./machines/srv-nl-0 ];
         };
       };
     };

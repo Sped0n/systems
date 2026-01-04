@@ -1,28 +1,32 @@
 { vars, ... }:
 {
-  networking = {
-    hostName = "calibarn";
+  imports = [
+    ./cloudflared.nix
+  ];
+
+  networking = rec {
+    hostName = "srv-sg-0";
     interfaces.eth0 = {
       ipv4.addresses = [
         {
-          address = "10.0.0.93";
+          address = vars."${hostName}".ipv4;
           prefixLength = 24;
         }
       ];
       ipv6.addresses = [
         {
-          address = vars.calibarn.ipv6;
-          prefixLength = 128;
+          address = vars."${hostName}".ipv6;
+          prefixLength = 64;
         }
       ];
     };
 
     defaultGateway = {
-      address = "10.0.0.1";
+      address = vars."${hostName}".ipv4Gateway;
       interface = "eth0";
     };
     defaultGateway6 = {
-      address = vars.calibarn.ipv6Gateway;
+      address = vars."${hostName}".ipv6Gateway;
       interface = "eth0";
     };
   };

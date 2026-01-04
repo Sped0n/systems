@@ -3,12 +3,12 @@
   services.my-builder = {
     enable = true;
     deployees = [
-      "banshee"
-      "exia"
-      "phenex"
+      "srv-de-0"
+      "srv-sg-0"
+      "srv-nl-0"
     ];
     authorizedKeys = [
-      vars.banshee.builderSshPublicKey
+      vars.srv-sg-0.builderSshPublicKey
     ];
   };
 }

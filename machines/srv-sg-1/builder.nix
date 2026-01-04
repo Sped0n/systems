@@ -2,9 +2,9 @@
 {
   services.my-builder = {
     enable = true;
-    deployees = [ "calibarn" ];
+    deployees = [ "srv-sg-1" ];
     authorizedKeys = [
-      vars.calibarn.builderSshPublicKey
+      vars.srv-sg-1.builderSshPublicKey
     ];
   };
 }

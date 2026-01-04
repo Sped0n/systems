@@ -1,32 +1,32 @@
 { vars, ... }:
 {
   imports = [
-    ./cloudflared.nix
+    ./wireguard.nix
   ];
 
-  networking = {
-    hostName = "phenex";
+  networking = rec {
+    hostName = "srv-nl-0";
     interfaces.eth0 = {
       ipv4.addresses = [
         {
-          address = vars.phenex.ipv4;
-          prefixLength = 22;
+          address = vars."${hostName}".ipv4;
+          prefixLength = 24;
         }
       ];
       ipv6.addresses = [
         {
-          address = vars.phenex.ipv6;
+          address = vars."${hostName}".ipv6;
           prefixLength = 64;
         }
       ];
     };
 
     defaultGateway = {
-      address = vars.phenex.ipv4Gateway;
+      address = vars."${hostName}".ipv4Gateway;
       interface = "eth0";
     };
     defaultGateway6 = {
-      address = vars.phenex.ipv6Gateway;
+      address = vars."${hostName}".ipv6Gateway;
       interface = "eth0";
     };
   };

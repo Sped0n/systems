@@ -7,7 +7,7 @@
 {
   # --- wg-quick ---------------------------------------------------------------
   age.secrets."wg0-conf" = {
-    file = "${secrets}/ages/exia-wg0-conf.age";
+    file = "${secrets}/ages/srv-nl-0-wg0-conf.age";
     owner = "root";
     mode = "0400";
   };

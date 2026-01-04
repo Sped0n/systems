@@ -6,10 +6,10 @@
 }:
 let
   hostNames = [
-    "phenex"
-    "banshee"
-    "exia"
-    "calibarn"
+    "srv-de-0"
+    "srv-sg-0"
+    "srv-nl-0"
+    "srv-sg-1"
   ];
 in
 {
@@ -17,12 +17,12 @@ in
     with vars;
     {
       "builder-aarch64-ssh-key" = {
-        file = "${secrets}/ages/calibarn-builder-ssh-key.age";
+        file = "${secrets}/ages/srv-sg-1-builder-ssh-key.age";
         mode = "0400";
         path = "${home}/.ssh/id_builder_aarch64";
       };
       "builder-x86_64-ssh-key" = {
-        file = "${secrets}/ages/banshee-builder-ssh-key.age";
+        file = "${secrets}/ages/srv-sg-0-builder-ssh-key.age";
         mode = "0400";
         path = "${home}/.ssh/id_builder_x86_64";
       };
@@ -71,38 +71,38 @@ in
         # --- git servers ------------------------------------------------------
         "gitlab.com" = gitBlock;
         "git.sped0n.com" = {
-          hostname = "phenex.${vars.tailnet}";
+          hostname = "srv-de-0.${vars.tailnet}";
           port = 22222;
         }
         // gitBlock;
 
         # --- builders ---------------------------------------------------------
         "builder-aarch64" = {
-          hostname = vars.calibarn.ipv4;
+          hostname = vars.srv-sg-1.ipv4;
           identityFile = config.age.secrets."builder-aarch64-ssh-key".path;
         }
         // builderBlock;
         "_builder-aarch64" = {
           match = ''
-            host builder-aarch64 exec "tailscale ping -c 3 --timeout 2s calibarn"
+            host builder-aarch64 exec "tailscale ping -c 3 --timeout 2s srv-sg-1"
           '';
-          hostname = "calibarn.${vars.tailnet}";
+          hostname = "srv-sg-1.${vars.tailnet}";
         };
         "builder-x86_64" = {
-          hostname = vars.banshee.ipv4;
+          hostname = vars.srv-sg-0.ipv4;
           identityFile = config.age.secrets."builder-x86_64-ssh-key".path;
         }
         // builderBlock;
         "_builder-x86_64" = {
           match = ''
-            host builder-x86_64 exec "tailscale ping -c 3 --timeout 2s banshee"
+            host builder-x86_64 exec "tailscale ping -c 3 --timeout 2s srv-sg-0"
           '';
-          hostname = "banshee.${vars.tailnet}";
+          hostname = "srv-sg-0.${vars.tailnet}";
         };
 
         # --- routers ----------------------------------------------------------
-        "tonfa" = {
-          hostname = "tonfa.${vars.tailnet}";
+        "trt-1" = {
+          hostname = "trt-1.${vars.tailnet}";
         }
         // openwrtBlock;
         "openwrt" = {

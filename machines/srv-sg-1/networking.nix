@@ -1,32 +1,28 @@
 { vars, ... }:
 {
-  imports = [
-    ./cloudflared.nix
-  ];
-
-  networking = {
-    hostName = "banshee";
+  networking = rec {
+    hostName = "srv-sg-1";
     interfaces.eth0 = {
       ipv4.addresses = [
         {
-          address = vars.banshee.ipv4;
+          address = "10.0.0.93";
           prefixLength = 24;
         }
       ];
       ipv6.addresses = [
         {
-          address = vars.banshee.ipv6;
-          prefixLength = 64;
+          address = vars."${hostName}".ipv6;
+          prefixLength = 128;
         }
       ];
     };
 
     defaultGateway = {
-      address = vars.banshee.ipv4Gateway;
+      address = "10.0.0.1";
       interface = "eth0";
     };
     defaultGateway6 = {
-      address = vars.banshee.ipv6Gateway;
+      address = vars."${hostName}".ipv6Gateway;
       interface = "eth0";
     };
   };

@@ -14,8 +14,8 @@
     groups.rclone-webdav = { };
   };
 
-  age.secrets."phenex-rclone-webdav-htpasswd" = {
-    file = "${secrets}/ages/phenex-rclone-webdav-htpasswd.age";
+  age.secrets."srv-de-0-rclone-webdav-htpasswd" = {
+    file = "${secrets}/ages/srv-de-0-rclone-webdav-htpasswd.age";
     owner = "rclone-webdav";
     mode = "0400";
   };
@@ -41,7 +41,7 @@
         ExecStart = ''
           ${pkgs.rclone}/bin/rclone serve webdav \
             --addr :9999 \
-            --htpasswd ${config.age.secrets."phenex-rclone-webdav-htpasswd".path} \
+            --htpasswd ${config.age.secrets."srv-de-0-rclone-webdav-htpasswd".path} \
             --read-only \
             --dir-cache-time 10s \
             ${vars.home}/storage/qb
