@@ -9,5 +9,6 @@
     ./restic.nix
     ./runner.nix
     ./ss.nix
+    ./sshd.nix
   ];
 }

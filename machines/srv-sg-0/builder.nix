@@ -1,4 +1,4 @@
-{ vars, ... }:
+{ ... }:
 {
   services.my-builder = {
     enable = true;
@@ -6,9 +6,6 @@
       "srv-de-0"
       "srv-sg-0"
       "srv-nl-0"
-    ];
-    authorizedKeys = [
-      vars.srv-sg-0.builderSshPublicKey
     ];
   };
 }

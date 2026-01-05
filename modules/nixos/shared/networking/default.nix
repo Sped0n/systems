@@ -3,7 +3,6 @@
   imports = [
     ./perf.nix
     ./security.nix
-    ./tailscale.nix
   ];
 
   networking.nameservers = [

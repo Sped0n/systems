@@ -2,9 +2,9 @@
 {
   homebrew.casks = [
     # dev
-    "tailscale-app"
     "ghostty"
     "orbstack"
+    "surge"
 
     # utility
     "stats"

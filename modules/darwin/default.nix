@@ -8,7 +8,6 @@
 
     ./diff.nix
     ./gc.nix
-    ./networking.nix
     ./nix.nix
   ];
 }

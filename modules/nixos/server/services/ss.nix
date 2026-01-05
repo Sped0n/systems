@@ -4,7 +4,6 @@
   pkgs,
   pkgs-unstable,
   secrets,
-  vars,
   ...
 }:
 let
@@ -45,8 +44,8 @@ in
     };
 
     networking.firewall = {
-      allowedTCPPorts = [ vars.ssPort ];
-      allowedUDPPorts = [ vars.ssPort ];
+      allowedTCPPorts = [ 12345 ];
+      allowedUDPPorts = [ 12345 ];
     };
 
     boot.kernel.sysctl = {

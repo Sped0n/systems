@@ -16,17 +16,6 @@ in
   age.secrets =
     with vars;
     {
-      "builder-aarch64-ssh-key" = {
-        file = "${secrets}/ages/srv-sg-1-builder-ssh-key.age";
-        mode = "0400";
-        path = "${home}/.ssh/id_builder_aarch64";
-      };
-      "builder-x86_64-ssh-key" = {
-        file = "${secrets}/ages/srv-sg-0-builder-ssh-key.age";
-        mode = "0400";
-        path = "${home}/.ssh/id_builder_x86_64";
-      };
-
       "openwrt-ssh-key" = {
         file = "${secrets}/ages/openwrt-ssh-key.age";
         mode = "0400";
@@ -71,7 +60,7 @@ in
         # --- git servers ------------------------------------------------------
         "gitlab.com" = gitBlock;
         "git.sped0n.com" = {
-          hostname = "srv-de-0.${vars.tailnet}";
+          hostname = "10.42.0.${vars."srv-de-0".meshId}";
           port = 22222;
         }
         // gitBlock;
@@ -79,32 +68,16 @@ in
         # --- builders ---------------------------------------------------------
         "builder-aarch64" = {
           hostname = vars.srv-sg-1.ipv4;
-          identityFile = config.age.secrets."builder-aarch64-ssh-key".path;
+          identityFile = config.age.secrets."srv-sg-1-ssh-key".path;
         }
         // builderBlock;
-        "_builder-aarch64" = {
-          match = ''
-            host builder-aarch64 exec "tailscale ping -c 3 --timeout 2s srv-sg-1"
-          '';
-          hostname = "srv-sg-1.${vars.tailnet}";
-        };
         "builder-x86_64" = {
           hostname = vars.srv-sg-0.ipv4;
-          identityFile = config.age.secrets."builder-x86_64-ssh-key".path;
+          identityFile = config.age.secrets."srv-sg-0-ssh-key".path;
         }
         // builderBlock;
-        "_builder-x86_64" = {
-          match = ''
-            host builder-x86_64 exec "tailscale ping -c 3 --timeout 2s srv-sg-0"
-          '';
-          hostname = "srv-sg-0.${vars.tailnet}";
-        };
 
         # --- routers ----------------------------------------------------------
-        "trt-1" = {
-          hostname = "trt-1.${vars.tailnet}";
-        }
-        // openwrtBlock;
         "openwrt" = {
           hostname = "192.168.31.1";
         }
@@ -123,15 +96,6 @@ in
                 identityFile = [
                   config.age.secrets."${hostName}-ssh-key".path
                 ];
-              };
-            }
-            {
-              name = "_${hostName}";
-              value = {
-                match = ''
-                  host ${hostName} exec "tailscale ping -c 3 --timeout 2s ${hostName}"
-                '';
-                hostname = "${hostName}.${vars.tailnet}";
               };
             }
           ];

@@ -65,7 +65,7 @@ in
     services.restic.backups = {
       "main" = {
         user = "root";
-        repository = "s3:s3.eu-central-003.backblazeb2.com/${vars.backupBucketName}/${config.networking.hostName}";
+        repository = "s3:s3.eu-central-003.backblazeb2.com/spedon-infra-backup/${config.networking.hostName}";
         passwordFile = config.age.secrets."restic-password".path;
         environmentFile = config.age.secrets."restic-env".path;
         extraBackupArgs = [

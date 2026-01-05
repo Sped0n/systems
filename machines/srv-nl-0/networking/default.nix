@@ -1,7 +1,7 @@
 { vars, ... }:
 {
   imports = [
-    ./wireguard.nix
+    ./torrent.nix
   ];
 
   networking = rec {

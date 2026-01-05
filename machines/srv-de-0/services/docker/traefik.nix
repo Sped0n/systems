@@ -49,7 +49,7 @@
 
         outputs.loki = [
           {
-            domain = "http://srv-de-0.${vars.tailnet}:9428";
+            domain = "http://10.42.0.${vars."srv-de-0".meshId}:9428";
             endpoint = "/insert/loki/api/v1/push";
             gzip_request = true;
             sanitize_label_names = true;

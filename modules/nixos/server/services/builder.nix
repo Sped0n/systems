@@ -7,6 +7,7 @@
 }:
 let
   cfg = config.services.my-builder;
+  hostname = config.networking.hostName;
 
   makeSecretAttr = hostName: {
     name = "${hostName}-ssh-key";
@@ -16,7 +17,6 @@ let
       mode = "0400";
     };
   };
-
   makeMatchBlockAttrs = hostName: [
     {
       name = hostName;
@@ -27,15 +27,6 @@ let
         identityFile = [
           config.age.secrets."${hostName}-ssh-key".path
         ];
-      };
-    }
-    {
-      name = "_${hostName}";
-      value = {
-        match = ''
-          host ${hostName} exec "tailscale ping -c 3 --timeout 2s ${hostName}"
-        '';
-        hostname = hostName;
       };
     }
   ];
@@ -51,12 +42,6 @@ in
         Hostnames that need builder SSH configuration.
         The service expects `vars.<host>.ipv4` and `vars.username` to exist.
       '';
-    };
-
-    authorizedKeys = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
-      description = "Public SSH keys that should be authorized for the builder user.";
     };
 
     gcDates = lib.mkOption {
@@ -77,7 +62,9 @@ in
       users.builder = {
         isNormalUser = true;
         group = "builder";
-        openssh.authorizedKeys.keys = cfg.authorizedKeys;
+        openssh.authorizedKeys.keys = [
+          vars."${hostname}".sshPublicKey
+        ];
       };
       groups.builder = { };
     };

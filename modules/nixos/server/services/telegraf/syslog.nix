@@ -61,12 +61,12 @@ in
 
           filter f_basic {
               (
-                  (program("tailscaled") or program("dhcpcd")) and
+                  program("dhcpcd") and
                   level(notice..emerg)
               )
               or
               (
-                  not (program("tailscaled") or program("dhcpcd")) and
+                  not program("dhcpcd") and
                   level(info..emerg)
               )
           };

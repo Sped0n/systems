@@ -52,10 +52,8 @@ in
 
     systemd.services.telegraf = {
       requires = [ "nixos-info-update.service" ];
-      after = [
-        "tailscaled.service"
-        "nixos-info-update.service"
-      ];
+      after = [ "nixos-info-update.service" ];
+      serviceConfig.AmbientCapabilities = [ "CAP_NET_ADMIN" ];
     };
   };
 }

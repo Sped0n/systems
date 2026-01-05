@@ -25,7 +25,6 @@ in
         net = {
           interfaces = [
             "eth0"
-            "tailscale0"
           ];
           fieldexclude = [ "speed" ];
           ignore_protocol_stats = true;
