@@ -23,9 +23,9 @@
       tls_starttls = false;
     };
     accounts.default = {
-      host = vars.smtpHost;
+      host = "smtp.resend.com";
       port = 465;
-      user = vars.smtpUsername;
+      user = "resend";
       passwordeval = "${pkgs.coreutils}/bin/cat ${config.age.secrets."smtp-password".path}";
       from = vars.infraEmail;
     };
