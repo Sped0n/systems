@@ -2,10 +2,10 @@
 {
   imports = [
     ./docker.nix
+    ./ladder.nix
     ./restic.nix
     ./runner.nix
     ./telegraf.nix
-    ./ss.nix
   ];
 
   systemd.tmpfiles.rules = with vars; [
