@@ -10,5 +10,6 @@
     ./runner.nix
     ./ss.nix
     ./sshd.nix
+    ./traefik.nix
   ];
 }

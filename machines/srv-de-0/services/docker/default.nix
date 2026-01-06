@@ -1,7 +1,6 @@
 { vars, ... }:
 {
   imports = [
-    ./traefik.nix
     ./syncthing.nix
     ./vaultwarden.nix
     ./qb.nix
