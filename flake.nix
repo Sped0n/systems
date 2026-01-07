@@ -117,6 +117,14 @@
           modules = commonNixosModules ++ [ ./machines/srv-de-0 ];
         };
 
+        "srv-nl-0" = nixpkgs.lib.nixosSystem rec {
+          system = "x86_64-linux";
+          specialArgs = genSpecialArgs {
+            inherit system;
+          };
+          modules = commonNixosModules ++ [ ./machines/srv-nl-0 ];
+        };
+
         "srv-sg-0" = nixpkgs.lib.nixosSystem rec {
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
@@ -133,12 +141,12 @@
           modules = commonNixosModules ++ [ ./machines/srv-sg-1 ];
         };
 
-        "srv-nl-0" = nixpkgs.lib.nixosSystem rec {
+        "srv-sg-2" = nixpkgs.lib.nixosSystem rec {
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
             inherit system;
           };
-          modules = commonNixosModules ++ [ ./machines/srv-nl-0 ];
+          modules = commonNixosModules ++ [ ./machines/srv-sg-2 ];
         };
       };
     };

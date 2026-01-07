@@ -21,6 +21,7 @@ in
         diskio.devices = [
           "sda"
           "vda"
+          "nvme0n1"
         ];
         net = {
           interfaces = [

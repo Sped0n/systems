@@ -7,9 +7,10 @@
 let
   hostNames = [
     "srv-de-0"
-    "srv-sg-0"
     "srv-nl-0"
+    "srv-sg-0"
     "srv-sg-1"
+    "srv-sg-2"
   ];
 in
 {
