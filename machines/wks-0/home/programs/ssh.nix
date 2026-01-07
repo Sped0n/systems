@@ -60,8 +60,8 @@ in
         # --- git servers ------------------------------------------------------
         "gitlab.com" = gitBlock;
         "git.sped0n.com" = {
-          hostname = "10.42.0.${vars."srv-de-0".meshId}";
-          port = 22222;
+          hostname = vars."srv-de-0".ipv4;
+          port = 12222;
         }
         // gitBlock;
 

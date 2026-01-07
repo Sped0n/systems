@@ -1,6 +1,7 @@
 { vars, ... }:
 {
   imports = [
+    ./forgejo.nix
     ./syncthing.nix
     ./vaultwarden.nix
     ./qb.nix
