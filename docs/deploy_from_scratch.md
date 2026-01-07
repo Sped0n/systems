@@ -24,12 +24,11 @@ You will find the hardware configuration file under `/tmp/etc/nixos/hardware-con
 
 ### macOS
 
-1. Place the agenix identity key to `/Users/spedon/.config/secrets/id_agenix`.
-   - `chmod` the key to 0500.
-2. Use `ssh-keygen -t ed25519` to generate a temporary key.
-   - Just keep pressing enter until the key is generated.
-3. Add the key to the ssh-agent with `eval '$(ssh-agent -s)' && ssh-add ~/.ssh/id_ed25519`.
-4. Add the temporary key to the GitHub.
+1. Copy SSH host key (pubkey) to `secrets` flake and set the correct permissions.
+   - You can generate the SSH host key pair with `sudo ssh-keygen -A` if you don't have one.
+2. Use `ssh-keygen -t ed25519` to generate a temporary key pair.
+3. Add the temporary key to the ssh-agent with `eval '$(ssh-agent -s)' && ssh-add ~/.ssh/id_ed25519`.
+4. Add the temporary key (pubkey) to the GitHub.
    - Settings > SSH and GPG keys > New SSH key.
 5. Clone the repo with `git clone git@github.com:Sped0n/systems.git`.
    - Run the command under `/Users/spedon/.config`.
@@ -44,15 +43,33 @@ You will find the hardware configuration file under `/tmp/etc/nixos/hardware-con
 ### NixOS (server)
 
 1. Reset the VPS from the admin console that you got from the provider.
-2. Get the public IPv4 address of the VPS.
-3. Run `nix run github:nix-community/nixos-anywhere -- --flake .#<configuration name> --target-host root@<ip address>`
+   - You need to install a distro that DON'T use SELinux.
+2. Get below information from the VPS.
+   - The IPv4/IPv6 address and gateway.
+   - The [hardware configuration](#get-hardware-configuration-from-non-nixos-host).
+   - The SSH host key (pubkey).
+3. Modify the configuration files under `machines/<configuration name>/` accordingly.
+4. Copy the SSH host key (pubkey) to `secrets` flake and set the correct permissions.
+5. Run
+
+   ```
+   nix run github:nix-community/nixos-anywhere -- \
+      --flake .#<configuration name> \
+      --kexec "$(nix build --print-out-paths github:Sped0n/nixos-images#packages.<arch>-linux.kexec-installer-nixos-unstable-noninteractive)/nixos-kexec-installer-noninteractive-<arch>-linux.tar.gz" \
+      --copy-host-keys \
+      --no-disko-deps \
+      --target-host root@<ip address>
+   ```
+
    - Change `<configuration name>` to the hostname of the machine you are deploying to.
+   - Change `<arch>` to `x86_64` or `aarch64` depending on the architecture of the VPS.
    - Change `<ip address>` to the public IPv4 address of the VPS.
    - User need to have a nix environment to run this command.
    - Run the command under `/Users/spedon/.config/systems`.
-4. Key in the password of the VPS if prompted.
-5. Wait for the command to finish.
-6. You are good to go!
+
+6. Key in the password of the VPS if prompted.
+7. Wait for the command to finish.
+8. You are good to go!
 
 ### NixOS (desktop)
 
@@ -60,7 +77,7 @@ You will find the hardware configuration file under `/tmp/etc/nixos/hardware-con
 2. Boot from the ISO.
 3. Skip the graphical installer and open console.
 4. Run `sudo su` to switch to root.
-5. Repeat step 2 to 4 of [macOS](#macos).
+5. Repeat step 1 to 4 of [macOS](#macos).
 6. Clone the repo with `git clone git@github.com:Sped0n/systems.git`.
    - Run the command under `/tmp`.
 7. Find where the target configuration's `disko.nix` located and run `sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount <path to disko.nix>`

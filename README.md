@@ -19,11 +19,11 @@
 
 ```
 machines
-├── dendrobium    # macOS (aarch64)
-├── phenex        # NixOS server (x86_64)
-├── banshee       # NixOS server (x86_64)
-├── calibarn      # NixOS server (aarch64)
-└── exia          # NixOS server (x86_64)
+├── wks-0       # macOS (aarch64)
+├── srv-de-0    # NixOS server (x86_64)
+├── srv-sg-0    # NixOS server (x86_64)
+├── srv-nl-0    # NixOS server (x86_64)
+└── srv-sg-1    # NixOS server (aarch64)
 ```
 
 ## Usage (Justfile)
