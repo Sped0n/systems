@@ -10,7 +10,7 @@ let
     "srv-nl-0"
     "srv-sg-0"
     "srv-sg-1"
-    "srv-sg-2"
+    "srv-us-0"
   ];
 in
 {

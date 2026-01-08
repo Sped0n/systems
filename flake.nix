@@ -141,12 +141,12 @@
           modules = commonNixosModules ++ [ ./machines/srv-sg-1 ];
         };
 
-        "srv-sg-2" = nixpkgs.lib.nixosSystem rec {
+        "srv-us-0" = nixpkgs.lib.nixosSystem rec {
           system = "x86_64-linux";
           specialArgs = genSpecialArgs {
             inherit system;
           };
-          modules = commonNixosModules ++ [ ./machines/srv-sg-2 ];
+          modules = commonNixosModules ++ [ ./machines/srv-us-0 ];
         };
       };
     };
