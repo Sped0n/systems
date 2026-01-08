@@ -46,10 +46,7 @@ in
 
           api.dashboard = true;
 
-          log = {
-            level = "WARN";
-            noColor = true;
-          };
+          log.level = "WARN";
           accessLog = {
             filePath = "/var/log/traefik/access.log";
             format = "json";
