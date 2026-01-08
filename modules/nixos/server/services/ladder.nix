@@ -14,7 +14,17 @@ let
   ladderConfigPath = config.age.secrets."ladder-config".path;
 in
 {
-  options.services.my-ladder.enable = lib.mkEnableOption "Enable ladder (sing-box) service";
+  options.services.my-ladder = {
+    enable = lib.mkEnableOption "Enable ladder (sing-box) service";
+
+    disguise = lib.mkOption {
+      type = lib.types.str;
+      default = "nus.edu.sg";
+      description = ''
+        Domain name used as the TLS certificate CN (disguise domain).
+      '';
+    };
+  };
 
   config = lib.mkIf cfg.enable {
     users.users.ladder = {
@@ -61,18 +71,31 @@ in
 
             install -d -m 700 "${stateDir}"
 
-            if [ ! -f "${keyPath}" ] || [ ! -f "${certPath}" ]; then
-              echo "ladder: generating self-signed certificate..." >&2
+            disguise="${cfg.disguise}"
+
+            generate_cert() {
+              echo "ladder: generating self-signed certificate for ${cfg.disguise}..." >&2
+              rm -f "${keyPath}" "${certPath}"
               ${pkgs.openssl}/bin/openssl req -x509 \
                 -newkey ec:<(${pkgs.openssl}/bin/openssl ecparam -name prime256v1) \
                 -keyout "${keyPath}" \
                 -out "${certPath}" \
                 -days 36500 \
                 -nodes \
-                -subj "/CN=nus.edu.sg"
+                -subj "/CN=${cfg.disguise}"
 
               chmod 400 "${keyPath}"
               chmod 444 "${certPath}"
+            }
+
+            if [ ! -f "${keyPath}" ] || [ ! -f "${certPath}" ]; then
+              generate_cert
+            else
+              cert_cn="$(${pkgs.openssl}/bin/openssl x509 -in "${certPath}" -noout -subject | sed -n 's/.*CN=//p' | head -n1)"
+              if [ "''${cert_cn}" != "${cfg.disguise}" ]; then
+                echo "ladder: certificate CN (''${cert_cn:-<none>}) does not match disguise (${cfg.disguise}), regenerating..." >&2
+                generate_cert
+              fi
             fi
           '')
         ];

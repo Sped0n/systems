@@ -1,4 +1,7 @@
 { ... }:
 {
-  services.my-ladder.enable = true;
+  services.my-ladder = {
+    enable = true;
+    disguise = "nus.edu.sg";
+  };
 }
