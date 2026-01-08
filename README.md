@@ -78,6 +78,7 @@ You will find the hardware configuration file under `/tmp/etc/nixos/hardware-con
 After we enter nixos-installer after kexec, we can use below command to create a zram swap device:
 
 ```
+modprobe zram
 zramctl /dev/zram0 --algorithm zstd --size "$(($(grep -Po 'MemTotal:\s*\K\d+' /proc/meminfo)/2))KiB"
 mkswap -U clear /dev/zram0
 swapon --discard --priority 100 /dev/zram0
@@ -109,9 +110,11 @@ swapon --discard --priority 100 /dev/zram0
    - The IPv4/IPv6 address and gateway (`ip addr && ip route show default && ip -6 route show default`).
    - The [hardware configuration](#get-hardware-configuration-from-non-nixos-host).
    - The SSH host key (`cat /etc/ssh/ssh_host_ed25519_key.pub`).
+   - The disk to install NixOS on (`lsblk`).
 2. Modify the configuration files under `machines/<configuration name>/` accordingly.
 3. Copy the SSH host key (pubkey) to `secrets` flake and set the correct permissions.
 4. Run
+
    ```
    nixos-anywhere \
       --flake .#<configuration name> \
@@ -127,6 +130,7 @@ swapon --discard --priority 100 /dev/zram0
    - Change `<ip address>` to the public IPv4 address of the VPS.
    - User need to have a nix environment to run this command.
    - Run the command under `/Users/spedon/.config/systems`.
+
 5. Key in the root password (several times).
    - This is the original password before kexec.
 6. After server kexec into nixos-installer, use below two ways to set a default password for root user.
