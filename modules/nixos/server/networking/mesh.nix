@@ -31,8 +31,6 @@
       listenPort = 41616;
       mtu = 1380;
       privateKeyFile = config.age.secrets."mesh-key".path;
-      postUp = "${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -o mesh0 -j MASQUERADE";
-      postDown = "${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -o mesh0 -j MASQUERADE";
       peers =
         let
           others = builtins.filter (n: n != config.networking.hostName) [
@@ -70,8 +68,13 @@
 
     firewall = {
       allowedUDPPorts = [ 41616 ];
+      extraCommands = ''
+        iptables -t nat -A POSTROUTING -o mesh0 -j MASQUERADE
+      '';
+      extraStopCommands = ''
+        iptables -t nat -D POSTROUTING -o mesh0 -j MASQUERADE
+      '';
       trustedInterfaces = [ "mesh0" ];
-      checkReversePath = false;
     };
   };
 }
