@@ -14,6 +14,7 @@
     "shottr"
     "windows-app"
     "onedrive"
+    "handbrake-app"
 
     # communication
     "telegram"
@@ -32,7 +33,7 @@
 
     # creativity
     "affinity"
-    "handbrake-app"
+    "autodesk-fusion"
 
     # entertainment
     "moonlight"
