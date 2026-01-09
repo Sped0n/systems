@@ -17,7 +17,7 @@
       zip
       unzip
       inetutils
-      tcptraceroute
+      nexttrace
     ])
     ++ (with pkgs-unstable; [
       just
