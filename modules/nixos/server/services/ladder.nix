@@ -9,22 +9,12 @@ let
   cfg = config.services.my-ladder;
 
   stateDir = "/var/lib/ladder";
-  keyPath = "${stateDir}/anytls.key";
-  certPath = "${stateDir}/anytls.crt";
+  keyPath = "${stateDir}/disguise.key";
+  certPath = "${stateDir}/disguise.crt";
   ladderConfigPath = config.age.secrets."ladder-config".path;
 in
 {
-  options.services.my-ladder = {
-    enable = lib.mkEnableOption "Enable ladder (sing-box) service";
-
-    disguise = lib.mkOption {
-      type = lib.types.str;
-      default = "nus.edu.sg";
-      description = ''
-        Domain name used as the TLS certificate CN (disguise domain).
-      '';
-    };
-  };
+  options.services.my-ladder.enable = lib.mkEnableOption "Enable ladder (sing-box) service";
 
   config = lib.mkIf cfg.enable {
     users.users.ladder = {
@@ -40,16 +30,7 @@ in
       mode = "0400";
     };
 
-    networking.firewall = {
-      allowedTCPPorts = [
-        443
-        23456
-      ];
-      allowedUDPPorts = [
-        443
-        23456
-      ];
-    };
+    networking.firewall.allowedTCPPorts = [ 443 ];
 
     systemd.services.ladder = {
       description = "ladder sing-box service";
@@ -71,10 +52,10 @@ in
 
             install -d -m 700 "${stateDir}"
 
-            disguise="${cfg.disguise}"
+            disguise="cname.vercel-dns.com"
 
             generate_cert() {
-              echo "ladder: generating self-signed certificate for ${cfg.disguise}..." >&2
+              echo "ladder: generating self-signed certificate for ''${disguise}..." >&2
               rm -f "${keyPath}" "${certPath}"
               ${pkgs.openssl}/bin/openssl req -x509 \
                 -newkey ec:<(${pkgs.openssl}/bin/openssl ecparam -name prime256v1) \
@@ -82,7 +63,7 @@ in
                 -out "${certPath}" \
                 -days 36500 \
                 -nodes \
-                -subj "/CN=${cfg.disguise}"
+                -subj "/CN=''${disguise}"
 
               chmod 400 "${keyPath}"
               chmod 444 "${certPath}"
@@ -92,11 +73,14 @@ in
               generate_cert
             else
               cert_cn="$(${pkgs.openssl}/bin/openssl x509 -in "${certPath}" -noout -subject | sed -n 's/.*CN=//p' | head -n1)"
-              if [ "''${cert_cn}" != "${cfg.disguise}" ]; then
-                echo "ladder: certificate CN (''${cert_cn:-<none>}) does not match disguise (${cfg.disguise}), regenerating..." >&2
+              if [ "''${cert_cn}" != "''${disguise}" ]; then
+                echo "ladder: certificate CN (''${cert_cn:-<none>}) does not match disguise (''${disguise}), regenerating..." >&2
                 generate_cert
               fi
             fi
+
+            echo "ladder: certificate SHA256 fingerprint:"
+            ${pkgs.openssl}/bin/openssl x509 -noout -fingerprint -sha256 -inform pem -in "${certPath}"
           '')
         ];
         ExecStart = ''
