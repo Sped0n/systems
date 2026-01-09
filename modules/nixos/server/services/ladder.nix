@@ -139,5 +139,21 @@ in
 
       "net.mptcp.enabled" = 1;
     };
+
+    services.fail2ban.jails.singbox = {
+      filter = {
+        Definition = {
+          failregex = ''^.*process connection from <HOST>:\d+: unknown user password'';
+          ignoreregex = '''';
+        };
+      };
+      settings = {
+        backend = "systemd";
+        journalmatch = "_SYSTEMD_UNIT=ladder.service";
+        findtime = "6h";
+        maxretry = 3;
+        bantime = "12h";
+      };
+    };
   };
 }
