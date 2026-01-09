@@ -5,7 +5,7 @@
     dynamicConfigOptions = {
       http = {
         middlewares.authelia.forwardauth = {
-          address = "http://10.42.0.${vars."srv-de-0".meshId}:9091/api/authz/forward-auth";
+          address = "http://100.96.0.${vars."srv-de-0".warpId}:9091/api/authz/forward-auth";
           trustForwardHeader = true;
           authResponseHeaders = [
             "Remote-User"

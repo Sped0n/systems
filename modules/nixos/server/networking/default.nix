@@ -2,6 +2,6 @@
 {
   imports = [
     ./cloudflared.nix
-    ./mesh.nix
+    ./warp.nix
   ];
 }

@@ -84,7 +84,7 @@ in
           metrics.otlp = {
             addEntryPointsLabels = false;
             pushInterval = "10s";
-            http.endpoint = "http://10.42.0.${vars."srv-de-0".meshId}:8428/opentelemetry/v1/metrics";
+            http.endpoint = "http://100.96.0.${vars."srv-de-0".warpId}:8428/opentelemetry/v1/metrics";
           };
 
           entryPoints = {
@@ -167,7 +167,7 @@ in
 
           outputs.loki = [
             {
-              domain = "http://10.42.0.${vars."srv-de-0".meshId}:9428";
+              domain = "http://100.96.0.${vars."srv-de-0".warpId}:9428";
               endpoint = "/insert/loki/api/v1/push";
               gzip_request = true;
               sanitize_label_names = true;
