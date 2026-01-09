@@ -3,6 +3,7 @@
   imports = [
     ./docker
 
+    ./ladder.nix
     ./nginx.nix
     ./restic.nix
     ./rclone.nix
