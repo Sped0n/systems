@@ -4,6 +4,7 @@
 
     ./builder.nix
     ./cfgpull.nix
+    ./diun.nix
     ./docker.nix
     ./ladder.nix
     ./msmtp.nix
