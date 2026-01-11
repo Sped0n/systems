@@ -30,6 +30,22 @@
       ];
       mtu = 1380;
       privateKeyFile = config.age.secrets."warp-key".path;
+      postUp = ''
+        ${pkgs.iputils}/bin/ping -c 3 -W 2 100.96.0.${
+          toString
+            vars.${
+              builtins.head (
+                builtins.filter (h: h != config.networking.hostName) [
+                  "srv-de-0"
+                  "srv-nl-0"
+                  "srv-sg-0"
+                  "srv-sg-1"
+                  "srv-us-0"
+                ]
+              )
+            }.warpId
+        } || true
+      '';
       peers = [
         {
           publicKey = vars.warpPublicKey;
@@ -42,10 +58,10 @@
 
     firewall = {
       extraCommands = ''
-        iptables -t nat -A POSTROUTING -o warp0 -j MASQUERADE
+        ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -o warp0 -j MASQUERADE
       '';
       extraStopCommands = ''
-        iptables -t nat -D POSTROUTING -o warp0 -j MASQUERADE
+        ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -o warp0 -j MASQUERADE
       '';
       trustedInterfaces = [ "warp0" ];
     };

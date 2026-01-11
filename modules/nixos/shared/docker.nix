@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ lib, pkgs, ... }:
 {
   virtualisation.docker = {
     enable = true;
@@ -29,22 +29,22 @@
     extraCommands =
       # For docker.host.internal
       ''
-        iptables -I nixos-fw 1 -i br+ -j ACCEPT
+        ${pkgs.iptables}/bin/iptables -I nixos-fw 1 -i br+ -j ACCEPT
       ''
       +
       # Need to MASQUERADE after we set docker's iptables to false
       ''
-        iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+        ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
       '';
     extraStopCommands =
       # For docker.host.internal
       ''
-        iptables -D nixos-fw -i br+ -j ACCEPT
+        ${pkgs.iptables}/bin/iptables -D nixos-fw -i br+ -j ACCEPT
       ''
       +
       # Need to MASQUERADE after we set docker's iptables to false
       ''
-        iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
+        ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
       '';
     trustedInterfaces = [ "docker0" ];
   };
