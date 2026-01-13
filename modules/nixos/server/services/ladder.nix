@@ -124,19 +124,35 @@ in
       "net.mptcp.enabled" = 1;
     };
 
-    services.fail2ban.jails.singbox = {
-      filter = {
-        Definition = {
-          failregex = ''^.*process connection from <HOST>:\d+: unknown user password'';
-          ignoreregex = '''';
+    services.fail2ban.jails = {
+      singbox-hard = {
+        filter.Definition.failregex =
+          "^.*process connection from <HOST>:\\d+: "
+          + "(unknown user password"
+          + "|TLS handshake: read tcp"
+          + "|TLS handshake: tls:"
+          + "|TLS handshake: client offered only unsupported versions)";
+        settings = {
+          backend = "systemd";
+          journalmatch = "_SYSTEMD_UNIT=ladder.service";
+          findtime = "6h";
+          maxretry = 3;
+          bantime = "12h";
         };
       };
-      settings = {
-        backend = "systemd";
-        journalmatch = "_SYSTEMD_UNIT=ladder.service";
-        findtime = "6h";
-        maxretry = 3;
-        bantime = "12h";
+
+      singbox-soft = {
+        filter.Definition.failregex =
+          "^.*process connection from <HOST>:\\d+: "
+          + "(TLS handshake: EOF"
+          + "|TLS handshake: context deadline exceeded)";
+        settings = {
+          backend = "systemd";
+          journalmatch = "_SYSTEMD_UNIT=ladder.service";
+          findtime = "15m";
+          maxretry = 5;
+          bantime = "2h";
+        };
       };
     };
   };
