@@ -9,22 +9,21 @@
 let
   yaml = pkgs.formats.yaml { };
   diunConfigFile = yaml.generate "diun.yml" {
-    watch = {
-      workers = 10;
-      schedule = "0 8 * * *";
-      runOnStartup = true;
-    };
-
+    db.path = "/var/lib/diun/diun.db";
+    watch.schedule = "0 8 * * *";
     providers.docker.watchByDefault = true;
-
     notif.mail = {
       host = "smtp.resend.com";
       port = 465;
       ssl = true;
       username = "resend";
+      # https://crazymax.dev/diun/faq/#secrets-loaded-from-files-and-trailing-newlines
+      # do trim newline when editing the secret file
+      # like `:set nofixeol` + `:set noeol` + `:wq` in neovim
+      passwordFile = config.age.secrets."smtp-password".path;
       from = vars.infraEmail;
       to = [ vars.personalEmail ];
-      templateTitle = "{{ .Entry.Image }} released | ${config.networking.hostName}";
+      templateTitle = "[${config.networking.hostName}] {{ .Entry.Image }} released";
       templateBody = ''
         Docker tag {{ .Entry.Image }} which you subscribed to through {{ .Entry.Provider }} provider has been released.
       '';
@@ -32,15 +31,17 @@ let
   };
 in
 {
-  users.users.diun = {
-    isSystemUser = true;
-    group = "diun";
-    extraGroups = [
-      "docker"
-      "smtp-auth-users"
-    ];
+  users = {
+    users.diun = {
+      isSystemUser = true;
+      group = "diun";
+      extraGroups = [
+        "docker"
+        "smtp-auth-users"
+      ];
+    };
+    groups.diun = { };
   };
-  users.groups.diun = { };
 
   systemd.services.diun = {
     description = "Diun (Docker Image Update Notifier)";
@@ -56,11 +57,6 @@ in
       StateDirectory = "diun";
       StateDirectoryMode = "0750";
       WorkingDirectory = "/var/lib/diun";
-
-      Environment = [
-        "DIUN_DB_PATH=/var/lib/diun/diun.db"
-        "DIUN_NOTIF_MAIL_PASSWORDFILE=${config.age.secrets."smtp-password".path}"
-      ];
 
       ExecStart = "${
         pkgs.callPackage (functions.fromRoot "/packages/diun.nix") { }
