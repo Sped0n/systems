@@ -96,8 +96,8 @@ swapon --discard --priority 100 /dev/zram0
    - Settings > SSH and GPG keys > New SSH key.
 5. Clone the repo with `git clone git@github.com:Sped0n/systems.git`.
    - Run the command under `/Users/spedon/.config`.
-6. Install Nix (not Determinate Nix) with [determinate nix installer](https://github.com/DeterminateSystems/nix-installer).
-7. Run `sudo nix run nix-darwin/nix-darwin-25.05#darwin-rebuild -- switch .#<configuration name>`.
+6. Install Determinate Nix with the [installer](https://github.com/DeterminateSystems/nix-installer).
+7. Run `sudo nix run nix-darwin/nix-darwin-25.11#darwin-rebuild -- switch .#<configuration name>`.
    - Change 25.05 to the latest stable version.
    - Change `<configuration name>` to the hostname of the machine you are deploying to.
    - Run the command under `/Users/spedon/.config/systems`.
