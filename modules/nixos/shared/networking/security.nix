@@ -13,6 +13,7 @@
       enable = true;
       rndtime = "30m";
     };
+    daemonSettings.Definition.dbpurgeage = "60d";
     ignoreIP = [
       # warp
       "100.96.0.0/12"

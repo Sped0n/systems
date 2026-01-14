@@ -17,11 +17,13 @@ in
   options.services.my-ladder.enable = lib.mkEnableOption "Enable ladder (sing-box) service";
 
   config = lib.mkIf cfg.enable {
-    users.users.ladder = {
-      isSystemUser = true;
-      group = "ladder";
+    users = {
+      users.ladder = {
+        isSystemUser = true;
+        group = "ladder";
+      };
+      groups.ladder = { };
     };
-    users.groups.ladder = { };
 
     age.secrets."ladder-config" = {
       file = "${secrets}/ages/ladder-config.age";
@@ -124,35 +126,18 @@ in
       "net.mptcp.enabled" = 1;
     };
 
-    services.fail2ban.jails = {
-      singbox-hard = {
-        filter.Definition.failregex =
-          "^.*process connection from <HOST>:\\d+: "
-          + "(unknown user password"
-          + "|TLS handshake: read tcp"
-          + "|TLS handshake: tls:"
-          + "|TLS handshake: client offered only unsupported versions)";
-        settings = {
-          backend = "systemd";
-          journalmatch = "_SYSTEMD_UNIT=ladder.service";
-          findtime = "6h";
-          maxretry = 3;
-          bantime = "12h";
-        };
-      };
-
-      singbox-soft = {
-        filter.Definition.failregex =
-          "^.*process connection from <HOST>:\\d+: "
-          + "(TLS handshake: EOF"
-          + "|TLS handshake: context deadline exceeded)";
-        settings = {
-          backend = "systemd";
-          journalmatch = "_SYSTEMD_UNIT=ladder.service";
-          findtime = "15m";
-          maxretry = 5;
-          bantime = "2h";
-        };
+    services.fail2ban.jails.singbox = {
+      filter.Definition.failregex =
+        "^.*process connection from <HOST>:\\d+: "
+        + "(unknown user password"
+        + "|TLS handshake: read tcp"
+        + "|TLS handshake: tls:"
+        + "|TLS handshake: remote error:"
+        + "|TLS handshake: client offered only unsupported versions)";
+      settings = {
+        backend = "systemd";
+        journalmatch = "_SYSTEMD_UNIT=ladder.service";
+        findtime = "6h";
       };
     };
   };

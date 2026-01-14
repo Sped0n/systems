@@ -12,20 +12,22 @@
     mode = "0400";
   };
 
-  users.groups.git = { };
-  users.users.git = {
-    isSystemUser = true;
-    group = "git";
-    shell = "${(pkgs.writeShellScriptBin "forgejo-shell" ''
-      #!/bin/sh
-      shift
-      ${pkgs.openssh}/bin/ssh \
-        -i ${config.age.secrets."id-forgejo".path} \
-        -p 12223 \
-        -o StrictHostKeyChecking=no \
-        -o UserKnownHostsFile=/dev/null \
-        git@127.0.0.1 "SSH_ORIGINAL_COMMAND=\"$SSH_ORIGINAL_COMMAND\" $@"
-    '')}/bin/forgejo-shell";
+  users = {
+    users.git = {
+      isSystemUser = true;
+      group = "git";
+      shell = "${(pkgs.writeShellScriptBin "forgejo-shell" ''
+        #!/bin/sh
+        shift
+        ${pkgs.openssh}/bin/ssh \
+          -i ${config.age.secrets."id-forgejo".path} \
+          -p 12223 \
+          -o StrictHostKeyChecking=no \
+          -o UserKnownHostsFile=/dev/null \
+          git@127.0.0.1 "SSH_ORIGINAL_COMMAND=\"$SSH_ORIGINAL_COMMAND\" $@"
+      '')}/bin/forgejo-shell";
+    };
+    groups.git = { };
   };
 
   environment.etc."ssh/forgejo-authorized-keys-command" = {
