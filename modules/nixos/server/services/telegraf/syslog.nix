@@ -52,10 +52,6 @@ in
             );
           };
 
-          filter f_ignore_ping_warp_peers {
-            not match("ping-warp-peers" value("PROGRAM"));
-          };
-
           filter f_basic {
             (
               program("dhcpcd") and
@@ -74,7 +70,6 @@ in
             filter(f_ignore_kernel_veth);
             filter(f_ignore_dhcpcd_veth);
             filter(f_ignore_restic);
-            filter(f_ignore_ping_warp_peers);
             filter(f_basic);
             destination(d_telegraf);
           };

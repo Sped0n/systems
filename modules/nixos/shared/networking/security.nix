@@ -15,8 +15,8 @@
     };
     daemonSettings.Definition.dbpurgeage = "60d";
     ignoreIP = [
-      # warp
-      "100.96.0.0/12"
+      # mesh
+      "100.96.0.0/16"
     ];
   };
 }
