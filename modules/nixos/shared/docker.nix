@@ -34,7 +34,7 @@
       +
       # Need to MASQUERADE after we set docker's iptables to false
       ''
-        ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+        ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s 172.16.0.0/12 -o eth0 -j MASQUERADE
       '';
     extraStopCommands =
       # For docker.host.internal
@@ -44,7 +44,7 @@
       +
       # Need to MASQUERADE after we set docker's iptables to false
       ''
-        ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -o eth0 -j MASQUERADE
+        ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s 172.16.0.0/12 -o eth0 -j MASQUERADE
       '';
     trustedInterfaces = [ "docker0" ];
   };

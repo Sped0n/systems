@@ -73,10 +73,10 @@
       firewall = {
         allowedUDPPorts = [ meshPort ];
         extraCommands = ''
-          iptables -t nat -A POSTROUTING -o mesh0 -j MASQUERADE
+          ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s 172.16.0.0/12 -o mesh0 -j MASQUERADE
         '';
         extraStopCommands = ''
-          iptables -t nat -D POSTROUTING -o mesh0 -j MASQUERADE
+          ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s 172.16.0.0/12 -o mesh0 -j MASQUERADE
         '';
         trustedInterfaces = [ "mesh0" ];
       };
