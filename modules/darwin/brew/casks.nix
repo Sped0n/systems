@@ -21,10 +21,9 @@
     # productivity
     "raycast"
     "obsidian"
-    "microsoft-outlook"
 
     # browsers
     "vivaldi"
-    "chromium"
+    "ungoogled-chromium"
   ];
 }

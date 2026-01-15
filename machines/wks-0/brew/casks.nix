@@ -24,9 +24,7 @@
     # productivity
     "drawio"
     "typora"
-    "microsoft-word"
-    "microsoft-excel"
-    "microsoft-powerpoint"
+    "wpsoffice"
 
     # ai
     "chatwise"
