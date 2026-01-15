@@ -22,53 +22,49 @@ in
           };
 
           filter f_ignore_firewall {
-              not (
-                program("kernel") and
-                level(info) and
-                message("refused connection:")
-              );
+            not (
+              program("kernel") and
+              level(info) and
+              message("refused connection:")
+            );
           };
 
           filter f_ignore_kernel_veth {
-              not (
-                program("kernel") and
-                level(info) and
-                message("veth")
-              );
+            not (
+              program("kernel") and
+              level(info) and
+              message("veth")
+            );
           };
 
           filter f_ignore_dhcpcd_veth {
-              not (
-                program("dhcpcd") and
-                (level(notice) or level(warning) or level(err)) and
-                message("veth")
-              );
+            not (
+              program("dhcpcd") and
+              (level(notice) or level(warning) or level(err)) and
+              message("veth")
+            );
           };
 
           filter f_ignore_restic {
-              not (
-                program("restic") and
-                level(info)
-              );
+            not (
+              program("restic") and
+              level(info)
+            );
           };
 
-          filter f_ignore_ssserver {
-              not (
-                program("ssserver") and
-                not message("ERROR")
-              );
+          filter f_ignore_ping_warp_peers {
+            not match("ping-warp-peers" value("PROGRAM"));
           };
 
           filter f_basic {
-              (
-                  program("dhcpcd") and
-                  level(notice..emerg)
-              )
-              or
-              (
-                  not program("dhcpcd") and
-                  level(info..emerg)
-              )
+            (
+              program("dhcpcd") and
+              level(notice..emerg)
+            )
+            or (
+              not program("dhcpcd") and
+              level(info..emerg)
+            )
           };
 
           log {
@@ -78,7 +74,7 @@ in
             filter(f_ignore_kernel_veth);
             filter(f_ignore_dhcpcd_veth);
             filter(f_ignore_restic);
-            filter(f_ignore_ssserver);
+            filter(f_ignore_ping_warp_peers);
             filter(f_basic);
             destination(d_telegraf);
           };

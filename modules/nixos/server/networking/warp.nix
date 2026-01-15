@@ -1,6 +1,7 @@
 {
   config,
   pkgs,
+  lib,
   secrets,
   vars,
   ...
@@ -30,22 +31,6 @@
       ];
       mtu = 1380;
       privateKeyFile = config.age.secrets."warp-key".path;
-      postUp = ''
-        ${pkgs.iputils}/bin/ping -c 3 -W 2 100.96.0.${
-          toString
-            vars.${
-              builtins.head (
-                builtins.filter (h: h != config.networking.hostName) [
-                  "srv-de-0"
-                  "srv-nl-0"
-                  "srv-sg-0"
-                  "srv-sg-1"
-                  "srv-us-0"
-                ]
-              )
-            }.warpId
-        } || true
-      '';
       peers = [
         {
           publicKey = vars.warpPublicKey;
@@ -64,6 +49,44 @@
         ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -o warp0 -j MASQUERADE
       '';
       trustedInterfaces = [ "warp0" ];
+    };
+  };
+
+  systemd = {
+    services.ping-warp-peers = {
+      description = "Ping Warp peers to keep the connection alive";
+      after = [ "wg-quick-warp0.service" ];
+      requires = [ "wg-quick-warp0.service" ];
+      partOf = [ "wg-quick-warp0.service" ];
+      wantedBy = [ "wg-quick-warp0.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        ExecStart = pkgs.writeShellScript "ping-warp-peers" ''
+          #!${pkgs.bash}/bin/bash
+          set -euo pipefail; for ip in ${
+            lib.concatStringsSep " " (
+              map (h: "100.96.0.${toString vars.${h}.warpId}") (
+                builtins.filter (h: h != config.networking.hostName) [
+                  "srv-de-0"
+                  "srv-nl-0"
+                  "srv-sg-0"
+                  "srv-sg-1"
+                  "srv-us-0"
+                ]
+              )
+            )
+          }; do ${pkgs.iputils}/bin/ping -c 3 -W 2 "$ip" || true; done
+        '';
+      };
+    };
+
+    timers.ping-warp-peers = {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnBootSec = "1min";
+        OnUnitActiveSec = "5min";
+        Unit = "ping-warp-peers.service";
+      };
     };
   };
 }
