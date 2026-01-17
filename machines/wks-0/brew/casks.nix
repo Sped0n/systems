@@ -13,7 +13,6 @@
     "aldente"
     "shottr"
     "windows-app"
-    "onedrive"
     "handbrake-app"
 
     # communication
@@ -25,8 +24,6 @@
     "drawio"
     "typora"
     "wpsoffice"
-
-    # ai
     "chatwise"
 
     # creativity
@@ -36,5 +33,6 @@
     # entertainment
     "moonlight"
     "bluestacks"
+    "pikpak"
   ];
 }
