@@ -89,6 +89,9 @@ in
           ${pkgs.sing-box}/bin/sing-box run -c ${ladderConfigPath}
         '';
 
+        LimitNOFILE = 262144;
+        TasksMax = "infinity";
+
         Restart = "on-failure";
         RestartSec = 3;
 
@@ -110,20 +113,9 @@ in
     };
 
     boot.kernel.sysctl = {
-      "net.ipv4.tcp_rmem" = "4096 87380 33554432";
-      "net.ipv4.tcp_wmem" = "4096 87380 33554432";
-
-      "net.ipv4.tcp_window_scaling" = 1;
-      "net.ipv4.tcp_tw_reuse" = 1;
-
-      "net.core.somaxconn" = 65535;
-      "net.ipv4.tcp_max_syn_backlog" = 65535;
-
-      "net.ipv4.tcp_keepalive_time" = 600;
-      "net.ipv4.tcp_keepalive_intvl" = 10;
-      "net.ipv4.tcp_keepalive_probes" = 6;
-
-      "net.mptcp.enabled" = 1;
+      "net.ipv4.tcp_keepalive_time" = 300;
+      "net.ipv4.tcp_keepalive_intvl" = 30;
+      "net.ipv4.tcp_keepalive_probes" = 3;
     };
 
     services.fail2ban.jails.singbox = {
