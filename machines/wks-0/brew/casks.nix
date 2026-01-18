@@ -23,7 +23,7 @@
     # productivity
     "drawio"
     "typora"
-    "wpsoffice"
+    "onlyoffice"
     "chatwise"
 
     # creativity

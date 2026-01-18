@@ -14,7 +14,6 @@
     "appcleaner"
     "keka"
     "keyboardcleantool"
-    "macfuse"
     "iina"
 
     # productivity
