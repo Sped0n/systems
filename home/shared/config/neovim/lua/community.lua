@@ -10,6 +10,7 @@ return {
   -- editor
   { import = "astrocommunity.editing-support.conform-nvim" },
   { import = "astrocommunity.git.git-blame-nvim" },
+  { import = "astrocommunity.git.codediff-nvim" },
   { import = "astrocommunity.recipes.heirline-vscode-winbar" },
   -- languages
   { import = "astrocommunity.pack.lua" },
