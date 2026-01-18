@@ -6,9 +6,12 @@
   ...
 }:
 {
-  boot.kernel.sysctl = {
-    "net.ipv4.ip_forward" = 1;
-    "net.ipv6.conf.all.forwarding" = 1;
+  boot = {
+    kernel.sysctl = {
+      "net.ipv4.ip_forward" = 1;
+      "net.ipv6.conf.all.forwarding" = 1;
+    };
+    kernelModules = [ "wireguard" ];
   };
 
   # https://tailscale.com/s/ethtool-config-udp-gro
@@ -76,7 +79,7 @@
           ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s 172.16.0.0/12 -o mesh0 -j MASQUERADE
         '';
         extraStopCommands = ''
-          ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s 172.16.0.0/12 -o mesh0 -j MASQUERADE
+          ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s 172.16.0.0/12 -o mesh0 -j MASQUERADE || true
         '';
         trustedInterfaces = [ "mesh0" ];
       };
