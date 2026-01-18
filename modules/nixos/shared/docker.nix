@@ -1,51 +1,12 @@
-{ lib, pkgs, ... }:
+{ ... }:
 {
   virtualisation.docker = {
     enable = true;
     enableOnBoot = true;
     daemon.settings = {
-      iptables = false;
-      max-concurrent-downloads = 2;
       log-driver = "journald";
-      log-opts = {
-        tag = "docker#{{.Name}}({{.ID}})";
-      };
-      default-address-pools = [
-        {
-          base = "172.16.0.0/12";
-          size = 24;
-        }
-      ];
+      log-opts.tag = "docker#{{.Name}}({{.ID}})";
+      max-concurrent-downloads = 2;
     };
-  };
-
-  services.docuum = {
-    enable = true;
-    threshold = lib.mkDefault "10GB";
-  };
-  systemd.services.docuum.environment.LOG_LEVEL = "info";
-
-  networking.firewall = {
-    extraCommands =
-      # For docker.host.internal
-      ''
-        ${pkgs.iptables}/bin/iptables -I nixos-fw 1 -i br+ -j ACCEPT
-      ''
-      +
-      # Need to MASQUERADE after we set docker's iptables to false
-      ''
-        ${pkgs.iptables}/bin/iptables -t nat -A POSTROUTING -s 172.16.0.0/12 -o eth0 -j MASQUERADE
-      '';
-    extraStopCommands =
-      # For docker.host.internal
-      ''
-        ${pkgs.iptables}/bin/iptables -D nixos-fw -i br+ -j ACCEPT
-      ''
-      +
-      # Need to MASQUERADE after we set docker's iptables to false
-      ''
-        ${pkgs.iptables}/bin/iptables -t nat -D POSTROUTING -s 172.16.0.0/12 -o eth0 -j MASQUERADE
-      '';
-    trustedInterfaces = [ "docker0" ];
   };
 }
