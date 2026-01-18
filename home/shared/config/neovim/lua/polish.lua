@@ -23,9 +23,6 @@ vim.keymap.set("v", "<Right>", "<nop>", { noremap = true })
 
 -- disable mouse
 vim.keymap.set("", "<LeftDrag>", "<nop>", { noremap = true })
-vim.keymap.set("", "<LeftRelease>", "<nop>", { noremap = true })
-vim.keymap.set("", "<LeftMouse>", "<nop>", { noremap = true })
-vim.keymap.set("", "<2-LeftMouse>", "<nop>", { noremap = true })
 
 -- vertical movement
 vim.keymap.set("", "<C-d>", "<C-d>zz", { noremap = true })
