@@ -144,30 +144,30 @@ in
               initial_read_offset = "saved-or-end";
               data_format = "json";
               json_string_fields = [
-                "ServiceName"
-                "downstream_Content-Type"
                 "request_Cf-Ray"
                 "request_Referer"
               ];
               tag_keys = [
                 "DownstreamStatus"
+                "downstream_Content-Type"
                 "RequestHost"
                 "RequestMethod"
                 "RequestPath"
                 "request_Cf-Connecting-Ip"
                 "request_Cf-Ipcountry"
                 "request_User-Agent"
+                "ServiceName"
               ];
               tags = {
-                metric_type = "logs";
                 log_source = "telegraf";
+                metric_type = "logs";
               };
             }
           ];
 
           outputs.loki = [
             {
-              domain = "http://100.96.0.${vars."srv-de-0".meshId}:9428";
+              domain = "http://100.96.0.${vars."srv-de-0".meshId}:10428";
               endpoint = "/insert/loki/api/v1/push";
               gzip_request = true;
               sanitize_label_names = true;
