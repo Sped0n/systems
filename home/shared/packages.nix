@@ -5,40 +5,40 @@
       coreutils
       findutils
       diffutils
+      inetutils
       gnused
       gnugrep
       gawk
       gnutar
+      gnumake
+      gnupg
+      patch
       gzip
       bzip2
       xz
-      gnumake
-      patch
       zip
       unzip
-      inetutils
-      nexttrace
+
+      age
+      fzf
+      ripgrep
+      fd
+      dust
+      tree
+      jq
+      less
+      wget
+      curl
+      aria2
     ])
     ++ (with pkgs-unstable; [
       just
-      openssh
-      wget
-      curl
-      nali
-
-      age
-      gnupg
-
-      dust
-      fd
-      fzf
       btop
-      jq
-      ripgrep
-      tree
-      less
       tokei
       tlrc
+
+      nali
+      nexttrace
 
       croc
     ]);

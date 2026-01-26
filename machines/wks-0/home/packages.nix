@@ -5,11 +5,10 @@
   ...
 }:
 {
-  home.packages = [
-    (pkgs-unstable.nixos-anywhere.override {
+  home.packages = with pkgs-unstable; [
+    (nixos-anywhere.override {
       nix = determinate.inputs.nix.packages."${pkgs.stdenv.system}".default;
     })
-    pkgs.rclone
-    pkgs-unstable.gh
+    gh
   ];
 }
