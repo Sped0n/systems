@@ -6,9 +6,10 @@
   ...
 }:
 let
-  cfg = config.services.my-runner;
   hostname = config.networking.hostName;
-  token = config.age.secrets."forgejo-runner-token".path;
+  my-docker = config.services.my-docker;
+  my-runner = config.services.my-runner;
+  tokenFilePath = config.age.secrets."forgejo-runner-token".path;
 in
 {
   options.services.my-runner = {
@@ -39,7 +40,14 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
+  config = lib.mkIf my-runner.enable {
+    assertions = [
+      {
+        assertion = (!my-runner.enable) || my-docker.enable;
+        message = "services.my-runner.enable requires services.my-docker.enable = true";
+      }
+    ];
+
     age.secrets."forgejo-runner-token" = {
       file = "${secrets}/ages/forgejo-runner-token.age";
       owner = "root";
@@ -51,17 +59,17 @@ in
       instances.alfa = {
         enable = true;
         name = "${hostname}-alfa";
-        tokenFile = token;
+        tokenFile = tokenFilePath;
         url = "https://git.sped0n.com/";
-        labels = cfg.labels;
+        labels = my-runner.labels;
         settings = {
           runner = {
-            capacity = cfg.capacity;
+            capacity = my-runner.capacity;
             fetch_interval = "30s";
           };
           container = {
             docker_host = "automount";
-            options = lib.concatStringsSep " " cfg.dockerOptions;
+            options = lib.concatStringsSep " " my-runner.dockerOptions;
             force_pull = true;
           };
         };

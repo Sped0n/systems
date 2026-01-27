@@ -4,10 +4,10 @@
     (functions.fromRoot "/modules/shared")
 
     ./networking
+    ./services
     ./system
 
     ./diff.nix
-    ./docker.nix
     ./gc.nix
     ./users.nix
   ];

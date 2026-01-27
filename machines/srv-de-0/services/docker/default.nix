@@ -12,5 +12,8 @@
     "d ${home}/storage 0755 ${username} users -"
   ];
 
-  services.docuum.threshold = "25GB";
+  services.my-docker = {
+    enable = true;
+    docuumThreshold = "25GB";
+  };
 }

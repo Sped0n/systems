@@ -6,8 +6,8 @@
   ...
 }:
 let
-  cfg = config.services.my-builder;
   hostname = config.networking.hostName;
+  my-builder = config.services.my-builder;
 
   makeSecretAttr = hostName: {
     name = "${hostName}-ssh-key";
@@ -57,7 +57,7 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
+  config = lib.mkIf my-builder.enable {
     users = {
       users.builder = {
         isNormalUser = true;
@@ -71,8 +71,8 @@ in
 
     nix = {
       gc = {
-        dates = cfg.gcDates;
-        options = cfg.gcOptions;
+        dates = my-builder.gcDates;
+        options = my-builder.gcOptions;
       };
       settings = {
         keep-outputs = true;
@@ -81,7 +81,7 @@ in
       };
     };
 
-    age.secrets = builtins.listToAttrs (map makeSecretAttr cfg.deployees);
+    age.secrets = builtins.listToAttrs (map makeSecretAttr my-builder.deployees);
 
     home-manager.users.builder = {
       home = {
@@ -100,7 +100,7 @@ in
             };
           };
         }
-        // builtins.listToAttrs (lib.concatMap makeMatchBlockAttrs cfg.deployees);
+        // builtins.listToAttrs (lib.concatMap makeMatchBlockAttrs my-builder.deployees);
       };
     };
   };

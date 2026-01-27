@@ -8,11 +8,12 @@
 }:
 
 let
-  cfg = config.services.my-restic;
+  my-restic = config.services.my-restic;
+  my-telegraf = config.services.my-telegraf;
 in
 {
   options.services.my-restic = {
-    enable = lib.mkEnableOption "a custom Restic backup configuration with daily backups, weekly checks, and failure notifications";
+    enable = lib.mkEnableOption "Whether to enable the custom Restic backup module.";
 
     paths = lib.mkOption {
       type = lib.types.listOf lib.types.str;
@@ -45,7 +46,7 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
+  config = lib.mkIf my-restic.enable {
     age.secrets =
       let
         owner = "root";
@@ -80,15 +81,15 @@ in
           OnCalendar = "*-*-* 03:00:00";
           Persistent = true;
         };
-        paths = cfg.paths;
-        exclude = cfg.exclude;
-        pruneOpts = cfg.pruneOpts;
+        paths = my-restic.paths;
+        exclude = my-restic.exclude;
+        pruneOpts = my-restic.pruneOpts;
       }
-      // lib.optionalAttrs (cfg.backupPrepareCommand != null) {
-        backupPrepareCommand = cfg.backupPrepareCommand;
+      // lib.optionalAttrs (my-restic.backupPrepareCommand != null) {
+        backupPrepareCommand = my-restic.backupPrepareCommand;
       }
-      // lib.optionalAttrs (cfg.backupCleanupCommand != null) {
-        backupCleanupCommand = cfg.backupCleanupCommand;
+      // lib.optionalAttrs (my-restic.backupCleanupCommand != null) {
+        backupCleanupCommand = my-restic.backupCleanupCommand;
       };
     };
 
@@ -156,5 +157,9 @@ in
         };
       };
     };
+
+    services.my-telegraf.syslogExtraFilters.ignore_restic_noise = lib.mkIf my-telegraf.enable ''
+      not (program("restic") and level(info));
+    '';
   };
 }

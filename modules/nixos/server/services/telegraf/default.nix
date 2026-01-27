@@ -1,59 +1,122 @@
 {
   config,
+  functions,
   lib,
+  pkgs,
   pkgs-unstable,
+  vars,
   ...
 }:
 let
-  cfg = config.services.my-telegraf;
+  my-telegraf = config.services.my-telegraf;
+
+  toml = pkgs.formats.toml { };
 in
 {
-  options.services.my-telegraf = {
-    enable = lib.mkEnableOption "the my-telegraf bundle";
-    package = lib.mkOption {
-      type = lib.types.package;
-      default = pkgs-unstable.telegraf;
-      description = "Telegraf package used by services.my-telegraf.";
-    };
-  };
-
   imports = [
-    ./inputs.nix
     ./osinfo.nix
-    ./outputs.nix
     ./syslog.nix
   ];
 
-  config = lib.mkIf cfg.enable {
-    users.users.telegraf.extraGroups = [
-      "docker"
-      "nixos-info-updater"
-    ];
+  options.services.my-telegraf = {
+    enable = lib.mkEnableOption "Whether to enable the custom Telegraf module.";
 
-    services.telegraf = {
-      enable = true;
-      package = cfg.package;
-      extraConfig.agent = {
-        interval = "10s";
-        round_interval = true;
-        metric_batch_size = 1000;
-        metric_buffer_limit = 100000;
-        collection_jitter = "0s";
-        flush_interval = "10s";
-        flush_jitter = "0s";
-        precision = "";
-        debug = false;
-        quiet = false;
-        logfile = "/dev/null";
-        hostname = config.networking.hostName;
-        omit_hostname = false;
-      };
+    extraConfig = lib.mkOption {
+      description = ''
+        Extra configuration options for custom Telegraf module.
+      '';
+      type = toml.type;
+      default = { };
     };
 
-    systemd.services.telegraf = {
-      requires = [ "nixos-info-update.service" ];
-      after = [ "nixos-info-update.service" ];
-      serviceConfig.AmbientCapabilities = [ "CAP_NET_ADMIN" ];
+    syslogExtraFilters = lib.mkOption {
+      type = with lib.types; attrsOf lines;
+      default = { };
+      description = ''
+        Extra syslog-ng filters to be appended to the Telegraf syslog-ng log path.
+
+        Attribute names become filter names `f_<name>`.
+        Values must be valid syslog-ng filter bodies (the content inside `{ ... }`),
+        typically ending statements with `;`.
+      '';
+      example = {
+        ignore_restic = ''
+          not (
+            program("restic") and
+            level(info)
+          );
+        '';
+      };
+    };
+  };
+
+  config = lib.mkIf my-telegraf.enable {
+    services.telegraf = {
+      enable = true;
+      package = pkgs-unstable.telegraf;
+      extraConfig = functions.mergeToml {
+        agent = {
+          interval = "10s";
+          round_interval = true;
+          metric_batch_size = 1000;
+          metric_buffer_limit = 100000;
+          collection_jitter = "0s";
+          flush_interval = "10s";
+          flush_jitter = "0s";
+          precision = "";
+          debug = false;
+          quiet = false;
+          logfile = "/dev/null";
+          hostname = config.networking.hostName;
+          omit_hostname = false;
+        };
+
+        inputs = {
+          system = { };
+          kernel.collect = [ "psi" ];
+          cpu.fieldexclude = [ "time_*" ];
+          mem = { };
+          swap = { };
+          disk.mount_points = [ "/" ];
+          diskio.devices = [
+            "sda"
+            "vda"
+            "nvme0n1"
+          ];
+          net = {
+            interfaces = [ "eth0" ];
+            fieldexclude = [ "speed" ];
+          };
+          netstat = { };
+          processes = { };
+        };
+
+        outputs.influxdb = [
+          {
+            urls = [ "http://100.96.0.${vars."srv-de-0".meshId}:8428" ];
+            database = "victoriametrics";
+            skip_database_creation = true;
+            exclude_retention_policy_tag = true;
+            content_encoding = "gzip";
+            namepass = [
+              "system*"
+              "kernel*"
+              "cpu*"
+              "mem*"
+              "swap*"
+              "disk*"
+              "diskio*"
+              "net*"
+              "netstat*"
+              "processes*"
+            ];
+          }
+        ];
+      } my-telegraf.extraConfig;
+    };
+
+    systemd.services.telegraf.serviceConfig = {
+      LimitNOFILE = 8192;
     };
   };
 }

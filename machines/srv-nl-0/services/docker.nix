@@ -1,4 +1,7 @@
 { ... }:
 {
-  services.docuum.threshold = "2GB";
+  services.my-docker = {
+    enable = true;
+    docuumThreshold = "2GB";
+  };
 }

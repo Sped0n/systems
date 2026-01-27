@@ -7,22 +7,24 @@
   ...
 }:
 let
-  cfg = config.services.my-traefik;
-  format = pkgs.formats.toml { };
+  my-traefik = config.services.my-traefik;
+
+  toml = pkgs.formats.toml { };
 in
 {
   options.services.my-traefik = {
-    enable = lib.mkEnableOption "Enable Traefik reverse proxy service.";
+    enable = lib.mkEnableOption "Whether to enable the custom Traefik module.";
+
     dynamicConfigOptions = lib.mkOption {
       description = ''
         Dynamic configuration for Traefik.
       '';
-      type = format.type;
+      type = toml.type;
       default = { };
     };
   };
 
-  config = lib.mkIf cfg.enable {
+  config = lib.mkIf my-traefik.enable {
     users.users.traefik.extraGroups = [ "docker" ];
     systemd.tmpfiles.rules = [
       "d /var/log/traefik 0755 traefik traefik -"
@@ -120,7 +122,7 @@ in
         };
         dynamicConfigOptions = lib.recursiveUpdate {
           http.middlewares.cftunnel.plugin.traefik-real-ip.excludednets = [ ];
-        } cfg.dynamicConfigOptions;
+        } my-traefik.dynamicConfigOptions;
       };
 
       logrotate.settings = {

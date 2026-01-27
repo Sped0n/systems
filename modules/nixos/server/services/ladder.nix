@@ -6,7 +6,7 @@
   ...
 }:
 let
-  cfg = config.services.my-ladder;
+  my-ladder = config.services.my-ladder;
 
   stateDir = "/var/lib/ladder";
   keyPath = "${stateDir}/disguise.key";
@@ -16,7 +16,7 @@ in
 {
   options.services.my-ladder.enable = lib.mkEnableOption "Enable ladder (sing-box) service";
 
-  config = lib.mkIf cfg.enable {
+  config = lib.mkIf my-ladder.enable {
     users = {
       users.ladder = {
         isSystemUser = true;
