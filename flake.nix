@@ -67,9 +67,9 @@
               if builtins.match ".*darwin$" system != null then "/Users/${username}" else "/home/${username}";
           };
 
-          functions = {
-            loadOverlays = import ./functions/loadOverlays.nix;
-            fromRoot = relPath: self.outPath + relPath;
+          functions = import ./functions {
+            lib = nixpkgs.lib;
+            inherit self;
           };
 
           pkgs-unstable = import nixpkgs-unstable {

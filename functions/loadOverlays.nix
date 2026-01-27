@@ -3,7 +3,6 @@ let
   inherit (builtins)
     attrNames
     filter
-    map
     match
     pathExists
     readDir
