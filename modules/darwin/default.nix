@@ -6,8 +6,8 @@
     ./brew
     ./system
 
+    ./determinate.nix
     ./diff.nix
     ./gc.nix
-    ./nix.nix
   ];
 }

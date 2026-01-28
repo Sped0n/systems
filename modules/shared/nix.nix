@@ -32,8 +32,8 @@
       ];
     };
     extraOptions = ''
-      		builders-use-substitutes = true
-      	'';
+      builders-use-substitutes = true
+    '';
   };
 
   environment.systemPackages = [
@@ -41,9 +41,4 @@
       nix = determinate.inputs.nix.packages."${pkgs.stdenv.system}".default;
     })
   ];
-
-  services.my-determinate = {
-    enable = true;
-    config.garbageCollector.strategy = "disabled";
-  };
 }

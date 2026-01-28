@@ -7,7 +7,7 @@
     ./home
 
     ./age.nix
+    ./determinate.nix
     ./networking.nix
-    ./nix.nix
   ];
 }
