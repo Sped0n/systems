@@ -108,7 +108,7 @@ swapon --discard --priority 100 /dev/zram0
 
 1. Get below information from the VPS.
    - The IPv4/IPv6 address and gateway (`ip addr && ip route show default && ip -6 route show default`).
-   - The [hardware configuration](#get-hardware-configuration-from-non-nixos-host).
+   - The [hardware configuration](<#Get Hardware Configuration from Non-NixOS Host>).
    - The SSH host key (`cat /etc/ssh/ssh_host_ed25519_key.pub`).
    - The disk to install NixOS on (`lsblk`).
 2. Modify the configuration files under `machines/<configuration name>/` accordingly.
@@ -136,7 +136,7 @@ swapon --discard --priority 100 /dev/zram0
 6. After server kexec into nixos-installer, use below two ways to set a default password for root user.
    - Use VNC provided by the VPS provider and run `passwd` command.
    - Direct SSH (`ssh root@<ip address> -o PubkeyAuthentication=no`) and run `passwd` command.
-7. [Setup zram](#perform-installation-on-systems-with-limited-ram) if needed.
+7. [Setup zram](<#Perform Installation on Systems with Limited RAM>) if needed.
 8. Key in the root password (several times).
    - This is the new password set in step 7.
 9. Wait for the command to finish.
