@@ -55,6 +55,6 @@
     gofumpt
 
     # markdown
-    marksman
+    markdown-oxide
   ];
 }

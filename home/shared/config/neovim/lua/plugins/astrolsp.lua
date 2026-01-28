@@ -27,7 +27,7 @@ return {
       -- json
       "jsonls",
       -- markdown
-      "marksman",
+      "markdown_oxide",
     })
   end,
 }
