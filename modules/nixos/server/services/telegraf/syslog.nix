@@ -62,7 +62,7 @@ in
           };
 
           filter f_ignore_dhcpcd_noise {
-            not program("dhcpcd") and level(debug..info);
+            not (program("dhcpcd") and level(debug..info));
           };
 
           ${lib.concatStringsSep "\n\n" (
