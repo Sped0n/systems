@@ -5,6 +5,7 @@
     # core
     nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2511";
     nixpkgs-unstable.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1";
+    nixpkgs-swift.url = "https://flakehub.com/f/NixOS/nixpkgs/=0.1.927018";
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
 
     # shared
