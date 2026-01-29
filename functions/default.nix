@@ -18,21 +18,20 @@ let
 
       raw = import path;
 
-      # If the imported value is a function with attrset-formals (functionArgs != {}),
-      # we auto-apply ctx (filtered to only keys that exist in ctx).
+      # If raw is a function with arguments, try to apply it with ctx if possible
       value =
         if builtins.isFunction raw && builtins.functionArgs raw != { } then
           let
-            argNames = builtins.attrNames (builtins.functionArgs raw);
-            providedNames = builtins.filter (n: builtins.hasAttr n ctx) argNames;
-            providedArgs = builtins.listToAttrs (
-              map (n: {
-                name = n;
-                value = ctx.${n};
-              }) providedNames
-            );
+            fargs = builtins.functionArgs raw;
+
+            # In functionArgs, value == true means "has default", false means "required"
+            requiredNames = builtins.filter (n: fargs.${n} == false) (builtins.attrNames fargs);
+
+            canApply = builtins.all (n: builtins.hasAttr n ctx) requiredNames;
+
+            providedArgs = builtins.intersectAttrs fargs ctx;
           in
-          raw providedArgs
+          if canApply then raw providedArgs else raw
         else
           raw;
 

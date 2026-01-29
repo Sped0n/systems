@@ -36,7 +36,7 @@
   };
 
   outputs =
-    {
+    inputs@{
       self,
       nixpkgs,
       nixpkgs-unstable,
@@ -47,20 +47,17 @@
       disko,
       nix-darwin,
       nix-homebrew,
+      ...
     }:
     let
       genSpecialArgs =
         {
           system,
-          unstableConfigOverrides ? { },
           extraArgs ? { },
         }:
         rec {
-          inherit
-            agenix
-            determinate
-            secrets
-            ;
+          inherit agenix determinate secrets;
+
           vars = import "${secrets}/vars" // rec {
             username = "spedon";
             home =
@@ -71,19 +68,38 @@
             lib = nixpkgs.lib;
             inherit self;
           };
-
-          pkgs-unstable = import nixpkgs-unstable {
-            inherit system;
-            config = {
-              allowUnfree = true;
-            }
-            // unstableConfigOverrides;
-            overlays = functions.loadOverlays ./overlays;
-          };
         }
         // extraArgs;
 
+      overlaysList =
+        (import ./functions {
+          lib = nixpkgs.lib;
+          inherit self;
+        }).loadOverlays
+          {
+            overlayDirectory = ./overlays;
+            args = { inherit inputs; };
+          };
+
+      nixpkgsModule =
+        { ... }:
+        {
+          nixpkgs = {
+            config.allowUnfree = true;
+            overlays = overlaysList;
+          };
+        };
+
+      pkgsUnstableFor =
+        system:
+        import nixpkgs-unstable {
+          inherit system;
+          config.allowUnfree = true;
+          overlays = overlaysList;
+        };
+
       commonNixosModules = [
+        nixpkgsModule
         determinate.nixosModules.default
         disko.nixosModules.disko
         agenix.nixosModules.default
@@ -91,6 +107,7 @@
       ];
 
       commonDarwinModules = [
+        nixpkgsModule
         determinate.darwinModules.default
         agenix.darwinModules.default
         home-manager.darwinModules.home-manager
@@ -101,8 +118,8 @@
       darwinConfigurations = {
         "wks-0" = nix-darwin.lib.darwinSystem rec {
           system = "aarch64-darwin";
-          specialArgs = genSpecialArgs {
-            inherit system;
+          specialArgs = (genSpecialArgs { inherit system; }) // {
+            pkgs-unstable = pkgsUnstableFor system;
           };
           modules = commonDarwinModules ++ [ ./machines/wks-0 ];
         };
@@ -111,40 +128,40 @@
       nixosConfigurations = {
         "srv-de-0" = nixpkgs.lib.nixosSystem rec {
           system = "x86_64-linux";
-          specialArgs = genSpecialArgs {
-            inherit system;
+          specialArgs = (genSpecialArgs { inherit system; }) // {
+            pkgs-unstable = pkgsUnstableFor system;
           };
           modules = commonNixosModules ++ [ ./machines/srv-de-0 ];
         };
 
         "srv-nl-0" = nixpkgs.lib.nixosSystem rec {
           system = "x86_64-linux";
-          specialArgs = genSpecialArgs {
-            inherit system;
+          specialArgs = (genSpecialArgs { inherit system; }) // {
+            pkgs-unstable = pkgsUnstableFor system;
           };
           modules = commonNixosModules ++ [ ./machines/srv-nl-0 ];
         };
 
         "srv-sg-0" = nixpkgs.lib.nixosSystem rec {
           system = "x86_64-linux";
-          specialArgs = genSpecialArgs {
-            inherit system;
+          specialArgs = (genSpecialArgs { inherit system; }) // {
+            pkgs-unstable = pkgsUnstableFor system;
           };
           modules = commonNixosModules ++ [ ./machines/srv-sg-0 ];
         };
 
         "srv-sg-1" = nixpkgs.lib.nixosSystem rec {
           system = "aarch64-linux";
-          specialArgs = genSpecialArgs {
-            inherit system;
+          specialArgs = (genSpecialArgs { inherit system; }) // {
+            pkgs-unstable = pkgsUnstableFor system;
           };
           modules = commonNixosModules ++ [ ./machines/srv-sg-1 ];
         };
 
         "srv-us-0" = nixpkgs.lib.nixosSystem rec {
           system = "x86_64-linux";
-          specialArgs = genSpecialArgs {
-            inherit system;
+          specialArgs = (genSpecialArgs { inherit system; }) // {
+            pkgs-unstable = pkgsUnstableFor system;
           };
           modules = commonNixosModules ++ [ ./machines/srv-us-0 ];
         };

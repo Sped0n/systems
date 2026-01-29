@@ -1,16 +1,10 @@
 {
   determinate,
-  functions,
   pkgs,
   vars,
   ...
 }:
 {
-  nixpkgs = {
-    config.allowUnfree = true;
-    overlays = functions.loadOverlays (functions.fromRoot "/overlays");
-  };
-
   nix = {
     settings = {
       trusted-users = [
