@@ -66,6 +66,10 @@ in
         ];
     };
 
+    extraHosts = builtins.concatStringsSep "\n" (
+      map (name: "100.96.0.${toString vars.${name}.meshId} ${name}") vars.serverHostnames
+    );
+
     firewall = {
       allowedUDPPorts = [ meshPort ];
       extraCommands = ''
