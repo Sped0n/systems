@@ -2,7 +2,7 @@
 { inputs, ... }:
 final: prev:
 let
-  system = prev.stdenv.hostPlatform.system;
+  system = prev.stdenv.system;
   pkgs-swift = inputs.nixpkgs-swift.legacyPackages.${system};
 in
 {
