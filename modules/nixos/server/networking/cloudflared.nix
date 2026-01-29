@@ -8,7 +8,7 @@
 }:
 let
   cfg = config.services.my-cloudflared;
-  host = config.networking.hostName;
+  hostname = config.networking.hostName;
 in
 {
   options.services.my-cloudflared = {
@@ -16,8 +16,8 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    age.secrets."${host}-cf-tunnel-json" = {
-      file = "${secrets}/ages/${host}-cf-tunnel-json.age";
+    age.secrets."${hostname}-cf-tunnel-json" = {
+      file = "${secrets}/ages/${hostname}-cf-tunnel-json.age";
       owner = "root";
       mode = "0400";
     };
@@ -32,9 +32,9 @@ in
       enable = true;
       package = pkgs-unstable.cloudflared;
       tunnels = {
-        "${vars.${host}.cfTunnelId}" = {
+        "${vars.${hostname}.cfTunnelId}" = {
           default = "http_status:404";
-          credentialsFile = config.age.secrets."${host}-cf-tunnel-json".path;
+          credentialsFile = config.age.secrets."${hostname}-cf-tunnel-json".path;
         };
       };
     };

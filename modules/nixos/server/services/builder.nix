@@ -9,23 +9,23 @@ let
   hostname = config.networking.hostName;
   my-builder = config.services.my-builder;
 
-  makeSecretAttr = hostName: {
-    name = "${hostName}-ssh-key";
+  mkSecretAttr = _hostname: {
+    name = "${_hostname}-ssh-key";
     value = {
-      file = "${secrets}/ages/${hostName}-ssh-key.age";
+      file = "${secrets}/ages/${_hostname}-ssh-key.age";
       owner = "builder";
       mode = "0400";
     };
   };
-  makeMatchBlockAttrs = hostName: [
+  mkMatchBlockAttrs = _hostname: [
     {
-      name = hostName;
+      name = _hostname;
       value = {
-        hostname = vars."${hostName}".ipv4;
+        hostname = vars."${_hostname}".ipv4;
         port = 12222;
         user = vars.username;
         identityFile = [
-          config.age.secrets."${hostName}-ssh-key".path
+          config.age.secrets."${_hostname}-ssh-key".path
         ];
       };
     }
@@ -81,7 +81,7 @@ in
       };
     };
 
-    age.secrets = builtins.listToAttrs (map makeSecretAttr my-builder.deployees);
+    age.secrets = builtins.listToAttrs (map mkSecretAttr my-builder.deployees);
 
     home-manager.users.builder = {
       home = {
@@ -100,7 +100,7 @@ in
             };
           };
         }
-        // builtins.listToAttrs (lib.concatMap makeMatchBlockAttrs my-builder.deployees);
+        // builtins.listToAttrs (lib.concatMap mkMatchBlockAttrs my-builder.deployees);
       };
     };
   };

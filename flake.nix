@@ -63,6 +63,13 @@
             username = "spedon";
             home =
               if builtins.match ".*darwin$" system != null then "/Users/${username}" else "/home/${username}";
+            serverHostnames = [
+              "srv-de-0"
+              "srv-nl-0"
+              "srv-sg-0"
+              "srv-sg-1"
+              "srv-us-0"
+            ];
           };
 
           functions = import ./functions {

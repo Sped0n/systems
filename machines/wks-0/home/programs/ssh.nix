@@ -4,15 +4,6 @@
   vars,
   ...
 }:
-let
-  hostNames = [
-    "srv-de-0"
-    "srv-nl-0"
-    "srv-sg-0"
-    "srv-sg-1"
-    "srv-us-0"
-  ];
-in
 {
   age.secrets =
     with vars;
@@ -25,16 +16,16 @@ in
     }
     // (
       let
-        mkSecretAttr = hostName: {
-          name = "${hostName}-ssh-key";
+        mkSecretAttr = hostname: {
+          name = "${hostname}-ssh-key";
           value = {
-            file = "${secrets}/ages/${hostName}-ssh-key.age";
+            file = "${secrets}/ages/${hostname}-ssh-key.age";
             mode = "0400";
-            path = "${vars.home}/.ssh/id_${hostName}";
+            path = "${vars.home}/.ssh/id_${hostname}";
           };
         };
       in
-      builtins.listToAttrs (map mkSecretAttr hostNames)
+      builtins.listToAttrs (map mkSecretAttr vars.serverHostnames)
     );
 
   programs.ssh = {
@@ -87,21 +78,21 @@ in
       # --- servers ------------------------------------------------------------
       // (
         let
-          mkMatchBlockAttrs = hostName: [
+          mkMatchBlockAttrs = hostname: [
             {
-              name = hostName;
+              name = hostname;
               value = {
-                hostname = vars."${hostName}".ipv4;
+                hostname = vars."${hostname}".ipv4;
                 port = 12222;
                 user = vars.username;
                 identityFile = [
-                  config.age.secrets."${hostName}-ssh-key".path
+                  config.age.secrets."${hostname}-ssh-key".path
                 ];
               };
             }
           ];
         in
-        builtins.listToAttrs (builtins.concatMap mkMatchBlockAttrs hostNames)
+        builtins.listToAttrs (builtins.concatMap mkMatchBlockAttrs vars.serverHostnames)
       );
   };
 }
