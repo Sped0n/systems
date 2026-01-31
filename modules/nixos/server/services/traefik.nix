@@ -1,6 +1,7 @@
 {
   lib,
   config,
+  functions,
   pkgs,
   pkgs-unstable,
   vars,
@@ -8,8 +9,10 @@
 }:
 let
   my-traefik = config.services.my-traefik;
+  my-telegraf = config.services.my-telegraf;
 
   toml = pkgs.formats.toml { };
+  traefikOtelPort = 4327;
 in
 {
   options.services.my-traefik = {
@@ -40,13 +43,12 @@ in
             checkNewVersion = false;
             sendAnonymousUsage = false;
           };
+          api.dashboard = true;
 
           experimental.plugins."traefik-real-ip" = {
             moduleName = "github.com/jramsgz/traefik-real-ip";
             version = "v1.0.4";
           };
-
-          api.dashboard = true;
 
           log.level = "WARN";
           accessLog = {
@@ -71,74 +73,91 @@ in
                 GzipRatio = "drop";
                 RetryAttempts = "drop";
               };
-              headers = {
-                names = {
-                  "Content-Type" = "keep";
-                  Referer = "keep";
-                  "User-Agent" = "keep";
-                  "Cf-Connecting-Ip" = "keep";
-                  "Cf-Ipcountry" = "keep";
-                  "Cf-Ray" = "keep";
-                };
+              headers.names = {
+                "Content-Type" = "keep";
+                "Referer" = "keep";
+                "User-Agent" = "keep";
+                "Cf-Connecting-Ip" = "keep";
+                "Cf-Ipcountry" = "keep";
+                "Cf-Ray" = "keep";
               };
             };
           };
-          metrics.otlp = {
+          metrics.otlp = lib.mkIf my-telegraf.enable {
             addEntryPointsLabels = false;
+            addRoutersLabels = false;
+            addServicesLabels = true;
             pushInterval = "10s";
-            http.endpoint = "http://100.96.0.${vars."srv-de-0".meshId}:8428/opentelemetry/v1/metrics";
-          };
-
-          entryPoints = {
-            https = {
-              address = ":4443";
-              http = {
-                tls = {
-                  domains = [
-                    {
-                      main = "\${DNS_DOMAIN}";
-                      sans = [
-                        "*.\${DNS_DOMAIN}"
-                      ];
-                    }
-                  ];
-                };
-              };
-              transport = {
-                respondingTimeouts = {
-                  readTimeout = "600s";
-                  writeTimeout = "600s";
-                };
-              };
+            explicitBoundaries = [
+              0.002
+              0.005
+              0.01
+              0.02
+              0.05
+              0.1
+              0.2
+              0.5
+              1
+              2
+            ];
+            grpc = {
+              endpoint = "localhost:${toString traefikOtelPort}";
+              insecure = true;
             };
           };
 
-          providers = {
-            docker = {
-              endpoint = "unix:///var/run/docker.sock";
-              exposedByDefault = false;
+          entryPoints.https = {
+            address = ":4443";
+            http.tls.domains = [
+              {
+                main = "\${DNS_DOMAIN}";
+                sans = [
+                  "*.\${DNS_DOMAIN}"
+                ];
+              }
+            ];
+            transport.respondingTimeouts = {
+              readTimeout = "600s";
+              writeTimeout = "600s";
             };
+          };
+
+          providers.docker = {
+            endpoint = "unix:///var/run/docker.sock";
+            exposedByDefault = false;
           };
         };
-        dynamicConfigOptions = lib.recursiveUpdate {
+        dynamicConfigOptions = functions.mergeToml {
           http.middlewares.cftunnel.plugin.traefik-real-ip.excludednets = [ ];
         } my-traefik.dynamicConfigOptions;
       };
 
-      logrotate.settings = {
-        "/var/log/traefik/access.log" = {
-          copytruncate = true;
-          frequency = "hourly";
-          size = "100K";
-          rotate = 0;
-          missingok = true;
-          notifempty = true;
-        };
+      logrotate.settings."/var/log/traefik/access.log" = {
+        copytruncate = true;
+        frequency = "hourly";
+        size = "100K";
+        rotate = 0;
+        missingok = true;
+        notifempty = true;
       };
 
-      telegraf = {
-        extraConfig = {
-          inputs.tail = [
+      my-telegraf.extraConfig = lib.mkIf my-telegraf.enable {
+        inputs = {
+          opentelemetry = [
+            {
+              service_address = "localhost:${toString traefikOtelPort}";
+              fielddrop = [ "start_time_unix_nano" ];
+              tagexclude = [
+                "host.name"
+                "os.*"
+                "process.*"
+                "scope.*"
+                "telemetry.*"
+                "otel.*"
+              ];
+            }
+          ];
+          tail = [
             {
               name_override = "traefik_access_log";
               files = [ "/var/log/traefik/access.log" ];
@@ -166,8 +185,21 @@ in
               };
             }
           ];
+        };
 
-          outputs.loki = [
+        outputs = {
+          influxdb = [
+            {
+              urls = [ "http://100.96.0.${vars."srv-de-0".meshId}:8428" ];
+              database = "victoriametrics";
+              skip_database_creation = true;
+              exclude_retention_policy_tag = true;
+              content_encoding = "gzip";
+              namedrop = [ "traefik_access_log" ];
+              namepass = [ "traefik*" ];
+            }
+          ];
+          loki = [
             {
               domain = "http://100.96.0.${vars."srv-de-0".meshId}:10428";
               endpoint = "/insert/loki/api/v1/push";
@@ -180,5 +212,4 @@ in
       };
     };
   };
-
 }
