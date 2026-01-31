@@ -22,8 +22,10 @@ in
             "com.*"
             "org.*"
             "io.*"
+            "build_version"
             "summary"
             "description"
+            "maintainer"
           ];
         };
         outputs.influxdb = [
