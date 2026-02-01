@@ -14,20 +14,52 @@ in
 
     services.my-telegraf = {
       extraConfig = {
-        inputs.docker = {
-          timeout = "10s";
-          source_tag = true;
-          docker_label_exclude = [
-            "traefik.*"
-            "com.*"
-            "org.*"
-            "io.*"
-            "build_version"
-            "summary"
-            "description"
-            "maintainer"
+        inputs.docker =
+          let
+            common = {
+              timeout = "10s";
+              source_tag = true;
+              docker_label_exclude = [
+                "traefik.*"
+                "com.*"
+                "org.*"
+                "io.*"
+                "build_version"
+                "summary"
+                "description"
+                "maintainer"
+              ];
+            };
+          in
+          [
+            (
+              {
+                namepass = [ "docker*" ];
+                namedrop = [ "docker_container_mem" ];
+                fieldexclude = [
+                  # cpu
+                  "n_cpus"
+                  "throttling*"
+                  # disk
+                  "layers_size"
+                  # misc
+                  "container_id"
+                ];
+              }
+              // common
+            )
+            (
+              {
+                namepass = [ "docker_container_mem" ];
+                fieldexclude = [
+                  "limit"
+                  "max_usage"
+                  "usage_percent"
+                ];
+              }
+              // common
+            )
           ];
-        };
         outputs.influxdb = [
           {
             urls = [ "http://100.96.0.${vars."srv-de-0".meshId}:8428" ];
