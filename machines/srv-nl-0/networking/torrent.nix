@@ -1,9 +1,13 @@
 {
   config,
+  lib,
   pkgs,
   secrets,
   ...
 }:
+let
+  my-telegraf = config.services.my-telegraf;
+in
 {
   age.secrets."torrent-key" = {
     file = "${secrets}/ages/srv-nl-0-torrent-key.age";
@@ -35,5 +39,9 @@
         51820
       ];
     };
+  };
+
+  services.my-telegraf.extraConfig = lib.mkIf my-telegraf.enable {
+    inputs.wireguard.devices = [ "torrent0" ];
   };
 }

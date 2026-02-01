@@ -1,11 +1,14 @@
 {
   config,
+  lib,
   pkgs,
   secrets,
   vars,
   ...
 }:
 let
+  my-telegraf = config.services.my-telegraf;
+
   meshPort = 41641;
 in
 {
@@ -80,5 +83,52 @@ in
       '';
       trustedInterfaces = [ "mesh0" ];
     };
+  };
+
+  services.my-telegraf.extraConfig = lib.mkIf my-telegraf.enable {
+    inputs = {
+      wireguard = {
+        devices = [ "mesh0" ];
+        fieldexclude = [
+          "listen_port"
+          "firewall_mark"
+          "peers"
+          "persistent_keepalive_interval_ns"
+          "protocol_version"
+          "allowed*"
+        ];
+      };
+      ping = [
+        {
+          name_override = "mesh_ping";
+          fieldexclude = [
+            "packets_*"
+            "ttl"
+            "minimum_response_ms"
+            "maximum_response_ms"
+            "standard_deviation_ms"
+            "percentile*"
+          ];
+          urls = vars.serverHostnames;
+          method = "native";
+          ping_interval = 30.0;
+          count = 5;
+        }
+      ];
+    };
+
+    outputs.influxdb = [
+      {
+        urls = [ "http://100.96.0.${vars."srv-de-0".meshId}:8428" ];
+        database = "victoriametrics";
+        skip_database_creation = true;
+        exclude_retention_policy_tag = true;
+        content_encoding = "gzip";
+        namepass = [
+          "wireguard*"
+          "mesh_ping*"
+        ];
+      }
+    ];
   };
 }
