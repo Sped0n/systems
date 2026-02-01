@@ -1,6 +1,10 @@
 ---
-temperature: 0.6
-top_p: 0.95
+model: openai:deepseek/deepseek-v3.2:floor
+temperature: 0.1
+top_p: 0.9
+max_tokens: 120
+seed: 42
+reasoning_effort: none
 ---
 
 ## 0 · Role

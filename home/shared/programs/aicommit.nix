@@ -34,7 +34,7 @@ in
           trap 'rm -f "$temp_message_file"' EXIT
 
           recent_commits="$(
-            git log -n 10 --pretty=format:$'- %s%n%b%n' 2>/dev/null || true
+            git log -n 15 --pretty=format:$'- %s%n%b%n' 2>/dev/null || true
           )"
           if [[ -z "$recent_commits" ]]; then
             recent_commits="(no previous commits to learn from yet)"
