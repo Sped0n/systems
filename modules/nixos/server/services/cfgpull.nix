@@ -49,7 +49,7 @@ in
 
             # 3. Pull latest changes
             echo "Pulling from remote..."
-            git pull
+            git pull 1>/dev/null
           else
             # Case: Directory exists but is NOT a git repository
             echo "Directory exists but is not a git repository. Deleting and re-cloning..."
@@ -71,7 +71,6 @@ in
       timerConfig = {
         OnCalendar = "daily";
         Persistent = true;
-        RandomizedDelaySec = "5m";
       };
     };
   };
