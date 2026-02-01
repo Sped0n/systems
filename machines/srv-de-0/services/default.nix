@@ -6,9 +6,9 @@
     ./ladder.nix
     ./nginx.nix
     ./restic.nix
-    ./rclone.nix
     ./telegraf.nix
     ./traefik.nix
+    ./vidhub.nix
   ];
 
   systemd.tmpfiles.rules = with vars; [
