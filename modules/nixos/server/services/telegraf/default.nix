@@ -9,6 +9,7 @@
 }:
 let
   my-telegraf = config.services.my-telegraf;
+  hostname = config.networking.hostName;
 
   toml = pkgs.formats.toml { };
 in
@@ -56,6 +57,7 @@ in
       package = pkgs-unstable.telegraf;
       extraConfig = functions.mergeToml {
         agent = {
+          inherit hostname;
           interval = "10s";
           round_interval = true;
           metric_batch_size = 1000;
@@ -67,21 +69,25 @@ in
           debug = false;
           quiet = false;
           logfile = "/dev/null";
-          hostname = config.networking.hostName;
           omit_hostname = false;
         };
 
         inputs = {
           system = { };
           kernel.collect = [ "psi" ];
-          cpu.fieldexclude = [ "time_*" ];
-          mem = { };
+          cpu.fieldexclude = [
+            "time*"
+            "usage_guest*"
+          ];
+          mem.fieldexclude = [
+            "huge_page*"
+            "swap*"
+          ];
           swap = { };
           disk.mount_points = [ "/" ];
           diskio.devices = [
             "sda"
             "vda"
-            "nvme0n1"
           ];
           net = {
             interfaces = [ "eth0" ];
@@ -116,6 +122,7 @@ in
     };
 
     systemd.services.telegraf.serviceConfig = {
+      AmbientCapabilities = [ "CAP_NET_ADMIN" ];
       LimitNOFILE = 8192;
     };
   };

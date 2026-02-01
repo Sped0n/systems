@@ -146,7 +146,8 @@ in
           opentelemetry = [
             {
               service_address = "localhost:${toString traefikOtelPort}";
-              fielddrop = [ "start_time_unix_nano" ];
+              namedrop = [ "traefik_config*" ];
+              fieldexclude = [ "start_time_unix_nano" ];
               tagexclude = [
                 "host.name"
                 "os.*"
