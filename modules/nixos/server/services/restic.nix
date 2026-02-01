@@ -144,16 +144,7 @@ in
           LockPersonality = true;
           RestrictSUIDSGID = true;
 
-          ProtectHostname = true;
-          ProtectClock = true;
-          ProtectKernelLogs = true;
-          ProtectKernelModules = true;
-          ProtectKernelTunables = true;
-          ProtectControlGroups = true;
-
           KeyringMode = "private";
-          RemoveIPC = true;
-          RestrictRealtime = true;
         };
       };
     };
