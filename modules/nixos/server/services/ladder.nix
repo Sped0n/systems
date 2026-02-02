@@ -46,6 +46,7 @@ in
 
         StateDirectory = "ladder";
         StateDirectoryMode = "0700";
+        UMask = "0077";
 
         ExecStartPre = [
           (pkgs.writeShellScript "ladder-init" ''
@@ -95,10 +96,17 @@ in
         Restart = "on-failure";
         RestartSec = 3;
 
-        NoNewPrivileges = true;
-        PrivateTmp = true;
         ProtectSystem = "strict";
         ProtectHome = true;
+        PrivateTmp = true;
+
+        NoNewPrivileges = true;
+        LockPersonality = true;
+        RestrictSUIDSGID = true;
+        RestrictNamespaces = true;
+        PrivateDevices = true;
+        MemoryDenyWriteExecute = true;
+        SystemCallArchitectures = "native";
         RestrictAddressFamilies = [
           "AF_INET"
           "AF_INET6"
@@ -107,8 +115,6 @@ in
         ];
         CapabilityBoundingSet = [ "CAP_NET_BIND_SERVICE" ];
         AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" ];
-        ReadWritePaths = [ stateDir ];
-        UMask = "0077";
       };
     };
 
@@ -116,16 +122,15 @@ in
       "net.ipv4.tcp_keepalive_time" = 300;
       "net.ipv4.tcp_keepalive_intvl" = 30;
       "net.ipv4.tcp_keepalive_probes" = 3;
+      "net.ipv4.tcp_tw_reuse" = 1;
     };
 
     services.fail2ban.jails.singbox = {
       filter.Definition.failregex =
         "^.*process connection from <HOST>:\\d+: "
         + "(unknown user password"
-        + "|TLS handshake: read tcp"
         + "|TLS handshake: tls:"
-        + "|TLS handshake: remote error:"
-        + "|TLS handshake: client offered only unsupported versions)";
+        + "|TLS handshake: remote error:)";
       settings = {
         backend = "systemd";
         journalmatch = "_SYSTEMD_UNIT=ladder.service";

@@ -7,11 +7,9 @@
 
     # TCP timestamps (RTT measurement, PAWS protection)
     "net.ipv4.tcp_timestamps" = 1;
-    "net.ipv6.tcp_timestamps" = 1;
 
     # window scaling for high-bandwidth/latency paths
     "net.ipv4.tcp_window_scaling" = 1;
-    "net.ipv6.tcp_window_scaling" = 1;
 
     # socket buffer limits (throughput tuning)
     "net.core.wmem_max" = 33554432;
@@ -20,7 +18,7 @@
     "net.ipv4.tcp_wmem" = "4096 87380 33554432";
 
     # queue discipline and congestion control
-    "net.core.default_qdisc" = "cake";
+    "net.core.default_qdisc" = "fq";
     "net.ipv4.tcp_congestion_control" = "bbr";
 
     # connection setup and loss recovery behavior
