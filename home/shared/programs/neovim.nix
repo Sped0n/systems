@@ -17,9 +17,6 @@
 
   # language supports
   home.packages = with pkgs-unstable; [
-    # copilot
-    copilot-language-server
-
     # nix
     nixd
     nixfmt
