@@ -9,7 +9,7 @@
       sync_frequency = "1m";
       sync_address = "https://atuin.sped0n.com";
       style = "compact";
-      inline_height = 10;
+      inline_height = 17;
       invert = false;
       enter_accept = false;
     };
