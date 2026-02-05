@@ -24,7 +24,7 @@
     "drawio"
     "typora"
     "onlyoffice"
-    "chatwise"
+    "lobehub"
 
     # creativity
     "affinity"

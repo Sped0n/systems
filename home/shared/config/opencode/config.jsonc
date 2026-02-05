@@ -1,0 +1,123 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  // general
+  "theme": "system",
+  "autoupdate": false,
+  "model": "openrouter/moonshotai/kimi-k2.5",
+  "default_agent": "plan",
+  // providers
+  "provider": {
+    "openrouter": {
+      "models": {
+        "moonshotai/kimi-k2.5": {
+          "options": {
+            "provider": {
+              "only": ["moonshotai"],
+            },
+            "thinking": {
+              "type": "enabled",
+            },
+          },
+        },
+        "x-ai/grok-4.1-fast": {
+          "options": {
+            "options": {
+              "reasoningEffort": "medium",
+            },
+          },
+        },
+      },
+    },
+    "yescode": {
+      "npm": "@ai-sdk/openai",
+      "name": "YesCode",
+      "options": {
+        "baseURL": "https://co.yes.vg/v1",
+        "apiKey": "{env:YESCODE_API_KEY}",
+      },
+      "models": {
+        "gpt-5.2": {
+          "name": "GPT-5.2",
+          "options": {
+            "reasoningEffort": "high",
+            "textVerbosity": "low",
+            "reasoningSummary": "auto",
+            "include": ["reasoning.encrypted_content"],
+          },
+        },
+        "gpt-5.3-codex": {
+          "name": "GPT-5.3-Codex",
+          "options": {
+            "reasoningEffort": "high",
+            "textVerbosity": "low",
+            "reasoningSummary": "auto",
+            "include": ["reasoning.encrypted_content"],
+          },
+        },
+      },
+    },
+  },
+  // agents
+  "agent": {
+    "plan": {
+      "model": "yescode/gpt-5.2",
+      "temperature": 0.1,
+      "permission": {
+        "lsp": "deny",
+        "websearch": "deny",
+        "webfetch": "deny",
+        "skill": {
+          "*": "deny",
+          "ast-grep": "allow",
+        },
+      },
+    },
+    "build": {
+      "model": "yescode/gpt-5.3-codex",
+      "temperature": 0.3,
+      "permission": {
+        "lsp": "deny",
+        "websearch": "deny",
+        "webfetch": "deny",
+      },
+    },
+    "general": {
+      "model": "openrouter/moonshotai/kimi-k2.5",
+      "temperature": 0.25,
+      "permission": {
+        "lsp": "deny",
+        "websearch": "deny",
+        "webfetch": "deny",
+      },
+    },
+    "explore": {
+      "model": "openrouter/x-ai/grok-4.1-fast",
+      "temperature": 0.0,
+      "permission": {
+        "lsp": "deny",
+        "websearch": "deny",
+        "webfetch": "deny",
+        "skill": {
+          "*": "deny",
+          "ast-grep": "allow",
+        },
+      },
+      "tools": {
+        "jina-mcp-server*": false,
+      },
+    },
+    "commit-message-writer": {
+      "model": "openrouter/x-ai/grok-4.1-fast",
+    },
+  },
+  // mcp servers
+  "mcp": {
+    "jina-mcp-server": {
+      "type": "remote",
+      "url": "https://mcp.jina.ai/v1?include_tools=search_web,read_url,parallel_search_web,parallel_read_url",
+      "headers": {
+        "Authorization": "{env:JINA_API_KEY}",
+      },
+    },
+  },
+}

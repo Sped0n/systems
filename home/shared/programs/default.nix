@@ -1,8 +1,6 @@
 { ... }:
 {
   imports = [
-    ./aichat.nix
-    ./aicommit.nix
     ./atuin.nix
     ./bat.nix
     ./delta.nix
@@ -12,6 +10,7 @@
     ./ghostty.nix
     ./git.nix
     ./neovim.nix
+    ./opencode.nix
     ./ssh.nix
     ./starship.nix
     ./tmux.nix
