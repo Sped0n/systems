@@ -13,7 +13,7 @@
   };
 
   xdg.configFile."nvim".source =
-    config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/shared/config/neovim/";
+    config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/raw/neovim/";
 
   # language supports
   home.packages = with pkgs-unstable; [

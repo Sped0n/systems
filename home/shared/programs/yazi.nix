@@ -3,8 +3,6 @@
   programs.yazi = {
     enable = true;
     package = pkgs-unstable.yazi;
-    theme = builtins.fromTOML (
-      builtins.readFile (functions.fromRoot "/home/shared/config/yazi/theme.toml")
-    );
+    theme = fromTOML (builtins.readFile (functions.fromRoot "/home/raw/yazi/theme.toml"));
   };
 }

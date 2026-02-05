@@ -18,16 +18,16 @@ in
 
   xdg.configFile = lib.mkIf opencode.enable {
     "opencode/opencode.jsonc".source = (
-      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/shared/config/opencode/config.jsonc"
+      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/raw/opencode/config.jsonc"
     );
     "opencode/AGENTS.md".source = (
-      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/shared/config/opencode/AGENTS.md"
+      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/raw/opencode/AGENTS.md"
     );
     "opencode/agents".source = (
-      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/shared/config/opencode/agents"
+      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/raw/opencode/agents"
     );
     "opencode/skills".source = (
-      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/shared/config/opencode/skills"
+      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/raw/opencode/skills"
     );
   };
 

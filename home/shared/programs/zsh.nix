@@ -21,8 +21,8 @@
     };
     initContent = lib.mkMerge [
       (lib.mkOrder 500 ''
-        source ${(functions.fromRoot "/home/shared/config/zsh/extras.zsh")}
-        source ${(functions.fromRoot "/home/shared/config/zsh/functions.zsh")}
+        source ${(functions.fromRoot "/home/raw/zsh/extras.zsh")}
+        source ${(functions.fromRoot "/home/raw/zsh/functions.zsh")}
       '')
       (lib.mkOrder 1550 "fastfetch")
     ];
