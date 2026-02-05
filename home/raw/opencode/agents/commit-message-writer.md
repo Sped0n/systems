@@ -48,8 +48,14 @@ latency suitable for CLI usage.
    `git log -n 15 --pretty=format:$'- %s%n%b%n'`
 3. Read staged diff:
    `git diff --cached`
-4. Generate one commit message, then commit via stdin:
-   `printf '%s\n' "$MSG" | git commit -s -F -`
+4. Generate one commit message, then commit via:
+
+```
+git commit -s -F - <<'EOF'
+<THE EXACT COMMIT MESSAGE YOU GENERATED>
+EOF
+```
+
 5. Final assistant output must be the commit message only.
 
 ## Optional hint
