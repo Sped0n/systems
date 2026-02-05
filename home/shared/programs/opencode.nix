@@ -47,19 +47,10 @@ in
   };
 
   home.packages = lib.mkIf opencode.enable [
-    (pkgs.writeShellScriptBin "oct" ''
+    (pkgs.writeShellScriptBin "oc" ''
       set -euo pipefail
       export OPENCODE_EXPERIMENTAL_MARKDOWN=1
       export OPENCODE_EXPERIMENTAL_PLAN_MODE=1
-      export OPENROUTER_API_KEY="$(${pkgs.coreutils}/bin/cat ${
-        config.age.secrets."openrouter-api-key".path
-      })"
-      export YESCODE_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."yescode-api-key".path})"
-      export JINA_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."jina-api-key".path})"
-      exec ${lib.getExe opencode.package} --port "$@"
-    '')
-    (pkgs.writeShellScriptBin "occ" ''
-      set -euo pipefail
       export OPENROUTER_API_KEY="$(${pkgs.coreutils}/bin/cat ${
         config.age.secrets."openrouter-api-key".path
       })"
