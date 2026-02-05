@@ -47,7 +47,7 @@ in
 
           experimental.plugins."traefik-real-ip" = {
             moduleName = "github.com/jramsgz/traefik-real-ip";
-            version = "v1.0.4";
+            version = "v1.0.7";
           };
 
           log.level = "WARN";
