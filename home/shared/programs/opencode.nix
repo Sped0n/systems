@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  pkgs-unstable,
   secrets,
   vars,
   ...
@@ -13,7 +12,7 @@ in
 {
   programs.opencode = {
     enable = lib.mkDefault false;
-    package = pkgs-unstable.opencode;
+    package = pkgs.llm-agents.opencode;
   };
 
   xdg.configFile = lib.mkIf opencode.enable {
