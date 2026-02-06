@@ -373,7 +373,7 @@ You are operating in an environment with `ast-grep`, and there is an agent skill
 
 For any code search that requires understanding of syntax or code structure, you should default to using:
 
-ast-grep --lang [language] -p '<pattern>'
+`ast-grep --lang [language] -p '<pattern>'`
 
 Adjust the `--lang` flag as needed for the specific programming language. Avoid using text-only search tools unless a plain-text search is explicitly requested.
 
@@ -381,3 +381,21 @@ If a search is ambiguous, prefer:
 
 - `ast-grep` for AST- and structure-aware queries (preferred default).
 - `rg` only for raw text matching (comments, strings, logs, docs) or when explicitly requested.
+
+### 10.2 Web search & URL reading (via Jina MCP server)
+
+Built-in `websearch` / `webfetch` are not available. When you need information from the internet, use the **Jina MCP server** (`jina-mcp-server`) instead.
+
+Available tools:
+
+- `search_web`: search the web for relevant pages.
+- `read_url`: fetch and extract the content of a single URL.
+- `parallel_search_web`: run multiple independent searches concurrently.
+- `parallel_read_url`: fetch multiple URLs concurrently.
+
+Usage rules:
+
+- Prefer `parallel_*` tools whenever requests are independent (e.g., compare multiple sources, fetch multiple pages).
+- Use `search_web` to discover sources, then `read_url` to quote/ground details.
+- Never reveal or print the Jina API key; authentication is handled via `JINA_API_KEY` in the environment.
+- When you use web-derived facts, include the source URLs in the answer.
