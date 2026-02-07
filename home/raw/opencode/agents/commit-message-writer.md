@@ -5,15 +5,15 @@ temperature: 0.1
 top_p: 0.9
 steps: 5
 tools:
-  write: false
-  edit: false
+  "*": false
   bash: true
-  webfetch: false
-  lsp: false
+  read: true
+  grep: true
+  glob: true
+  list: true
+  skill: true
 permission:
   edit: deny
-  websearch: deny
-  webfetch: deny
   task:
     "*": deny
     "explore": allow
@@ -62,7 +62,9 @@ EOF
 
 - A user-provided hint may exist; treat it as additional context, not a
   requirement.
-  Hard output rules (final response):
+
+## Hard output rules (final response)
+
 - Output plain text only (no code blocks, no extra commentary).
 - Output exactly one commit message (subject + optional body).
 - Conventional Commits: `type(scope)!: subject`
@@ -70,14 +72,20 @@ EOF
   - Use `!` only for breaking changes.
 - Subject: imperative mood, concise, specific, <= 72 chars, no trailing dot.
 - Body only if necessary; wrap lines <= 72 chars.
+  - For body, prefer paragraphs instead of bullet points, just like Linux
+    kernel commit style.
 - No metadata (no refs, no "Authored-by", no "Signed-off-by").
-  Content selection:
+
+## Content selection
+
 - Base the message primarily on the staged diff; use hint only to disambiguate.
 - Prefer the smallest accurate summary of the primary change.
 - Choose type consistent with repo history (feat, fix, refactor, perf, docs,
   test, build, ci, chore, revert).
 - If multiple changes exist, focus on the main one.
-  Using @explore:
+
+## Using @explore
+
 - Only invoke `@explore` if the staged diff is too large/ambiguous to classify
   confidently (e.g., mixed refactor+behavior change) and you need a fast,
   read-only summary.
