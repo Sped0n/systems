@@ -12,6 +12,19 @@
       inline_height = 17;
       invert = false;
       enter_accept = false;
+      history_filter = [
+        "^cd(\\s|$)"
+        "^ls(\\s|$)"
+        "^exa(\\s|$)"
+        "^rm(\\s|$)"
+        "^(sudo\s+)?rm(\\s|$)"
+        "^cat(\\s|$)"
+        "^(sudo\s+)?cat(\\s|$)"
+        "^bat(\\s|$)"
+        "(?i)^clear(\\s|$)"
+        "^open(\\s|$)"
+        "pbcopy"
+      ];
     };
   };
 }
