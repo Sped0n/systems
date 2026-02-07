@@ -12,17 +12,32 @@
         "moonshotai/kimi-k2.5": {
           "options": {
             "provider": {
-              "only": ["moonshotai"],
+              "sort": "throughput",
             },
-            "thinking": {
-              "type": "enabled",
+            "reasoning": {
+              "enabled": true,
             },
           },
         },
+      },
+    },
+    "orf": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "OpenRouter (Fallback)",
+      "options": {
+        "baseURL": "https://openrouter.ai/api/v1",
+        "apiKey": "{env:OPENROUTER_API_KEY}",
+      },
+      "models": {
         "x-ai/grok-4.1-fast": {
+          "name": "Grok 4.1 Fast",
+          "headers": {
+            "HTTP-Referer": "https://opencode.ai",
+            "X-Title": "OpenCode",
+          },
           "options": {
-            "options": {
-              "reasoningEffort": "medium",
+            "reasoning": {
+              "enabled": true,
             },
           },
         },
@@ -62,10 +77,12 @@
     "plan": {
       "model": "yescode/gpt-5.2",
       "temperature": 0.1,
+      "tools": {
+        "lsp": false,
+        "websearch": false,
+        "webfetch": false,
+      },
       "permission": {
-        "lsp": "deny",
-        "websearch": "deny",
-        "webfetch": "deny",
         "skill": {
           "*": "deny",
           "ast-grep": "allow",
@@ -75,39 +92,45 @@
     "build": {
       "model": "yescode/gpt-5.3-codex",
       "temperature": 0.3,
-      "permission": {
-        "lsp": "deny",
-        "websearch": "deny",
-        "webfetch": "deny",
+      "tools": {
+        "lsp": false,
+        "websearch": false,
+        "webfetch": false,
       },
     },
     "general": {
       "model": "openrouter/moonshotai/kimi-k2.5",
       "temperature": 0.25,
-      "permission": {
-        "lsp": "deny",
-        "websearch": "deny",
-        "webfetch": "deny",
+      "tools": {
+        "lsp": false,
+        "websearch": false,
+        "webfetch": false,
       },
     },
     "explore": {
-      "model": "openrouter/x-ai/grok-4.1-fast",
+      "model": "orf/x-ai/grok-4.1-fast",
       "temperature": 0.0,
+      "tools": {
+        "lsp": false,
+        "websearch": false,
+        "webfetch": false,
+        "jina-mcp-server*": false,
+      },
       "permission": {
-        "lsp": "deny",
-        "websearch": "deny",
-        "webfetch": "deny",
         "skill": {
           "*": "deny",
           "ast-grep": "allow",
         },
       },
-      "tools": {
-        "jina-mcp-server*": false,
-      },
     },
     "commit-message-writer": {
-      "model": "openrouter/x-ai/grok-4.1-fast",
+      "model": "orf/x-ai/grok-4.1-fast",
+    },
+    "50": {
+      "model": "orf/x-ai/grok-4.1-fast",
+    },
+    "99": {
+      "model": "openrouter/moonshotai/kimi-k2.5",
     },
   },
   // mcp servers
