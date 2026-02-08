@@ -1,6 +1,9 @@
 return {
   {
     "Sped0n/ocx.nvim",
+    -- name = "ocx.nvim",
+    -- dir = "/Users/spedon/eden/nvim/ocx.nvim",
+    lazy = true,
     dependencies = {
       {
         "AstroNvim/astrocore",
