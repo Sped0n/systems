@@ -3,7 +3,6 @@ description: Fast Conventional Commit message writer for staged diffs (optimized
 mode: primary
 temperature: 0.1
 top_p: 0.9
-steps: 5
 tools:
   "*": false
   bash: true
@@ -19,13 +18,8 @@ permission:
     "explore": allow
   bash:
     "*": deny
-    "git log -n 15 --pretty=format:*": allow
-    "git diff --cached": allow
-    "git diff --cached*": allow
-    "git diff --staged": allow
-    "git diff --staged*": allow
-    "git diff --cached --name-status*": allow
-    "git diff --cached --name-only*": allow
+    "git log*": allow
+    "git diff*": allow
     "git status*": allow
     "git commit*": allow
     "ast-grep *": allow
