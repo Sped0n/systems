@@ -12,5 +12,6 @@
       "--memory-swap=8g"
       "--cpus=3"
     ];
+    cacheMaxSizeInGib = 5;
   };
 }
