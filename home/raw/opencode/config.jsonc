@@ -19,22 +19,8 @@
             },
           },
         },
-      },
-    },
-    "orf": {
-      "npm": "@ai-sdk/openai-compatible",
-      "name": "OpenRouter (Fallback)",
-      "options": {
-        "baseURL": "https://openrouter.ai/api/v1",
-        "apiKey": "{env:OPENROUTER_API_KEY}",
-      },
-      "models": {
         "x-ai/grok-4.1-fast": {
           "name": "Grok 4.1 Fast",
-          "headers": {
-            "HTTP-Referer": "https://opencode.ai",
-            "X-Title": "OpenCode",
-          },
           "options": {
             "reasoning": {
               "enabled": true,
@@ -47,7 +33,7 @@
       "npm": "@ai-sdk/openai",
       "name": "YesCode",
       "options": {
-        "baseURL": "https://co.yes.vg/v1",
+        "baseURL": "https://co-cdn.yes.vg/v1",
         "apiKey": "{env:YESCODE_API_KEY}",
       },
       "models": {
@@ -108,13 +94,12 @@
       },
     },
     "explore": {
-      "model": "orf/x-ai/grok-4.1-fast",
+      "model": "openrouter/x-ai/grok-4.1-fast",
       "temperature": 0.0,
       "tools": {
         "lsp": false,
         "websearch": false,
         "webfetch": false,
-        "jina-mcp-server*": false,
       },
       "permission": {
         "skill": {
@@ -124,10 +109,10 @@
       },
     },
     "commit-message-writer": {
-      "model": "orf/x-ai/grok-4.1-fast",
+      "model": "openrouter/x-ai/grok-4.1-fast",
     },
     "50": {
-      "model": "orf/x-ai/grok-4.1-fast",
+      "model": "openrouter/moonshotai/kimi-k2.5",
     },
     "99": {
       "model": "openrouter/moonshotai/kimi-k2.5",

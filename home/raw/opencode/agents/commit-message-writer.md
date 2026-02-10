@@ -77,6 +77,8 @@ EOF
 - Choose type consistent with repo history (feat, fix, refactor, perf, docs,
   test, build, ci, chore, revert).
 - If multiple changes exist, focus on the main one.
+- Ignore all unstaged/untracked changes entirely.
+- Do not mention unstaged/untracked changes in the commit message.
 
 ## Using @explore
 
