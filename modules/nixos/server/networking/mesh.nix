@@ -7,9 +7,11 @@
   ...
 }:
 let
+  hostname = config.networking.hostName;
   my-telegraf = config.services.my-telegraf;
 
   meshPort = 41641;
+  hub = "srv-sg-1";
 in
 {
   boot = {
@@ -26,7 +28,7 @@ in
   '';
 
   age.secrets."mesh-key" = {
-    file = "${secrets}/ages/${config.networking.hostName}-mesh-key.age";
+    file = "${secrets}/ages/${hostname}-mesh-key.age";
     owner = "root";
     mode = "0400";
   };
@@ -35,14 +37,14 @@ in
     wg-quick.interfaces."mesh0" = {
       autostart = true;
       address = [
-        "100.96.0.${vars.${config.networking.hostName}.meshId}/16"
+        "100.96.0.${vars.${hostname}.meshId}/16"
       ];
       listenPort = meshPort;
       mtu = 1380;
       privateKeyFile = config.age.secrets."mesh-key".path;
       peers =
         let
-          others = builtins.filter (n: n != config.networking.hostName) vars.serverHostnames;
+          others = builtins.filter (n: (n != hostname && n != hub)) vars.serverHostnames;
         in
         map (name: {
           publicKey = vars.${name}.meshPublicKey;
@@ -51,6 +53,18 @@ in
           persistentKeepalive = 25;
         }) others
         ++ [
+          # hub
+          {
+            publicKey = vars.${hub}.meshPublicKey;
+            endpoint = "${vars.${hub}.ipv4}:${toString meshPort}";
+            allowedIPs = [
+              "100.96.0.${vars.${hub}.meshId}/32"
+              "100.96.1.0/24"
+            ];
+            persistentKeepalive = 25;
+          }
+        ]
+        ++ lib.optionals (hostname == hub) [
           # wks-0
           {
             publicKey = "Jd40BFeb2wInYaQByBlX35uFz72P1dzAMvdjwBBBM0s=";
