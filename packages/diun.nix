@@ -2,6 +2,7 @@
   lib,
   buildGoModule,
   fetchFromGitHub,
+  versionCheckHook,
 }:
 buildGoModule rec {
   pname = "diun";
@@ -17,7 +18,9 @@ buildGoModule rec {
   };
   vendorHash = null;
 
-  doCheck = false; # Tests require a network connection.
+  # upstream disable CGO in release build
+  # https://github.com/crazy-max/diun/blob/76c0fe99212adc58d6a3433bbcde1ffa9fb879c4/Dockerfile#L11
+  env.CGO_ENABLED = false;
 
   ldflags = [
     "-s"
@@ -25,6 +28,12 @@ buildGoModule rec {
     "-X"
     "main.version=${version}"
   ];
+
+  doCheck = false; # Tests require a network connection.
+  nativeInstallCheckInputs = [
+    versionCheckHook
+  ];
+  doInstallCheck = true;
 
   postInstall = ''
     mv $out/bin/cmd $out/bin/diun
@@ -34,6 +43,7 @@ buildGoModule rec {
     description = "CLI application to receive notifications when a Docker image is updated on a Docker registry";
     homepage = "https://github.com/crazy-max/diun";
     license = licenses.mit;
+    mainProgram = "diun";
     maintainers = with maintainers; [ Sped0n ];
     platforms = platforms.unix;
   };
