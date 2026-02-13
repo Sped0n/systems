@@ -8,7 +8,8 @@
       display = {
         separator = "";
         constants = [
-          # CONSTANT {$1} - VERTICAL BARS AT START AND 46th CHARACTERS FORWARD AND BACKWARD
+          # constant {$1}
+          # vertical bars at start and 46th characters forward and backward
           (
             "                                         "
             + "│${builtins.fromJSON ''"\u001b"''}[42D"
@@ -18,73 +19,67 @@
       };
 
       modules = [
-        "break" # Start with a break
-
-        # Top Border
+        "break"
         {
           type = "custom";
           format = " ╭─────────────────────────────────────────────────────╮";
         }
 
-        # --- Modules ---
-        # Key format: "│ {color}{Key Text}{#}{padding}{#red}>{#}"
+        # fastfetch --help TYPE-format
+        # https://github.com/fastfetch-cli/fastfetch/wiki/Format-String-Guide
         {
           type = "title";
           key = " {#39}│ {#32}Host{#}      {#31}>{#}";
-          format = "{$1}  {1}@{2}";
+          format = "{$1}  {user-name}@{host-name}";
         }
         {
           type = "os";
           key = " {#39}│ {#32}Distro{#}    {#31}>{#}";
-          # If pretty name not applicable, fallbacks to Distro Name, Codename, Version ID
-          format = "{$1}  {/3}{2} {10} {8}{/}{?3}{3}{?}";
+          # show OS name/codename/version, or pretty-name if available
+          format = "{$1}  {/pretty-name}{name} {codename} {version}{/}{?pretty-name}{pretty-name}{?}";
         }
         {
           type = "kernel";
           key = " {#39}│ {#32}Kernel{#}    {#31}>{#}";
-          format = "{$1}  {1} {2} ({4})"; # Corresponds to Sysname, Release, Architecture
+          format = "{$1}  {sysname} {release} ({arch})";
         }
         {
           type = "packages";
           key = " {#39}│ {#32}Packages{#}  {#31}>{#}";
-          format = "{$1}  {1} (nix-system)";
-          # If you want to show counts from specific managers, you might need:
-          # format = "{$1}  {?nix-system}{nix-system} (nix-system){?}"; # Adjust based on desired output
+          format = "{$1}  {?nix-system}{nix-system} (nix-system){?}{?brew-cask}, {brew-cask}(brew-cask){?}";
         }
         {
           type = "terminal";
           key = " {#39}│ {#32}Terminal{#}  {#31}>{#}";
-          format = "{$1}  {5} {?6}v{6}"; # Corresponds to Process Name, Version
+          format = "{$1}  {pretty-name} {?version}v{version}";
         }
         {
           type = "shell";
           key = " {#39}│ {#32}Shell{#}     {#31}>{#}";
-          format = "{$1}  {6} v{4}"; # Corresponds to Name, Version
+          format = "{$1}  {pretty-name} v{version}";
         }
         {
           type = "cpu";
           key = " {#39}│ {#32}CPU{#}       {#31}>{#}";
-          format = "{$1}  {1} ({5})"; # Corresponds to Name, Core Count (physical)
+          format = "{$1}  {name} ({cores-physical})";
         }
         {
           type = "memory";
           key = " {#39}│ {#32}Memory{#}    {#31}>{#}";
-          format = "{$1}  {1} / {2}"; # Corresponds to Used, Total
+          format = "{$1}  {used} / {total}";
         }
         {
           type = "disk";
           key = " {#39}│ {#32}Disk{#}      {#31}>{#}";
-          folders = "/"; # Specify the folder to check
-          format = "{$1}  {1} / {2}"; # Corresponds to Used, Total for the specified folder
+          folders = "/";
+          format = "{$1}  {size-used} / {size-total}";
         }
         {
           type = "uptime";
           key = " {#39}│ {#32}Uptime{#}    {#31}>{#}";
-          # Using placeholders {0}, {1}, {2} for days, hours, minutes respectively
-          format = "{$1}  {?1}{1}d {?}{?2}{2}h {?}{3}m";
+          format = "{$1}  {?days}{days}d {?}{?hours}{hours}h {?}{minutes}m";
         }
 
-        # Bottom Border
         {
           type = "custom";
           format = " ╰─────────────────────────────────────────────────────╯";
