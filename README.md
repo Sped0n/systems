@@ -66,9 +66,8 @@ Then exit the terminal and open a new one. Run:
 nix-env -iE "_: with import <nixpkgs/nixos> { configuration = {}; }; \
   with config.system.build; [ nixos-generate-config ]"
 nixos-generate-config --no-filesystems --root /tmp
+cat /tmp/etc/nixos/hardware-configuration.nix
 ```
-
-You will find the hardware configuration file under `/tmp/etc/nixos/hardware-configuration.nix`.
 
 #### Perform Installation on Systems with Limited RAM
 
@@ -77,7 +76,7 @@ You will find the hardware configuration file under `/tmp/etc/nixos/hardware-con
 
 After we enter nixos-installer after kexec, we can use below command to create a zram swap device:
 
-```
+```bash
 modprobe zram
 zramctl /dev/zram0 --algorithm zstd --size "$(($(grep -Po 'MemTotal:\s*\K\d+' /proc/meminfo)/2))KiB"
 mkswap -U clear /dev/zram0
@@ -113,24 +112,11 @@ swapon --discard --priority 100 /dev/zram0
    - The disk to install NixOS on (`lsblk`).
 2. Modify the configuration files under `machines/<configuration name>/` accordingly.
 3. Copy the SSH host key (pubkey) to `secrets` flake and set the correct permissions.
-4. Run
-
-   ```
-   nixos-anywhere \
-      --flake .#<configuration name> \
-      --kexec "$(nix build --print-out-paths github:Sped0n/nixos-images#packages.<arch>-linux.kexec-installer-nixos-unstable-noninteractive)/nixos-kexec-installer-noninteractive-<arch>-linux.tar.gz" \
-      --copy-host-keys \
-      --no-disko-deps \
-      --target-host root@<ip address> \
-      --ssh-option "PubkeyAuthentication=no"
-   ```
-
+4. Run `nixos-anywhere --flake .#<configuration name> --target-host root@<ip address> --copy-host-keys --no-disko-deps --ssh-option "PubkeyAuthentication=no"`.
    - Change `<configuration name>` to the hostname of the machine you are deploying to.
-   - Change `<arch>` to `x86_64` or `aarch64` depending on the architecture of the VPS.
    - Change `<ip address>` to the public IPv4 address of the VPS.
    - User need to have a nix environment to run this command.
    - Run the command under `/Users/spedon/.config/systems`.
-
 5. Key in the root password (several times).
    - This is the original password before kexec.
 6. After server kexec into nixos-installer, use below two ways to set a default password for root user.
