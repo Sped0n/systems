@@ -1,4 +1,17 @@
-{ ... }:
+{ vars, ... }:
 {
-  services.my-ladder.enable = true;
+  services.my-ladder = {
+    singbox = {
+      enable = true;
+      variant = "default";
+      firewall.tcpPorts = with vars.ladderPorts; [ at ];
+    };
+    snell = {
+      enable = true;
+      firewall = with vars.ladderPorts; {
+        tcpPorts = [ sn ];
+        udpPorts = [ sn ];
+      };
+    };
+  };
 }
