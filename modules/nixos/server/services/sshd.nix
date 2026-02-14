@@ -4,10 +4,17 @@
     openssh = {
       enable = true;
       settings = {
-        X11Forwarding = true;
+        X11Forwarding = false;
         PermitRootLogin = "no";
         PasswordAuthentication = false;
+        KbdInteractiveAuthentication = false;
+        UseDns = false;
       };
+      extraConfig = ''
+        MaxAuthTries 3
+        ClientAliveCountMax 3
+        ClientAliveInterval 120
+      '';
       openFirewall = true;
       ports = [ 12222 ];
     };
