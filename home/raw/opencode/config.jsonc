@@ -20,8 +20,17 @@
           },
         },
         "x-ai/grok-4.1-fast": {
-          "name": "Grok 4.1 Fast",
           "options": {
+            "reasoning": {
+              "enabled": true,
+            },
+          },
+        },
+        "minimax/minimax-m2.5": {
+          "options": {
+            "provider": {
+              "sort": "throughput",
+            },
             "reasoning": {
               "enabled": true,
             },
@@ -39,6 +48,15 @@
       "models": {
         "gpt-5.2": {
           "name": "GPT-5.2",
+          "cost": {
+            "input": 1.05,
+            "output": 8.4,
+            "cache_read": 0.105,
+          },
+          "limit": {
+            "context": 400000,
+            "output": 128000,
+          },
           "options": {
             "reasoningEffort": "high",
             "textVerbosity": "low",
@@ -48,6 +66,16 @@
         },
         "gpt-5.3-codex": {
           "name": "GPT-5.3-Codex",
+          "cost": {
+            "input": 0.75,
+            "output": 6,
+            "cache_read": 0.075,
+          },
+          "limit": {
+            "context": 272000,
+            "output": 128000,
+          },
+
           "options": {
             "reasoningEffort": "high",
             "textVerbosity": "low",
@@ -83,6 +111,13 @@
         "websearch": false,
         "webfetch": false,
       },
+      "permission": {
+        "bash": {
+          "git *": "allow",
+          "git commit *": "ask",
+          "git push *": "deny",
+        },
+      },
     },
     "general": {
       "model": "openrouter/moonshotai/kimi-k2.5",
@@ -91,6 +126,13 @@
         "lsp": false,
         "websearch": false,
         "webfetch": false,
+      },
+      "permission": {
+        "bash": {
+          "git *": "allow",
+          "git commit *": "ask",
+          "git push *": "deny",
+        },
       },
     },
     "explore": {
@@ -109,10 +151,10 @@
       },
     },
     "commit-message-writer": {
-      "model": "openrouter/x-ai/grok-4.1-fast",
+      "model": "openrouter/minimax/minimax-m2.5",
     },
     "50": {
-      "model": "openrouter/moonshotai/kimi-k2.5",
+      "model": "openrouter/minimax/minimax-m2.5",
     },
     "99": {
       "model": "openrouter/moonshotai/kimi-k2.5",
