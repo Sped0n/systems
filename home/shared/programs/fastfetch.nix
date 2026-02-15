@@ -46,7 +46,7 @@
         {
           type = "packages";
           key = " {#39}│ {#32}Packages{#}  {#31}>{#}";
-          format = "{$1}  {?nix-system}{nix-system} (nix-system){?}{?brew-cask}, {brew-cask}(brew-cask){?}";
+          format = "{$1}  {?nix-system}{nix-system} (nix-system){?}{?brew-cask}, {brew-cask} (brew-cask){?}";
         }
         {
           type = "terminal";
