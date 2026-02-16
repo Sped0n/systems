@@ -14,8 +14,8 @@
       ];
       experimental-features = "nix-command flakes";
       download-buffer-size = 524288000;
-      http-connections = 128;
-      max-substitution-jobs = 128;
+      http-connections = 64;
+      max-substitution-jobs = 64;
       substituters = [ "https://cache.nixos.org?priority=10" ];
       trusted-public-keys = [ "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=" ];
       extra-substituters = [
