@@ -161,7 +161,7 @@ in
         description = "Daily check for Forgejo runner actcache size";
         wantedBy = [ "timers.target" ];
         timerConfig = {
-          OnCalendar = "*-*-* 03:00:00";
+          OnCalendar = "*-*-* 03:30:00";
           Persistent = true;
           RandomizedDelaySec = "15min";
           Unit = "runner-cache-purge.service";
