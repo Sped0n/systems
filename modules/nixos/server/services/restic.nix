@@ -80,6 +80,7 @@ in
         timerConfig = {
           OnCalendar = "*-*-* 03:00:00";
           Persistent = true;
+          RandomizedDelaySec = "15min";
         };
         paths = my-restic.paths;
         exclude = my-restic.exclude;
