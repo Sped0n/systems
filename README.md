@@ -20,6 +20,7 @@
 machines
 ├── wks-0       # macOS (aarch64)
 ├── srv-de-0    # NixOS server (x86_64)
+├── srv-hk-0    # NixOS server (x86_64)
 ├── srv-jp-0    # NixOS server (x86_64)
 ├── srv-nl-0    # NixOS server (x86_64)
 ├── srv-sg-0    # NixOS server (x86_64)
