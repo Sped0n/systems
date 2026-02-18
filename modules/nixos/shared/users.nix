@@ -1,24 +1,33 @@
-{ vars, ... }:
 {
-  users.mutableUsers = false;
-
-  users.groups = {
-    docker = { };
-    users.gid = 100;
+  config,
+  secrets,
+  vars,
+  ...
+}:
+{
+  age.secrets."hashed-password" = {
+    file = "${secrets}/ages/hashed-password.age";
+    mode = "0400";
   };
 
-  users.users."${vars.username}" = {
-    hashedPassword = vars.hashedPassword;
-    isNormalUser = true;
-    extraGroups = [
-      "networkmanager"
-      "wheel"
-      "docker"
-    ];
-    uid = 1000;
-  };
-
-  users.users.root = {
-    hashedPassword = vars.hashedPassword;
+  users = {
+    mutableUsers = false;
+    groups = {
+      docker = { };
+      users.gid = 100;
+    };
+    users = {
+      root.hashedPasswordFile = config.age.secrets."hashed-password".path;
+      "${vars.username}" = {
+        uid = 1000;
+        hashedPasswordFile = config.age.secrets."hashed-password".path;
+        isNormalUser = true;
+        extraGroups = [
+          "networkmanager"
+          "wheel"
+          "docker"
+        ];
+      };
+    };
   };
 }
