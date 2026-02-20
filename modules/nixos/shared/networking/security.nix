@@ -18,7 +18,7 @@
   networking.firewall = {
     enable = true;
     pingLimit = "--limit 10/minute --limit-burst 5";
-    checkReversePath = false;
+    checkReversePath = "loose";
   };
 
   services.fail2ban = {
