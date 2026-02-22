@@ -1,0 +1,7 @@
+{ ... }:
+{
+  homebrew.brews = [
+    # utility
+    "mole"
+  ];
+}
