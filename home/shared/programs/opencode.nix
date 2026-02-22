@@ -10,9 +10,14 @@ let
   opencode = config.programs.opencode;
 in
 {
-  programs.opencode = {
-    enable = lib.mkDefault false;
-    package = pkgs.llm-agents.opencode;
+  programs = {
+    opencode = {
+      enable = lib.mkDefault false;
+      package = pkgs.llm-agents.opencode;
+    };
+    zsh.shellAliases = lib.mkIf opencode.enable {
+      ocommit = "oc --agent commit-message-writer run \"STAGED CHANGE ONLY\" 2>/dev/null && git commit -e -F \"$(git rev-parse --git-path COMMIT_EDITMSG)\"";
+    };
   };
 
   xdg.configFile = lib.mkIf opencode.enable {
