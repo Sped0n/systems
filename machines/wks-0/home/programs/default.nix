@@ -2,9 +2,8 @@
   imports = [
     ./git.nix
     ./neovim.nix
+    ./opencode.nix
     ./ssh.nix
+    ./uv.nix
   ];
-
-  programs.uv.enable = true;
-  programs.opencode.enable = true;
 }
