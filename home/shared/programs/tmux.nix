@@ -45,10 +45,17 @@ in
     shell = "${pkgs.zsh}/bin/zsh";
     terminal = "tmux-256color";
     plugins = with pkgs.tmuxPlugins; [
-      yank
+      {
+        plugin = yank;
+        extraConfig = ''
+          set -g @yank_with_mouse off
+        '';
+      }
       {
         plugin = resurrect;
-        extraConfig = "set -g @resurrect-strategy-nvim 'session'";
+        extraConfig = ''
+          set -g @resurrect-strategy-nvim 'session'
+        '';
       }
       {
         plugin = continuum;
@@ -88,6 +95,9 @@ in
       # --- Modifier Keys ----------------------------------------------------
       set -s extended-keys off
       bind-key -T root C-\; send-keys Escape "[59;5u"
+
+      # --- Disable Mouse Copy -----------------------------------------------
+      unbind -T copy-mode-vi MouseDragEnd1Pane
     ''
     + ''
       # --- General ----------------------------------------------------------
