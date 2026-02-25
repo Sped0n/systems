@@ -136,6 +136,14 @@
       };
 
       nixosConfigurations = {
+        "esp-0" = nixpkgs.lib.nixosSystem rec {
+          system = "x86_64-linux";
+          specialArgs = (genSpecialArgs { inherit system; }) // {
+            pkgs-unstable = pkgsUnstableFor system;
+          };
+          modules = commonNixosModules ++ [ ./machines/esp-0 ];
+        };
+
         "srv-de-0" = nixpkgs.lib.nixosSystem rec {
           system = "x86_64-linux";
           specialArgs = (genSpecialArgs { inherit system; }) // {
