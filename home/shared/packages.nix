@@ -27,6 +27,7 @@
       tree
       jq
       less
+      lsof
       wget
       curl
       aria2
