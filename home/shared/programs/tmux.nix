@@ -96,8 +96,10 @@ in
       set -s extended-keys off
       bind-key -T root C-\; send-keys Escape "[59;5u"
 
-      # --- Disable Mouse Copy -----------------------------------------------
+      # --- VI ---------------------------------------------------------------
       unbind -T copy-mode-vi MouseDragEnd1Pane
+      unbind -T copy-mode-vi v
+      bind -T copy-mode-vi v send-keys -X begin-selection
     ''
     + ''
       # --- General ----------------------------------------------------------
