@@ -45,7 +45,10 @@
             "rime"
           ])
         ];
-        xkb-options = [ "grp:caps_toggle" ];
+        xkb-options = [
+          "grp:caps_toggle"
+          "caps:none"
+        ];
       };
 
       "org/gnome/desktop/wm/keybindings" = {
