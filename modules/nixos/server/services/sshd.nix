@@ -18,7 +18,10 @@
       openFirewall = true;
       ports = [ 12222 ];
     };
-    fail2ban.jails.sshd.settings.findtime = "6h";
+    fail2ban.jails.sshd.settings = {
+      findtime = "6h";
+      mode = "aggressive";
+    };
   };
 
   # Add terminfo database of all known terminals to the system profile.
