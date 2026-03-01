@@ -23,10 +23,10 @@
 
   services.fail2ban = {
     enable = true;
-    bantime = "12h";
+    bantime = "24h";
     bantime-increment = {
       enable = true;
-      rndtime = "30m";
+      rndtime = "1h";
     };
     daemonSettings.Definition.dbpurgeage = "60d";
     ignoreIP = [
