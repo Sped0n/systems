@@ -1,8 +1,13 @@
 return {
   {
     "Sped0n/ocx.nvim",
+
     -- name = "ocx.nvim",
     -- dir = "/Users/spedon/eden/nvim/ocx.nvim",
+
+    -- name = "ocx.nvim",
+    -- dir = "/home/spedon/eden/nvim/ocx.nvim",
+
     lazy = true,
     dependencies = {
       {
@@ -28,6 +33,14 @@ return {
             function() require("ocx").add_context { select = true } end,
             desc = "Add context to specific session",
           }
+          maps.n[prefix .. "t"] = {
+            function() require("ocx").terminate() end,
+            desc = "Terminate specific session",
+          }
+          maps.n[prefix .. "T"] = {
+            function() require("ocx").terminate(nil, { force = true }) end,
+            desc = "Terminate specific with force",
+          }
 
           maps.v[prefix .. "5"] = {
             function() require("ocx").run "50" end,
@@ -48,10 +61,6 @@ return {
         end,
       },
     },
-    config = function()
-      require("ocx").setup {
-        oc_bin = "oc",
-      }
-    end,
+    config = function() require("ocx").setup {} end,
   },
 }
