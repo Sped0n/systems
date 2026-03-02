@@ -5,10 +5,10 @@
 
     ./home
     ./services
+    ./system
 
     ./age.nix
     ./disko.nix
     ./networking.nix
-    ./system.nix
   ];
 }
