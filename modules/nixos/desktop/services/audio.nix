@@ -12,6 +12,7 @@
       pulse.enable = true;
       extraConfig.pipewire."hires" = {
         "context.properties" = {
+          "default.clock.rate" = 44100;
           "default.clock.allowed-rates" = [
             44100
             48000
@@ -22,6 +23,9 @@
             352800
             384000
           ];
+          "default.clock.quantum" = 1024;
+          "default.clock.min-quantum" = 32;
+          "default.clock.max-quantum" = 8192;
         };
         "stream.properties" = {
           "resample.quality" = 14;
