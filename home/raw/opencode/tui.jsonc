@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/tui.json",
+  // general
+  "theme": "system",
+  // keybinds
+  "keybinds": {
+    "input_submit": "shift+return,ctrl+return,alt+return",
+    "input_newline": "return",
+  },
+}

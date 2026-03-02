@@ -24,6 +24,9 @@ in
     "opencode/opencode.jsonc".source = (
       config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/raw/opencode/config.jsonc"
     );
+    "opencode/tui.jsonc".source = (
+      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/raw/opencode/tui.jsonc"
+    );
     "opencode/AGENTS.md".source = (
       config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/raw/opencode/AGENTS.md"
     );

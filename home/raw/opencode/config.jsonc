@@ -1,7 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
   // general
-  "theme": "system",
   "autoupdate": false,
   "model": "openrouter/moonshotai/kimi-k2.5",
   "default_agent": "ask",
@@ -184,10 +183,5 @@
         "Authorization": "{env:JINA_API_KEY}",
       },
     },
-  },
-  // keybinds
-  "keybinds": {
-    "input_submit": "shift+return,ctrl+return,alt+return",
-    "input_newline": "return",
   },
 }
