@@ -8,6 +8,7 @@
     (with pkgs; [
       android-tools
       cdecl
+      tio
 
       popsicle
     ])

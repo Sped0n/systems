@@ -32,6 +32,11 @@
       in
       {
         # --- git servers ------------------------------------------------------
+        "gitlab.espressif.cn" = {
+          hostname = "gitlab.espressif.cn";
+          port = 27227;
+        }
+        // gitBlock;
         "gitlab.com" = gitBlock;
         "git.sped0n.com" = {
           hostname = vars."srv-de-0".ipv4;
