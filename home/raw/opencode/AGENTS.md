@@ -358,21 +358,7 @@ For each user question (especially non-trivial tasks), your answer should try to
 
 ## 10 · Tools and execution environment
 
-You are operating in an environment with the following local CLI tools available:
-
-- `jq` for processing and transforming JSON.
-- `fzf` for interactive fuzzy-finding (files, symbols, command output, etc.).
-- `ripgrep` (`rg`) for fast plain-text searching.
-- `fd` for fast file discovery (as an alternative to `find`).
-- `sed` (GNU sed), `head`, and `tail` for read-only slicing.
-
-### 10.1 Global tool policy
-
-- For file discovery and search, use `bash` with `fd`, `rg`, and `ast-grep`.
-- For partial file viewing in shell, use `head`, `tail`, and `sed -n` (avoid write modes such as `sed -i`).
-- Use `read` when you already know the target file and need precise line-level context.
-
-### 10.2 Syntax-aware code search
+### 10.1 Syntax-aware code search
 
 You are operating in an environment with `ast-grep`, and there is an agent skill for it (same name: `ast-grep`).
 
@@ -385,9 +371,9 @@ Adjust the `--lang` flag as needed for the specific programming language. Avoid 
 If a search is ambiguous, prefer:
 
 - `ast-grep` for AST- and structure-aware queries (preferred default).
-- `rg` only for raw text matching (comments, strings, logs, docs) or when explicitly requested.
+- `grep` tool only for raw text matching (comments, strings, logs, docs) or when explicitly requested.
 
-### 10.3 Web search & URL reading (via Jina MCP server)
+### 10.2 Web search & URL reading (via Jina MCP server)
 
 Built-in `websearch` / `webfetch` are not available. When you need information from the internet, use the **Jina MCP server** (`jina-mcp-server`) instead.
 

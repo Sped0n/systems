@@ -91,9 +91,6 @@
       "model": "yescode/gpt-5.2",
       "temperature": 0.1,
       "tools": {
-        "grep": false,
-        "glob": false,
-        "list": false,
         "lsp": false,
         "websearch": false,
         "webfetch": false,
@@ -109,9 +106,6 @@
       "model": "yescode/gpt-5.3-codex",
       "temperature": 0.3,
       "tools": {
-        "grep": false,
-        "glob": false,
-        "list": false,
         "lsp": false,
         "websearch": false,
         "webfetch": false,
@@ -128,9 +122,6 @@
       "model": "openrouter/moonshotai/kimi-k2.5",
       "temperature": 0.25,
       "tools": {
-        "grep": false,
-        "glob": false,
-        "list": false,
         "lsp": false,
         "websearch": false,
         "webfetch": false,
@@ -147,9 +138,6 @@
       "model": "openrouter/x-ai/grok-4.1-fast",
       "temperature": 0.0,
       "tools": {
-        "grep": false,
-        "glob": false,
-        "list": false,
         "lsp": false,
         "websearch": false,
         "webfetch": false,

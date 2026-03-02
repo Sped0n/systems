@@ -16,13 +16,12 @@ permission:
     "explore": allow
   bash:
     "*": deny
+    "ast-grep *": allow
+    "tee *": allow
     "git log*": allow
     "git diff*": allow
     "git status*": allow
     "git rev-parse*": allow
-    "tee *": allow
-    "ast-grep *": allow
-    "rg *": allow
 ---
 
 ## Role
@@ -53,7 +52,7 @@ tee "$(git rev-parse --git-path COMMIT_EDITMSG)" >/dev/null <<'EOF'
 EOF
 ```
 
-   Do not write to any path other than `git rev-parse --git-path COMMIT_EDITMSG`.
+Do not write to any path other than `git rev-parse --git-path COMMIT_EDITMSG`.
 
 6. Final assistant output must include:
    - First line: `Wrote commit message to <resolved path>`

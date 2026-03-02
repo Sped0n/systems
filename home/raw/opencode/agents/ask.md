@@ -6,6 +6,9 @@ top_p: 0.95
 tools:
   "*": false
   "read": true
+  "glob": true
+  "grep": true
+  "list": true
   "bash": true
   "task": true
   "question": true
@@ -16,14 +19,6 @@ permission:
     "explore": allow
   bash:
     "*": ask
-    "pwd": allow
-    "ls*": allow
-    "head*": allow
-    "tail*": allow
-    "sed -n* *": allow
-    "wc *": allow
-    "rg *": allow
-    "fd *": allow
     "ast-grep *": allow
     "git log*": allow
     "git diff*": allow
