@@ -1,9 +1,4 @@
-{
-  determinate,
-  pkgs,
-  vars,
-  ...
-}:
+{ pkgs, vars, ... }:
 {
   nix.settings = {
     trusted-users = [
@@ -33,9 +28,7 @@
     ];
   };
 
-  environment.systemPackages = [
-    (pkgs.nixos-rebuild-ng.override {
-      nix = determinate.inputs.nix.packages."${pkgs.stdenv.system}".default;
-    })
+  environment.systemPackages = with pkgs; [
+    nixos-rebuild-ng
   ];
 }
