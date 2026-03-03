@@ -5,12 +5,9 @@ return {
       if opts.ensure_installed ~= "all" then
         opts.ensure_installed = require("astrocore").list_insert_unique(opts.ensure_installed, {
           "dockerfile",
-          "git_config",
-          "git_rebase",
-          "gitattributes",
-          "gitcommit",
-          "gitignore",
+          "gn",
           "jsonc",
+          "just",
           "kconfig",
           "nix",
           "regex",
