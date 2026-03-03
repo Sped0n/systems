@@ -148,11 +148,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1771881364,
-        "narHash": "sha256-A5uE/hMium5of/QGC6JwF5TGoDAfpNtW00T0s9u/PN8=",
+        "lastModified": 1772420042,
+        "narHash": "sha256-naZz40TUFMa0E0CutvwWsSPhgD5JldyTUDEgP9ADpfU=",
         "owner": "nix-community",
         "repo": "disko",
-        "rev": "a4cb7bf73f264d40560ba527f9280469f1f081c6",
+        "rev": "5af7af10f14706e4095bd6bc0d9373eb097283c6",
         "type": "github"
       },
       "original": {
@@ -252,11 +252,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1772020340,
-        "narHash": "sha256-aqBl3GNpCadMoJ/hVkWTijM1Aeilc278MjM+LA3jK6g=",
+        "lastModified": 1772380125,
+        "narHash": "sha256-8C+y46xA9bxcchj9GeDPJaRUDApaA3sy2fhJr1bTbUw=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "36e38ca0d9afe4c55405fdf22179a5212243eecc",
+        "rev": "a07a44a839eb036e950bf397d9b782916f8dcab3",
         "type": "github"
       },
       "original": {
@@ -273,11 +273,11 @@
         "treefmt-nix": "treefmt-nix"
       },
       "locked": {
-        "lastModified": 1772165712,
-        "narHash": "sha256-ThpPDZeGjLKXb3UW1rIFOmrNVBB0T3LxO8cu9c5B/ig=",
+        "lastModified": 1772530987,
+        "narHash": "sha256-XaPnnMKLHGaWQlq5DU35KJwumqrub1drfMcctAWADUg=",
         "owner": "numtide",
         "repo": "llm-agents.nix",
-        "rev": "e3356720c7b3d4c20e06396997c5d76fa7241f0e",
+        "rev": "f989c642b02cb31d93d5ce902e09ed7be3fdd665",
         "type": "github"
       },
       "original": {
@@ -314,11 +314,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1767634391,
-        "narHash": "sha256-owcSz2ICqTSvhBbhPP+1eWzi88e54rRZtfCNE5E/wwg=",
+        "lastModified": 1772129556,
+        "narHash": "sha256-Utk0zd8STPsUJPyjabhzPc5BpPodLTXrwkpXBHYnpeg=",
         "owner": "nix-darwin",
         "repo": "nix-darwin",
-        "rev": "08585aacc3d6d6c280a02da195fdbd4b9cf083c2",
+        "rev": "ebec37af18215214173c98cf6356d0aca24a2585",
         "type": "github"
       },
       "original": {
@@ -394,12 +394,12 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1771848320,
-        "narHash": "sha256-0MAd+0mun3K/Ns8JATeHT1sX28faLII5hVLq0L3BdZU=",
-        "rev": "2fc6539b481e1d2569f25f8799236694180c0993",
-        "revCount": 953160,
+        "lastModified": 1772433332,
+        "narHash": "sha256-izhTDFKsg6KeVBxJS9EblGeQ8y+O8eCa6RcW874vxEc=",
+        "rev": "cf59864ef8aa2e178cccedbe2c178185b0365705",
+        "revCount": 956934,
         "type": "tarball",
-        "url": "https://api.flakehub.com/f/pinned/NixOS/nixpkgs/0.1.953160%2Brev-2fc6539b481e1d2569f25f8799236694180c0993/019c8e05-d2f6-7c7e-9ead-612154b18bfb/source.tar.gz"
+        "url": "https://api.flakehub.com/f/pinned/NixOS/nixpkgs/0.1.956934%2Brev-cf59864ef8aa2e178cccedbe2c178185b0365705/019caf4e-4d68-7196-ab8f-8f2a855e40d4/source.tar.gz"
       },
       "original": {
         "type": "tarball",
@@ -422,11 +422,11 @@
     },
     "nixpkgs_3": {
       "locked": {
-        "lastModified": 1771423170,
-        "narHash": "sha256-K7Dg9TQ0mOcAtWTO/FX/FaprtWQ8BmEXTpLIaNRhEwU=",
+        "lastModified": 1772479524,
+        "narHash": "sha256-u7nCaNiMjqvKpE+uZz9hE7pgXXTmm5yvdtFaqzSzUQI=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "bcc4a9d9533c033d806a46b37dc444f9b0da49dd",
+        "rev": "4215e62dc2cd3bc705b0a423b9719ff6be378a43",
         "type": "github"
       },
       "original": {
@@ -467,11 +467,11 @@
     "secrets": {
       "flake": false,
       "locked": {
-        "lastModified": 1771923211,
-        "narHash": "sha256-zWx85J8MPFg+Ds/YVbLc+UdTz9cTPZFBV7br7EMMe9M=",
+        "lastModified": 1772543003,
+        "narHash": "sha256-OUL7ijZM8et7V+70zZkwDC4SsIMDsVZP6XW5/xYJE1I=",
         "ref": "refs/heads/main",
-        "rev": "197de32153ba42dae1b467e3f2acc70655184023",
-        "revCount": 4,
+        "rev": "e8e5324430772c60fae194170484be084517d393",
+        "revCount": 6,
         "type": "git",
         "url": "ssh://git@github.com/Sped0n/secrets"
       },
