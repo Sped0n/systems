@@ -54,101 +54,117 @@ in
   };
 
   home.packages = lib.mkIf opencode.enable [
-    (pkgs.writeShellScriptBin "oc" ''
-      set -euo pipefail
-      export OPENCODE_EXPERIMENTAL_MARKDOWN=1
-      export OPENCODE_EXPERIMENTAL_PLAN_MODE=1
-      export OPENROUTER_API_KEY="$(${pkgs.coreutils}/bin/cat ${
-        config.age.secrets."openrouter-api-key".path
-      })"
-      export YESCODE_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."yescode-api-key".path})"
-      export JINA_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."jina-api-key".path})"
-      exec ${lib.getExe opencode.package} "$@"
-    '')
+    (pkgs.writeShellApplication {
+      name = "oc";
+      runtimeInputs = [ pkgs.coreutils ];
+      text = ''
+        set -euo pipefail
+        export OPENCODE_EXPERIMENTAL_MARKDOWN=1
+        export OPENCODE_EXPERIMENTAL_PLAN_MODE=1
 
-    (pkgs.writeShellScriptBin "oc-ephemeral-run" ''
-      set -euo pipefail
+        OPENROUTER_API_KEY="$(cat "${config.age.secrets."openrouter-api-key".path}")"
+        export OPENROUTER_API_KEY
 
-      usage() {
-        ${pkgs.coreutils}/bin/printf "%s\\n" \
-          "Usage: oc-ephemeral-run [OC_ARGS...] PROMPT" \
-          "" \
-          "Runs oc --title <UUID> [OC_ARGS...] run <PROMPT> and deletes the session after completion." \
-          "" \
-          "Example:" \
-          "  oc-ephemeral-run --agent blabla --model hahaha \"hello world\""
-      }
+        YESCODE_API_KEY="$(cat "${config.age.secrets."yescode-api-key".path}")"
+        export YESCODE_API_KEY
 
-      if [ "$#" -lt 1 ]; then
-        usage >&2
-        exit 2
-      fi
+        JINA_API_KEY="$(cat "${config.age.secrets."jina-api-key".path}")"
+        export JINA_API_KEY
 
-      uuid=""
+        exec ${lib.getExe opencode.package} "$@"
+      '';
+    })
+    (pkgs.writeShellApplication {
+      name = "oc-ephemeral-run";
+      runtimeInputs = with pkgs; [
+        coreutils
+        jq
+      ];
+      text = ''
+        set -euo pipefail
 
-      cleanup() {
-        set +e
+        usage() {
+          printf "%s\\n" \
+            "Usage: oc-ephemeral-run [OC_ARGS...] PROMPT" \
+            "" \
+            "Runs oc --title <UUID> [OC_ARGS...] run <PROMPT> and deletes the session after completion." \
+            "" \
+            "Example:" \
+            "  oc-ephemeral-run --agent blabla --model hahaha \"hello world\""
+        }
 
-        if [ -z "$uuid" ]; then
-          return
+        if [ "$#" -lt 1 ]; then
+          usage >&2
+          exit 2
         fi
 
-        session_id="$(
-          oc session list --format json 2>/dev/null \
-            | ${pkgs.jq}/bin/jq -r --arg title "$uuid" '.[] | select(.title == $title) | .id' 2>/dev/null \
-            | ${pkgs.coreutils}/bin/head -n 1
-        )"
+        uuid=""
 
-        if [ -n "$session_id" ]; then
-          oc session delete "$session_id" >/dev/null 2>&1 \
-            || echo "oc-ephemeral-run: warning: failed to delete session $session_id" >&2
+        # shellcheck disable=SC2329
+        cleanup() {
+          set +e
+
+          if [ -z "$uuid" ]; then
+            return
+          fi
+
+          session_id="$(
+            oc session list --format json 2>/dev/null \
+              | jq -r --arg title "$uuid" '.[] | select(.title == $title) | .id' 2>/dev/null \
+              | head -n 1
+          )"
+
+          if [ -n "$session_id" ]; then
+            oc session delete "$session_id" >/dev/null 2>&1 \
+              || echo "oc-ephemeral-run: warning: failed to delete session $session_id" >&2
+          else
+            echo "oc-ephemeral-run: warning: failed to resolve session id for title $uuid" >&2
+          fi
+        }
+        trap cleanup EXIT
+
+        prompt="''${!#}"
+        if [ "$#" -gt 1 ]; then
+          oc_args=("''${@:1:$#-1}")
         else
-          echo "oc-ephemeral-run: warning: failed to resolve session id for title $uuid" >&2
+          oc_args=()
         fi
-      }
-      trap cleanup EXIT
 
-      prompt="''${!#}"
-      if [ "$#" -gt 1 ]; then
-        oc_args=("''${@:1:$#-1}")
-      else
-        oc_args=()
-      fi
+        for arg in "''${oc_args[@]}"; do
+          case "$arg" in
+            --session|--session=*)
+              echo "oc-ephemeral-run: do not pass --session; it is generated automatically" >&2
+              exit 2
+              ;;
+            --title|--title=*)
+              echo "oc-ephemeral-run: do not pass --title; it is generated automatically" >&2
+              exit 2
+              ;;
+          esac
+        done
 
-      for arg in "''${oc_args[@]}"; do
-        case "$arg" in
-          --session|--session=*)
-            echo "oc-ephemeral-run: do not pass --session; it is generated automatically" >&2
-            exit 2
-            ;;
-          --title|--title=*)
-            echo "oc-ephemeral-run: do not pass --title; it is generated automatically" >&2
-            exit 2
-            ;;
-        esac
-      done
+        if [ -r /proc/sys/kernel/random/uuid ]; then
+          uuid="$(cat /proc/sys/kernel/random/uuid)"
+        elif [ -x /usr/bin/uuidgen ]; then
+          uuid="$(/usr/bin/uuidgen)"
+        elif command -v uuidgen >/dev/null 2>&1; then
+          uuid="$(uuidgen)"
+        else
+          echo "oc-ephemeral-run: unable to generate UUID" >&2
+          exit 1
+        fi
 
-      if [ -r /proc/sys/kernel/random/uuid ]; then
-        uuid="$(${pkgs.coreutils}/bin/cat /proc/sys/kernel/random/uuid)"
-      elif [ -x /usr/bin/uuidgen ]; then
-        uuid="$(/usr/bin/uuidgen)"
-      elif command -v uuidgen >/dev/null 2>&1; then
-        uuid="$(uuidgen)"
-      else
-        echo "oc-ephemeral-run: unable to generate UUID" >&2
-        exit 1
-      fi
+        uuid="$(printf %s "$uuid" | tr -d '\r\n')"
 
-      uuid="$(${pkgs.coreutils}/bin/printf %s "$uuid" | ${pkgs.coreutils}/bin/tr -d '\r\n')"
-
-      oc_status=0
-      if oc --title "$uuid" "''${oc_args[@]}" run "$prompt"; then
         oc_status=0
-      else
-        oc_status=$?
-      fi
+        if oc --title "$uuid" "''${oc_args[@]}" run "$prompt"; then
+          oc_status=0
+        else
+          oc_status=$?
+        fi
 
-      exit "$oc_status"
-    '')
+        exit "$oc_status"
+      '';
+    })
   ];
 }
