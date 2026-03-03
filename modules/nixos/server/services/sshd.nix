@@ -21,6 +21,7 @@
     fail2ban.jails.sshd.settings = {
       findtime = "1d";
       mode = "aggressive";
+      usedns = "no";
     };
   };
 
