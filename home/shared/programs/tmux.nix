@@ -73,6 +73,7 @@ in
       # --- Window Management ------------------------------------------------
       set -g renumber-windows on
       set -g allow-rename off
+      set -g focus-events on
       bind c new-window -c '#{pane_current_path}'
 
       # --- Pane Management --------------------------------------------------
