@@ -5,7 +5,6 @@
 
     ./networking
     ./services
-
-    ./headless.nix
+    ./system
   ];
 }
