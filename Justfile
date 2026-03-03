@@ -163,48 +163,56 @@ _rollback_linux gen_num:
 # Deployment (Remote Systems)
 # =============================================================================
 
-deploy target_host:
+deploy *target_hosts:
     #!/bin/sh -e
 
-    target_expr=".#nixosConfigurations.{{target_host}}"
-
-    set +e
-    target_eval_output=$(nix eval --raw "${target_expr}.config.nixpkgs.system" 2>&1)
-    eval_status=$?
-    set -e
-
-    if [ "$eval_status" -ne 0 ]; then
-        echo "Error: could not determine system architecture for '{{target_host}}'."
-        printf '%s\n' "$target_eval_output"
-        exit "$eval_status"
+    if [ -z "{{target_hosts}}" ]; then
+        echo "Error: at least one target host is required."
+        echo "Usage: just deploy <host1> [host2 ...]"
+        exit 1
     fi
 
-    target_system=$(printf '%s\n' "$target_eval_output" | tail -n1 | tr -d '\r\n')
+    for target_host in {{target_hosts}}; do
+        target_expr=".#nixosConfigurations.${target_host}"
 
-    case "$target_system" in
-        x86_64-*)
-            build_host="builder-x86_64"
-            ;;
-        aarch64-*)
-            build_host="builder-aarch64"
-            ;;
-        *)
-            echo "Error: unsupported system architecture '$target_system' for '{{target_host}}'."
-            exit 1
-            ;;
-    esac
+        set +e
+        target_eval_output=$(nix eval --raw "${target_expr}.config.nixpkgs.system" 2>&1)
+        eval_status=$?
+        set -e
 
-    echo "Deploying configuration to {{target_host}}..."
-    echo "Detected target system: $target_system"
-    echo "Selected build host: $build_host"
-    echo "Running: {{deploy_rebuild_cmd}} switch --flake .#{{target_host}} --build-host $build_host --target-host {{target_host}} --sudo --ask-sudo-password --use-substitutes"
+        if [ "$eval_status" -ne 0 ]; then
+            echo "Error: could not determine system architecture for '$target_host'."
+            printf '%s\n' "$target_eval_output"
+            exit "$eval_status"
+        fi
 
-    {{deploy_rebuild_cmd}} switch --flake .#{{target_host}} \
-        --build-host "$build_host" \
-        --target-host "{{target_host}}" \
-        --sudo \
-        --ask-sudo-password \
-        --use-substitutes
+        target_system=$(printf '%s\n' "$target_eval_output" | tail -n1 | tr -d '\r\n')
+
+        case "$target_system" in
+            x86_64-*)
+                build_host="builder-x86_64"
+                ;;
+            aarch64-*)
+                build_host="builder-aarch64"
+                ;;
+            *)
+                echo "Error: unsupported system architecture '$target_system' for '$target_host'."
+                exit 1
+                ;;
+        esac
+
+        echo "Deploying configuration to $target_host..."
+        echo "Detected target system: $target_system"
+        echo "Selected build host: $build_host"
+        echo "Running: {{deploy_rebuild_cmd}} switch --flake .#$target_host --build-host $build_host --target-host $target_host --sudo --ask-sudo-password --use-substitutes"
+
+        {{deploy_rebuild_cmd}} switch --flake ".#$target_host" \
+            --build-host "$build_host" \
+            --target-host "$target_host" \
+            --sudo \
+            --ask-sudo-password \
+            --use-substitutes
+    done
 
 deploy-update-pkgs:
     @just _nix_update "{{deploy_pkgs_unstable}}"
