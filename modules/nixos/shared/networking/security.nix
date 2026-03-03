@@ -23,12 +23,13 @@
 
   services.fail2ban = {
     enable = true;
-    bantime = "24h";
+    bantime = "7d";
     bantime-increment = {
       enable = true;
-      rndtime = "1h";
+      rndtime = "1d";
+      maxtime = "60d";
     };
-    daemonSettings.Definition.dbpurgeage = "60d";
+    daemonSettings.Definition.dbpurgeage = "90d";
     ignoreIP = [
       # mesh
       "100.96.0.0/16"

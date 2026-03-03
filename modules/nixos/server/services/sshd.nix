@@ -19,7 +19,7 @@
       ports = [ 12222 ];
     };
     fail2ban.jails.sshd.settings = {
-      findtime = "12h";
+      findtime = "1d";
       mode = "aggressive";
     };
   };

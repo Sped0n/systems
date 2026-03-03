@@ -225,7 +225,7 @@ in
           settings = {
             backend = "systemd";
             journalmatch = "_SYSTEMD_UNIT=ladder-singbox.service";
-            findtime = "12h";
+            findtime = "1d";
           };
         };
       })
