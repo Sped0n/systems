@@ -85,16 +85,17 @@
       },
     },
   },
+  // global settings
+  "tools": {
+    "lsp": false,
+    "websearch": false,
+    "webfetch": false,
+  },
   // agents
   "agent": {
     "plan": {
       "model": "yescode/gpt-5.2",
       "temperature": 0.1,
-      "tools": {
-        "lsp": false,
-        "websearch": false,
-        "webfetch": false,
-      },
       "permission": {
         "skill": {
           "*": "deny",
@@ -105,11 +106,6 @@
     "build": {
       "model": "yescode/gpt-5.3-codex",
       "temperature": 0.3,
-      "tools": {
-        "lsp": false,
-        "websearch": false,
-        "webfetch": false,
-      },
       "permission": {
         "bash": {
           "git *": "allow",
@@ -121,11 +117,6 @@
     "general": {
       "model": "openrouter/moonshotai/kimi-k2.5",
       "temperature": 0.25,
-      "tools": {
-        "lsp": false,
-        "websearch": false,
-        "webfetch": false,
-      },
       "permission": {
         "bash": {
           "git *": "allow",
@@ -137,11 +128,6 @@
     "explore": {
       "model": "openrouter/x-ai/grok-4.1-fast",
       "temperature": 0.0,
-      "tools": {
-        "lsp": false,
-        "websearch": false,
-        "webfetch": false,
-      },
       "permission": {
         "skill": {
           "*": "deny",
