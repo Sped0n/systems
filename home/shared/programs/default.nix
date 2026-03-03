@@ -10,6 +10,7 @@
     ./ghostty.nix
     ./git.nix
     ./neovim.nix
+    ./nixos-deploy.nix
     ./opencode.nix
     ./ssh.nix
     ./starship.nix

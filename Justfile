@@ -6,7 +6,6 @@ detected_os := os()
 os := if detected_os == "macos" { "darwin" } else { "linux" }
 
 rebuild_cmd := if os == "darwin" { "darwin-rebuild" } else { "nixos-rebuild" }
-deploy_rebuild_cmd := "nixos-rebuild-ng"
 
 stable_channel := "nixpkgs"
 unstable_channel := "nixpkgs-unstable"
@@ -163,16 +162,56 @@ _rollback_linux gen_num:
 # Deployment (Remote Systems)
 # =============================================================================
 
-deploy *target_hosts:
+deploy target_hosts:
     #!/bin/sh -e
 
     if [ -z "{{target_hosts}}" ]; then
         echo "Error: at least one target host is required."
-        echo "Usage: just deploy <host1> [host2 ...]"
+        echo "Usage: just deploy <host1,host2,...>"
         exit 1
     fi
 
-    for target_host in {{target_hosts}}; do
+    if ! command -v nixos-deploy >/dev/null 2>&1; then \
+        echo "Error: 'nixos-deploy' command not found."; \
+        echo "Enable it with: programs.nixos-deploy.enable = true"; \
+        exit 1; \
+    fi
+    deploy_cmd="$(command -v nixos-deploy)"
+
+    if [ ! -t 0 ]; then
+        echo "Error: deploy requires an interactive terminal to read sudo password."
+        exit 1
+    fi
+
+    printf "Remote sudo password (used for all hosts): "
+    trap 'stty echo 2>/dev/null || true' EXIT INT TERM
+    stty -echo
+    IFS= read -r deploy_sudo_password
+    stty echo
+    trap - EXIT INT TERM
+    printf "\n"
+
+    host_list=$(printf '%s' "{{target_hosts}}" | tr -d '[:space:]')
+    if [ -z "$host_list" ]; then
+        echo "Error: invalid target host list."
+        echo "Usage: just deploy <host1,host2,...>"
+        exit 1
+    fi
+
+    OLD_IFS="$IFS"
+    set -f
+    IFS=','
+    set -- $host_list
+    IFS="$OLD_IFS"
+    set +f
+
+    for target_host in "$@"; do
+        if [ -z "$target_host" ]; then
+            echo "Error: host list contains an empty entry."
+            echo "Usage: just deploy <host1,host2,...>"
+            exit 1
+        fi
+
         target_expr=".#nixosConfigurations.${target_host}"
 
         set +e
@@ -204,15 +243,10 @@ deploy *target_hosts:
         echo "Deploying configuration to $target_host..."
         echo "Detected target system: $target_system"
         echo "Selected build host: $build_host"
-        echo "Running: {{deploy_rebuild_cmd}} switch --flake .#$target_host --build-host $build_host --target-host $target_host --sudo --ask-sudo-password --use-substitutes"
-
-        {{deploy_rebuild_cmd}} switch --flake ".#$target_host" \
-            --build-host "$build_host" \
-            --target-host "$target_host" \
-            --sudo \
-            --ask-sudo-password \
-            --use-substitutes
+        printf '%s\n' "$deploy_sudo_password" | "$deploy_cmd" ".#$target_host" "$build_host" "$target_host"
     done
+
+    deploy_sudo_password=""
 
 deploy-update-pkgs:
     @just _nix_update "{{deploy_pkgs_unstable}}"
