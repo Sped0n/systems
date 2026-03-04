@@ -12,6 +12,7 @@ tools:
   "bash": true
   "task": true
   "question": true
+  "jina-mcp-server*": true
 permission:
   edit: deny
   task:
