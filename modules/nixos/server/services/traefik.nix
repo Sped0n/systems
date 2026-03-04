@@ -205,6 +205,8 @@ in
               domain = "http://100.96.0.${vars."srv-de-0".meshId}:10428";
               endpoint = "/insert/loki/api/v1/push";
               gzip_request = true;
+              timeout = "5s";
+              metric_buffer_limit = 10000;
               sanitize_label_names = true;
               namepass = [ "traefik_access_log" ];
             }

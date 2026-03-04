@@ -67,8 +67,7 @@ in
           flush_jitter = "0s";
           precision = "";
           debug = false;
-          quiet = false;
-          logfile = "/dev/null";
+          quiet = true;
           omit_hostname = false;
         };
 
@@ -104,6 +103,8 @@ in
             skip_database_creation = true;
             exclude_retention_policy_tag = true;
             content_encoding = "gzip";
+            timeout = "5s";
+            metric_buffer_limit = 10000;
             namepass = [
               "system*"
               "kernel*"
