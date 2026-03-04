@@ -1,6 +1,7 @@
 { ... }:
 {
   imports = [
+    ./swap.nix
     ./usb.nix
   ];
 
