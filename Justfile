@@ -116,6 +116,24 @@ update-flakes:
 build:
     @just _build_with_diff
 
+make-iso flake:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    target="{{flake}}"
+    case "$target" in
+        .#nixosConfigurations.*)
+            target="path:$(pwd)${target#.}"
+            ;;
+        .#*)
+            machine="${target#.#}"
+            target="path:$(pwd)#nixosConfigurations.${machine}.config.system.build.isoImage"
+            ;;
+    esac
+
+    echo "Running: nix build $target -L"
+    nix build "$target" -L
+
 switch:
     @just _switch
 
