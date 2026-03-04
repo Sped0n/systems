@@ -6,8 +6,8 @@
     ./brew
     ./home
 
-    ./age.nix
     ./determinate.nix
     ./networking.nix
+    ./programs.nix
   ];
 }

@@ -7,8 +7,8 @@
     ./services
     ./system
 
-    ./age.nix
     ./disko.nix
     ./networking.nix
+    ./programs.nix
   ];
 }
