@@ -1,0 +1,107 @@
+name: Build NixOS ISO
+
+on:
+  workflow_dispatch:
+    inputs:
+      iso_config:
+        description: "NixOS config to build (for example: iso-0, iso-1)"
+        required: true
+        default: iso-0
+        type: string
+      runner:
+        description: "Runner to use (iso-0 -> ubuntu-24.04, iso-1 -> ubuntu-24.04-arm)"
+        required: true
+        default: ubuntu-24.04
+        type: choice
+        options:
+          - ubuntu-24.04
+          - ubuntu-24.04-arm
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-upload:
+    runs-on: ${{ github.event.inputs.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure SSH for private flake inputs
+        env:
+          SECRETS_REPO_SSH_KEY: ${{ secrets.SECRETS_REPO_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          : "${SECRETS_REPO_SSH_KEY:?Repository secret SECRETS_REPO_SSH_KEY is required}"
+
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SECRETS_REPO_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Set up Nix
+        uses: DeterminateSystems/determinate-nix-action@main
+        with:
+          extra-conf: |
+            lazy-trees = true
+            eval-cores = 0
+            fallback = true
+            builders-use-substitutes = true
+            connect-timeout = 5
+            http-connections = 64
+            max-substitution-jobs = 64
+            extra-substituters = http://127.0.0.1:37515/?trusted=1&compression=zstd&parallel-compression=true&priority=1 https://nix-community.cachix.org?priority=50 https://install.determinate.systems?priority=60 https://cache.numtide.com?priority=70
+            extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
+
+      - name: Set up Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+
+      - name: Build ISO
+        run: nix run nixpkgs#just -- make-iso ".#${{ github.event.inputs.iso_config }}"
+
+      - name: Resolve ISO output
+        id: iso
+        run: |
+          set -euo pipefail
+
+          shopt -s nullglob
+          files=(result/iso/*.iso)
+          if [ "${#files[@]}" -ne 1 ]; then
+            echo "Expected exactly one ISO in result/iso, found ${#files[@]}" >&2
+            ls -la result/iso || true
+            exit 1
+          fi
+
+          iso_path="${files[0]}"
+          config_input="${{ github.event.inputs.iso_config }}"
+          config_key="$(printf '%s' "$config_input" | tr -c 'A-Za-z0-9._-' '_')"
+          object_key="latest-${config_key}.iso"
+
+          echo "iso_path=$iso_path" >> "$GITHUB_OUTPUT"
+          echo "object_key=$object_key" >> "$GITHUB_OUTPUT"
+
+          echo "Resolved ISO: $iso_path"
+          echo "Destination key: $object_key"
+
+      - name: Upload ISO to Cloudflare R2
+        env:
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: auto
+          AWS_DEFAULT_REGION: auto
+        run: |
+          set -euo pipefail
+
+          : "${R2_BUCKET:?Repository variable R2_BUCKET is required}"
+          : "${R2_ENDPOINT:?Repository variable R2_ENDPOINT is required}"
+          : "${AWS_ACCESS_KEY_ID:?Repository secret R2_ACCESS_KEY_ID is required}"
+          : "${AWS_SECRET_ACCESS_KEY:?Repository secret R2_SECRET_ACCESS_KEY is required}"
+
+          destination="s3://${R2_BUCKET}/${{ steps.iso.outputs.object_key }}"
+          nix run nixpkgs#awscli2 -- s3 cp \
+            "${{ steps.iso.outputs.iso_path }}" \
+            "$destination" \
+            --endpoint-url "$R2_ENDPOINT"

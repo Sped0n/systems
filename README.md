@@ -1,4 +1,4 @@
-# systems
+# systems [![Flake Check](https://github.com/Sped0n/systems/actions/workflows/flake-check.yml/badge.svg)](https://github.com/Sped0n/systems/actions/workflows/flake-check.yml)
 
 ## Overview
 

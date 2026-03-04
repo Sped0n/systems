@@ -1,0 +1,54 @@
+name: Flake Check
+
+on:
+  push:
+    paths:
+      - "**/*.nix"
+      - "flake.lock"
+      - ".github/workflows/flake-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  flake-check:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure SSH for private flake inputs
+        env:
+          SECRETS_REPO_SSH_KEY: ${{ secrets.SECRETS_REPO_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          : "${SECRETS_REPO_SSH_KEY:?Repository secret SECRETS_REPO_SSH_KEY is required}"
+
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SECRETS_REPO_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Set up Nix
+        uses: DeterminateSystems/determinate-nix-action@main
+        with:
+          extra-conf: |
+            lazy-trees = true
+            eval-cores = 0
+            fallback = true
+            builders-use-substitutes = true
+            connect-timeout = 5
+            http-connections = 64
+            max-substitution-jobs = 64
+            extra-substituters = http://127.0.0.1:37515/?trusted=1&compression=zstd&parallel-compression=true&priority=1 https://nix-community.cachix.org?priority=50 https://install.determinate.systems?priority=60 https://cache.numtide.com?priority=70
+            extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
+
+      - name: Set up Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          listen: 127.0.0.1:37515
+
+      - name: Run flake check
+        run: nix flake check -L --keep-going
