@@ -144,7 +144,19 @@
           modules = [
             nixpkgsModule
             determinate.nixosModules.default
-            ./machines/iso-0
+            ./machines/iso
+          ];
+        };
+
+        "iso-1" = nixpkgs.lib.nixosSystem rec {
+          system = "aarch64-linux";
+          specialArgs = (genSpecialArgs { inherit system; }) // {
+            pkgs-unstable = pkgsUnstableFor system;
+          };
+          modules = [
+            nixpkgsModule
+            determinate.nixosModules.default
+            ./machines/iso
           ];
         };
 
