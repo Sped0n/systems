@@ -18,9 +18,9 @@ in
   options.services.my-traefik = {
     enable = lib.mkEnableOption "Whether to enable the custom Traefik module.";
 
-    dynamicConfigOptions = lib.mkOption {
+    extraDynamicConfig = lib.mkOption {
       description = ''
-        Dynamic configuration for Traefik.
+        Extra dynamic configuration for Traefik.
       '';
       type = toml.type;
       default = { };
@@ -129,7 +129,7 @@ in
         };
         dynamicConfigOptions = functions.mergeToml {
           http.middlewares.cftunnel.plugin.traefik-real-ip.excludednets = [ ];
-        } my-traefik.dynamicConfigOptions;
+        } my-traefik.extraDynamicConfig;
       };
 
       logrotate.settings."/var/log/traefik/access.log" = {

@@ -28,21 +28,17 @@
       };
     };
 
-    my-traefik = {
-      dynamicConfigOptions = {
-        http = {
-          routers.eyes-nginx = {
-            rule = "Host(`eyes.sped0n.com`)";
-            entryPoints = [ "https" ];
-            tls = true;
-            service = "eyes-nginx";
-            middlewares = [ "cftunnel@file" ];
-          };
-          services.eyes-nginx.loadBalancer.servers = [
-            { url = "http://localhost:10001"; }
-          ];
-        };
+    my-traefik.extraDynamicConfig.http = {
+      routers.eyes-nginx = {
+        rule = "Host(`eyes.sped0n.com`)";
+        entryPoints = [ "https" ];
+        tls = true;
+        service = "eyes-nginx";
+        middlewares = [ "cftunnel@file" ];
       };
+      services.eyes-nginx.loadBalancer.servers = [
+        { url = "http://localhost:10001"; }
+      ];
     };
   };
 }

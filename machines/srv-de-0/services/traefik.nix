@@ -2,7 +2,7 @@
 {
   services.my-traefik = {
     enable = true;
-    dynamicConfigOptions = {
+    extraDynamicConfig = {
       http = {
         middlewares.authelia.forwardauth = {
           address = "http://100.96.0.${vars."srv-de-0".meshId}:9091/api/authz/forward-auth";

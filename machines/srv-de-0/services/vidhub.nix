@@ -60,20 +60,16 @@
     };
   };
 
-  services.my-traefik = {
-    dynamicConfigOptions = {
-      http = {
-        routers.vidhub = {
-          rule = "Host(`vidhub.sped0n.com`)";
-          entryPoints = [ "https" ];
-          tls = true;
-          service = "vidhub";
-          middlewares = [ "cftunnel@file" ];
-        };
-        services.vidhub.loadBalancer.servers = [
-          { url = "http://localhost:9999"; }
-        ];
-      };
+  services.my-traefik.extraDynamicConfig.http = {
+    routers.vidhub = {
+      rule = "Host(`vidhub.sped0n.com`)";
+      entryPoints = [ "https" ];
+      tls = true;
+      service = "vidhub";
+      middlewares = [ "cftunnel@file" ];
     };
+    services.vidhub.loadBalancer.servers = [
+      { url = "http://localhost:9999"; }
+    ];
   };
 }
