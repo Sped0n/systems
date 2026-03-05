@@ -18,14 +18,15 @@
 
 ```
 machines
-├── wks-0       # macOS (aarch64)
 ├── esp-0       # NixOS desktop (x86_64)
+├── iso         # NixOS installer image
 ├── srv-de-0    # NixOS server (x86_64)
 ├── srv-hk-0    # NixOS server (x86_64)
 ├── srv-jp-0    # NixOS server (x86_64)
 ├── srv-nl-0    # NixOS server (x86_64)
 ├── srv-sg-0    # NixOS server (x86_64)
-└── srv-sg-1    # NixOS server (aarch64)
+├── srv-sg-1    # NixOS server (aarch64)
+└── wks-0       # macOS (aarch64)
 ```
 
 ## Usage (Justfile)

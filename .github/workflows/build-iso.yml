@@ -4,25 +4,20 @@ on:
   workflow_dispatch:
     inputs:
       iso_config:
-        description: "NixOS config to build (for example: iso-0, iso-1)"
+        description: "ISO target to build"
         required: true
-        default: iso-0
-        type: string
-      runner:
-        description: "Runner to use (iso-0 -> ubuntu-24.04, iso-1 -> ubuntu-24.04-arm)"
-        required: true
-        default: ubuntu-24.04
+        default: iso-x86_64
         type: choice
         options:
-          - ubuntu-24.04
-          - ubuntu-24.04-arm
+          - iso-x86_64
+          - iso-aarch64
 
 permissions:
   contents: read
 
 jobs:
   build-and-upload:
-    runs-on: ${{ github.event.inputs.runner }}
+    runs-on: ${{ github.event.inputs.iso_config == 'iso-aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
