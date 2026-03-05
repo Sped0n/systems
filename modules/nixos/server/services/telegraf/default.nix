@@ -103,8 +103,6 @@ in
             skip_database_creation = true;
             exclude_retention_policy_tag = true;
             content_encoding = "gzip";
-            timeout = "5s";
-            metric_buffer_limit = 10000;
             namepass = [
               "system*"
               "kernel*"
@@ -125,6 +123,7 @@ in
     systemd.services.telegraf.serviceConfig = {
       AmbientCapabilities = [ "CAP_NET_ADMIN" ];
       LimitNOFILE = 8192;
+      TimeoutStopSec = "20s";
     };
   };
 }

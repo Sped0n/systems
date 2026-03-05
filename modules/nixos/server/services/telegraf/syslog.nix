@@ -34,7 +34,26 @@ in
           source s_src { system(); };
 
           destination d_telegraf {
-            syslog("127.0.0.1" port(6514));
+            syslog(
+              "127.0.0.1"
+              port(6514)
+              disk-buffer(
+                mem-buf-length(10000)
+                disk-buf-size(268435456)
+                reliable(no)
+                dir("/var/lib/syslog-ng/telegraf")
+              )
+            );
+          };
+
+          rewrite r_telegraf_program {
+            # Keep app-name RFC5424-safe for Telegraf parser:
+            # - ASCII-only
+            # - non-empty
+            # - max 48 chars
+            subst("[^ -~]", "_", value("PROGRAM"), flags("global"));
+            subst("^$", "unknown", value("PROGRAM"));
+            subst("^(.{48}).+$", "$1", value("PROGRAM"));
           };
 
           filter f_ignore_firewall {
@@ -87,6 +106,7 @@ in
             filter(f_ignore_dhcpcd_veth);
             filter(f_ignore_dhcpcd_noise);
             filter(f_ignore_dnixd_noise);
+            rewrite(r_telegraf_program);
           ${lib.concatMapStringsSep "\n" (name: "  filter(f_${name});") extraNames}
             destination(d_telegraf);
           };
@@ -96,6 +116,7 @@ in
       my-telegraf.extraConfig = {
         inputs.syslog = {
           server = "tcp://127.0.0.1:6514";
+          best_effort = true;
           tagexclude = [
             "source"
             "hostname"
@@ -116,8 +137,6 @@ in
             domain = "http://100.96.0.${vars."srv-de-0".meshId}:9428";
             endpoint = "/insert/loki/api/v1/push";
             gzip_request = true;
-            timeout = "5s";
-            metric_buffer_limit = 10000;
             sanitize_label_names = true;
             namepass = [ "syslog" ];
           }
