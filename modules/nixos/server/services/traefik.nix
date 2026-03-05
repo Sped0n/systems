@@ -227,6 +227,10 @@ in
               metric_buffer_limit = 10000;
               sanitize_label_names = true;
               namepass = [ "traefik_access_log" ];
+              tagpass.RequestHost = [
+                "*.sped0n.com"
+                "sped0n.com"
+              ];
             }
           ];
         };

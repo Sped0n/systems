@@ -3,6 +3,7 @@
   lib,
   pkgs-unstable,
   secrets,
+  vars,
   ...
 }:
 let
@@ -73,12 +74,12 @@ in
         enable = true;
         name = "${hostname}";
         tokenFile = tokenFilePath;
-        url = "https://git.sped0n.com/";
+        url = "http://100.96.0.${toString vars."srv-de-0".meshId}:4300/";
         labels = my-runner.labels;
         settings = {
           runner = {
             capacity = my-runner.capacity;
-            fetch_interval = "30s";
+            fetch_interval = "10s";
           };
           container = {
             docker_host = "automount";
