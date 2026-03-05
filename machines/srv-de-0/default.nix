@@ -4,10 +4,10 @@
     (functions.fromRoot "/modules/nixos/server")
 
     ./home
-    ./networking
     ./services
 
     ./disko.nix
+    ./networking.nix
     ./system.nix
   ];
 }

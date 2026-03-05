@@ -3,8 +3,9 @@
   imports = [
     (functions.fromRoot "/modules/nixos/shared")
 
-    ./networking
     ./services
     ./system
+
+    ./mesh.nix
   ];
 }

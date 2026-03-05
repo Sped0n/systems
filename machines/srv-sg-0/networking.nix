@@ -1,16 +1,12 @@
 { vars, ... }:
 {
-  imports = [
-    ./cloudflared.nix
-  ];
-
   networking = rec {
-    hostName = "srv-de-0";
+    hostName = "srv-sg-0";
     interfaces.eth0 = {
       ipv4.addresses = [
         {
           address = vars."${hostName}".ipv4;
-          prefixLength = 22;
+          prefixLength = 24;
         }
       ];
       ipv6.addresses = [

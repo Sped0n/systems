@@ -3,6 +3,7 @@
   imports = [
     ./docker
 
+    ./cloudflared.nix
     ./ladder.nix
     ./nginx.nix
     ./restic.nix

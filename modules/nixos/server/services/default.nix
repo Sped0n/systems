@@ -3,6 +3,7 @@
     ./docker
     ./telegraf
 
+    ./cloudflared.nix
     ./builder.nix
     ./cfgpull.nix
     ./ladder.nix
