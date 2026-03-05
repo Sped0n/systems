@@ -18,6 +18,14 @@ in
   options.services.my-traefik = {
     enable = lib.mkEnableOption "Whether to enable the custom Traefik module.";
 
+    extraEntryPoints = lib.mkOption {
+      description = ''
+        Extra Traefik entryPoints merged into static config.
+      '';
+      type = toml.type;
+      default = { };
+    };
+
     extraDynamicConfig = lib.mkOption {
       description = ''
         Extra dynamic configuration for Traefik.
@@ -28,6 +36,13 @@ in
   };
 
   config = lib.mkIf my-traefik.enable {
+    assertions = [
+      {
+        assertion = !(builtins.hasAttr "https" my-traefik.extraEntryPoints);
+        message = "services.my-traefik.extraEntryPoints must not define 'https' (reserved by module default entrypoint).";
+      }
+    ];
+
     users.users.traefik.extraGroups = [ "docker" ];
     systemd.tmpfiles.rules = [
       "d /var/log/traefik 0755 traefik traefik -"
@@ -106,21 +121,24 @@ in
             };
           };
 
-          entryPoints.https = {
-            address = ":4443";
-            http.tls.domains = [
-              {
-                main = "\${DNS_DOMAIN}";
-                sans = [
-                  "*.\${DNS_DOMAIN}"
-                ];
-              }
-            ];
-            transport.respondingTimeouts = {
-              readTimeout = "600s";
-              writeTimeout = "600s";
+          entryPoints = {
+            https = {
+              address = ":4443";
+              http.tls.domains = [
+                {
+                  main = "\${DNS_DOMAIN}";
+                  sans = [
+                    "*.\${DNS_DOMAIN}"
+                  ];
+                }
+              ];
+              transport.respondingTimeouts = {
+                readTimeout = "600s";
+                writeTimeout = "600s";
+              };
             };
-          };
+          }
+          // my-traefik.extraEntryPoints;
 
           providers.docker = {
             endpoint = "unix:///var/run/docker.sock";
