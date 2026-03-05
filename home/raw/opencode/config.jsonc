@@ -7,6 +7,9 @@
   // providers
   "provider": {
     "openrouter": {
+      "options": {
+        "baseURL": "https://aiproxy.sped0n.com/openrouter",
+      },
       "models": {
         "moonshotai/kimi-k2.5": {
           "options": {
