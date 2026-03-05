@@ -18,10 +18,7 @@ flake_shared := "determinate home-manager agenix llm-agents"
 flake_darwin := flake_shared + " nix-darwin nix-homebrew"
 flake_linux := flake_shared + " disko"
 flakes := if os == "darwin" { flake_darwin } else { flake_linux }
-
-deploy_flakes := flake_linux
-deploy_pkgs_unstable := unstable_channel
-deploy_pkgs_all := combined_channels
+flakes_all := flake_shared + " nix-darwin nix-homebrew disko"
 
 current_system := "/run/current-system"
 result_link := "./result"
@@ -31,6 +28,7 @@ system_profile := "/nix/var/nix/profiles/system"
 # Default Recipe
 # =============================================================================
 
+# Show all public recipes.
 default:
     @just --list
 
@@ -38,6 +36,7 @@ default:
 # Core Helper Functions
 # =============================================================================
 
+# Run `nix flake update` with optional input arguments.
 _nix_update *args:
     @if [ -z '{{args}}' ]; then \
         echo "Running: nix flake update"; \
@@ -47,15 +46,18 @@ _nix_update *args:
         nix flake update {{args}}; \
     fi
 
+# Update Homebrew package metadata on macOS.
 [macos]
 _brew_update:
     @echo "Running: brew update"
     @brew update || (echo "Brew update failed, continuing..."; exit 0)
 
+# No-op Homebrew update on Linux.
 [linux]
 _brew_update:
     @echo "Skipping brew update (macOS only)"
 
+# Build the system and print a closure diff against current state.
 _build_with_diff:
     @echo "Running: {{rebuild_cmd}} build --flake ."
     @{{rebuild_cmd}} build --flake .
@@ -66,10 +68,12 @@ _build_with_diff:
     @echo "Removing {{result_link}} symlink..."
     @unlink {{result_link}}
 
+# Apply the built system configuration.
 _switch:
     @echo "Running: sudo {{rebuild_cmd}} switch --flake ."
     @sudo {{rebuild_cmd}} switch --flake .
 
+# Validate that the rollback generation argument is present and numeric.
 _validate_generation gen_num:
     #!/bin/sh -e
     if [ -z "{{gen_num}}" ]; then
@@ -82,6 +86,7 @@ _validate_generation gen_num:
         exit 1
     fi
 
+# Ensure rebuild command and sudo access are available.
 _check_rebuild_prereqs:
     #!/bin/sh -e
     if ! command -v {{rebuild_cmd}} > /dev/null; then
@@ -97,25 +102,35 @@ _check_rebuild_prereqs:
 # Package Management
 # =============================================================================
 
+# Update unstable package channels.
 update-pkgs: _brew_update
     @just _nix_update "{{pkgs_unstable}}"
 
+# Update both stable and unstable package channels.
 update-pkgs-all: _brew_update
     @just _nix_update "{{pkgs_all}}"
 
+# Update only the specified flake inputs.
 update-specific input:
     @just _nix_update {{input}}
 
+# Update shared flake inputs based on the current OS.
 update-flakes:
     @just _nix_update "{{flakes}}"
+
+# Update all flake inputs across both macOS and Linux targets.
+update-flakes-all:
+    @just _nix_update "{{flakes_all}}"
 
 # =============================================================================
 # Build and Switch Operations
 # =============================================================================
 
+# Build the local configuration and show closure changes.
 build:
     @just _build_with_diff
 
+# Build an ISO image from a machine name or full flake target.
 make-iso flake:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -134,6 +149,7 @@ make-iso flake:
     echo "Running: nix build $target -L"
     nix build "$target" -L
 
+# Switch this machine to the new configuration.
 switch:
     @just _switch
 
@@ -141,16 +157,19 @@ switch:
 # Generation Management
 # =============================================================================
 
+# List available system generations for this host.
 list-generations:
     @just _check_rebuild_prereqs
     @echo "Available {{os}} generations (requires sudo):"
     @sudo {{rebuild_cmd}} {{ if os() == "macos" { "--list-generations" } else { "list-generations" } }}
 
+# Roll back to the specified system generation.
 rollback gen_num:
     @just _validate_generation {{gen_num}}
     @just _check_rebuild_prereqs
     @just _rollback_{{os}} {{gen_num}}
 
+# Perform rollback for nix-darwin systems.
 [macos]
 _rollback_darwin gen_num:
     #!/bin/sh -e
@@ -163,6 +182,7 @@ _rollback_darwin gen_num:
     sudo darwin-rebuild switch -G "{{gen_num}}"
     echo "Rollback complete!"
 
+# Perform rollback for NixOS systems.
 [linux]
 _rollback_linux gen_num:
     #!/bin/sh -e
@@ -180,6 +200,7 @@ _rollback_linux gen_num:
 # Deployment (Remote Systems)
 # =============================================================================
 
+# Deploy configurations to one or more remote target hosts.
 deploy target_hosts:
     #!/bin/sh -e
 
@@ -266,15 +287,6 @@ deploy target_hosts:
 
     deploy_sudo_password=""
 
-deploy-update-pkgs:
-    @just _nix_update "{{deploy_pkgs_unstable}}"
-
-deploy-update-pkgs-all:
-    @just _nix_update "{{deploy_pkgs_all}}"
-
-deploy-update-flakes:
-    @just _nix_update "{{deploy_flakes}}"
-
 # =============================================================================
 # Convenience Aliases
 # =============================================================================
@@ -284,9 +296,7 @@ alias b := build
 alias up := update-pkgs
 alias upa := update-pkgs-all
 alias uf := update-flakes
+alias ufa := update-flakes-all
 alias us := update-specific
-alias dup := deploy-update-pkgs
-alias dupa := deploy-update-pkgs-all
-alias duf := deploy-update-flakes
 alias lg := list-generations
 alias rb := rollback

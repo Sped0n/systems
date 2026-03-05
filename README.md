@@ -32,19 +32,18 @@ machines
 
 ```
 Available recipes:
-    build                  # Build the configuration and show diff-closures [alias: b]
-    default                # Default recipe to show available commands
-    deploy target_host     # Deploy the configuration to a target host
-    deploy-update-flakes   # Update flakes for the target hosts [alias: duf]
-    deploy-update-pkgs     # Update unstable packages for the target hosts [alias: dup]
-    deploy-update-pkgs-all # Update all packages for the target hosts [alias: dupa]
-    list-generations       # List available generations
-    rollback gen_num       # Rollback to a specific generation
-    switch                 # Switch to the new configuration [alias: s]
-    update-flakes          # Update flakes [alias: uf]
-    update-pkgs            # Update unstable packages [alias: up]
-    update-pkgs-all        # Update all packages [alias: upa]
-    update-specific input  # Update specific flakes [alias: us]
+    build                  # Build the local configuration and show closure changes. [alias: b]
+    default                # Show all public recipes.
+    deploy target_hosts    # Deploy configurations to one or more remote target hosts.
+    list-generations       # List available system generations for this host. [alias: lg]
+    make-iso flake         # Build an ISO image from a machine name or full flake target.
+    rollback gen_num       # Roll back to the specified system generation. [alias: rb]
+    switch                 # Switch this machine to the new configuration. [alias: s]
+    update-flakes          # Update shared flake inputs based on the current OS. [alias: uf]
+    update-flakes-all      # Update all flake inputs across both macOS and Linux targets. [alias: ufa]
+    update-pkgs            # Update unstable package channels. [alias: up]
+    update-pkgs-all        # Update both stable and unstable package channels. [alias: upa]
+    update-specific input  # Update only the specified flake inputs. [alias: us]
 ```
 
 ## Provisioning
