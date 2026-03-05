@@ -12,6 +12,8 @@
     pipewire.enable = lib.mkForce false;
   };
 
+  programs.nano.enable = false;
+
   fonts = {
     enableDefaultPackages = false;
     fontconfig.enable = false;
@@ -25,30 +27,39 @@
     );
   };
 
-  environment.gnome.excludePackages = with pkgs; [
-    decibels # audio player
-    epiphany # web browser
-    geary # mail client
-    gedit # text editor
-    loupe # image viewer
-    orca # screen reader
-    papers # document viewer
-    showtime # video player
-    simple-scan # document scanner
-    snapshot # camera viewer
-    yelp # help viewer
+  environment = {
+    defaultPackages = lib.mkForce (
+      with pkgs;
+      [
+        gparted
+        firefox
+      ]
+    );
+    gnome.excludePackages = with pkgs; [
+      decibels # audio player
+      epiphany # web browser
+      geary # mail client
+      gedit # text editor
+      loupe # image viewer
+      orca # screen reader
+      papers # document viewer
+      showtime # video player
+      simple-scan # document scanner
+      snapshot # camera viewer
+      yelp # help viewer
 
-    gnome-calendar
-    gnome-characters
-    gnome-clocks
-    gnome-connections
-    gnome-contacts
-    gnome-font-viewer
-    gnome-logs
-    gnome-maps
-    gnome-music
-    gnome-tour
-    gnome-user-docs
-    gnome-weather
-  ];
+      gnome-calendar
+      gnome-characters
+      gnome-clocks
+      gnome-connections
+      gnome-contacts
+      gnome-font-viewer
+      gnome-logs
+      gnome-maps
+      gnome-music
+      gnome-tour
+      gnome-user-docs
+      gnome-weather
+    ];
+  };
 }

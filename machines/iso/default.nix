@@ -6,14 +6,16 @@
   ...
 }:
 {
+  disabledModules = [ "profiles/base.nix" ];
+
   imports = [
     (functions.fromRoot "/modules/shared/nix.nix")
     (modulesPath + "/installer/cd-dvd/installation-cd-graphical-gnome.nix")
 
+    ./profiles-base-no-vim-and-zfs.nix
     ./size-reduction.nix
   ];
 
-  networking.hostName = "iso-0";
   system.stateVersion = "24.11";
 
   environment.systemPackages =
@@ -22,12 +24,18 @@
       disko
       firefox
       openssh
-      vim
+      wl-clipboard
     ])
     ++ (with pkgs-unstable; [
       just
       btop
     ]);
+
+  programs.neovim = {
+    enable = true;
+    defaultEditor = true;
+  };
+  environment.variables.VISUAL = "nvim";
 
   zramSwap = {
     enable = true;
