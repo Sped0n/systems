@@ -1,7 +1,7 @@
 { pkgs, vars, ... }:
 {
   services.my-restic = {
-    enable = false;
+    enable = true;
     paths = [ "${vars.home}/infra" ];
     exclude = [
       "*.log"
