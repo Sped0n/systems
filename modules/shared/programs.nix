@@ -20,28 +20,20 @@ let
       keyPath,
       keyLabel,
     }:
-    pkgs.writeShellApplication {
-      inherit name;
-      runtimeInputs =
-        (with pkgs; [
-          coreutils
-          gnupg
-        ])
-        ++ lib.optional pkgs.stdenv.isLinux pkgs.sudo;
-      text = ''
-        set -e
+    pkgs.writeShellScriptBin name ''
+      #!${pkgs.bash}/bin/bash
+      set -e
 
-        if [ "$(id -u)" -eq 0 ]; then
-          echo "Error: Do not run this script with sudo." >&2
-          exit 1
-        fi
+      if [ "$(id -u)" -eq 0 ]; then
+        ${pkgs.coreutils}/bin/echo "Error: Do not run this script with sudo." >&2
+        exit 1
+      fi
 
-        KEY_FILE="${keyPath}"
-        echo "Importing ${keyLabel} signing key from ''${KEY_FILE}..."
-        gpg --import <(sudo cat "''${KEY_FILE}")
-        echo "Key import successful."
-      '';
-    };
+      KEY_FILE="${keyPath}"
+      ${pkgs.coreutils}/bin/echo "Importing ${keyLabel} signing key from ''${KEY_FILE}..."
+      sudo ${pkgs.coreutils}/bin/cat "''${KEY_FILE}" | ${pkgs.gnupg}/bin/gpg --import
+      ${pkgs.coreutils}/bin/echo "Key import successful."
+    '';
 in
 {
   options.programs = {

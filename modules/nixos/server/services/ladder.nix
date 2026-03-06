@@ -139,54 +139,47 @@ in
               description = "Ladder sing-box service";
               after = [ "network.target" ];
               wantedBy = [ "multi-user.target" ];
-              path =
-                with pkgs;
-                [
-                  coreutils
-                  gnused
-                  openssl
-                ]
-                ++ [ pkgs-unstable.sing-box ];
               serviceConfig = {
-                ExecStartPre = pkgs.writeShellScript "ladder-singbox-init" ''
-                  set -euo pipefail
-                  umask 077
+                ExecStartPre = [
+                  (pkgs.writeShellScript "ladder-init" ''
+                    set -euo pipefail
+                    umask 077
 
-                  install -d -m 700 "${stateDir}"
+                    install -d -m 700 "${stateDir}"
 
-                  disguise="cname.vercel-dns.com"
+                    disguise="cname.vercel-dns.com"
 
-                  generate_cert() {
-                    echo "ladder: generating self-signed certificate for ''${disguise}..." >&2
-                    rm -f "${keyPath}" "${certPath}"
-                    openssl req -x509 \
-                      -newkey ec:<(openssl ecparam -name prime256v1) \
-                      -keyout "${keyPath}" \
-                      -out "${certPath}" \
-                      -days 36500 \
-                      -nodes \
-                      -subj "/CN=''${disguise}"
+                    generate_cert() {
+                      echo "ladder: generating self-signed certificate for ''${disguise}..." >&2
+                      rm -f "${keyPath}" "${certPath}"
+                      ${pkgs.openssl}/bin/openssl req -x509 \
+                        -newkey ec:<(${pkgs.openssl}/bin/openssl ecparam -name prime256v1) \
+                        -keyout "${keyPath}" \
+                        -out "${certPath}" \
+                        -days 36500 \
+                        -nodes \
+                        -subj "/CN=''${disguise}"
 
-                    chmod 400 "${keyPath}"
-                    chmod 444 "${certPath}"
-                  }
+                      chmod 400 "${keyPath}"
+                      chmod 444 "${certPath}"
+                    }
 
-                  if [ ! -f "${keyPath}" ] || [ ! -f "${certPath}" ]; then
-                    generate_cert
-                  else
-                    cert_cn="$(openssl x509 -in "${certPath}" -noout -subject | sed -n 's/.*CN=//p' | head -n1)"
-                    if [ "''${cert_cn}" != "''${disguise}" ]; then
-                      echo "ladder: certificate CN (''${cert_cn:-<none>}) does not match disguise (''${disguise}), regenerating..." >&2
+                    if [ ! -f "${keyPath}" ] || [ ! -f "${certPath}" ]; then
                       generate_cert
+                    else
+                      cert_cn="$(${pkgs.openssl}/bin/openssl x509 -in "${certPath}" -noout -subject | sed -n 's/.*CN=//p' | head -n1)"
+                      if [ "''${cert_cn}" != "''${disguise}" ]; then
+                        echo "ladder: certificate CN (''${cert_cn:-<none>}) does not match disguise (''${disguise}), regenerating..." >&2
+                        generate_cert
+                      fi
                     fi
-                  fi
 
-                  echo "ladder: certificate SHA256 fingerprint:"
-                  openssl x509 -noout -fingerprint -sha256 -inform pem -in "${certPath}"
-                '';
-                ExecStart = pkgs.writeShellScript "ladder-singbox-run" ''
-                  set -euo pipefail
-                  sing-box run -c ${singboxConfigPath}
+                    echo "ladder: certificate SHA256 fingerprint:"
+                    ${pkgs.openssl}/bin/openssl x509 -noout -fingerprint -sha256 -inform pem -in "${certPath}"
+                  '')
+                ];
+                ExecStart = ''
+                  ${pkgs-unstable.sing-box}/bin/sing-box run -c ${singboxConfigPath}
                 '';
               }
               // serviceConfigShared;
@@ -195,10 +188,6 @@ in
             ladder-singbox-config-watch = {
               description = "Restart ladder-singbox only when config content changes";
               after = [ "ladder-singbox.service" ];
-              path = [
-                pkgs.coreutils
-                config.systemd.package
-              ];
               serviceConfig = {
                 Type = "oneshot";
                 ExecStart = pkgs.writeShellScript "ladder-singbox-config-watch" ''
@@ -206,12 +195,12 @@ in
                   file='${singboxConfigPath}'
                   state='${stateDir}/singbox-config.sha256'
                   [[ -r "$file" ]] || exit 0
-                  new="$(sha256sum "$file" | cut -d' ' -f1)"
-                  old="$(cat "$state" 2>/dev/null || true)"
+                  new="$(${pkgs.coreutils}/bin/sha256sum "$file" | ${pkgs.coreutils}/bin/cut -d' ' -f1)"
+                  old="$(${pkgs.coreutils}/bin/cat "$state" 2>/dev/null || true)"
                   if [[ "$new" != "$old" ]]; then
-                    install -d -m 700 '${stateDir}'
+                    ${pkgs.coreutils}/bin/install -d -m 700 '${stateDir}'
                     printf '%s\n' "$new" > "$state"
-                    systemctl try-restart ladder-singbox.service
+                    /run/current-system/sw/bin/systemctl try-restart ladder-singbox.service
                   fi
                 '';
               };
@@ -255,10 +244,10 @@ in
               description = "Ladder snell service";
               after = [ "network.target" ];
               wantedBy = [ "multi-user.target" ];
-              path = [ pkgs-unstable.snell ];
+              restartTriggers = [ ];
               serviceConfig = {
-                ExecStart = pkgs.writeShellScript "ladder-snell-run" ''
-                  snell-server -c ${snellConfigPath}
+                ExecStart = ''
+                  ${pkgs-unstable.snell}/bin/snell-server -c ${snellConfigPath}
                 '';
               }
               // serviceConfigShared;
@@ -267,10 +256,6 @@ in
             ladder-snell-config-watch = {
               description = "Restart ladder-snell only when config content changes";
               after = [ "ladder-snell.service" ];
-              path = [
-                pkgs.coreutils
-                config.systemd.package
-              ];
               serviceConfig = {
                 Type = "oneshot";
                 ExecStart = pkgs.writeShellScript "ladder-snell-restart-on-config" ''
@@ -278,12 +263,12 @@ in
                   file='${snellConfigPath}'
                   state='${stateDir}/snell-config.sha256'
                   [[ -r "$file" ]] || exit 0
-                  new="$(sha256sum "$file" | cut -d' ' -f1)"
-                  old="$(cat "$state" 2>/dev/null || true)"
+                  new="$(${pkgs.coreutils}/bin/sha256sum "$file" | ${pkgs.coreutils}/bin/cut -d' ' -f1)"
+                  old="$(${pkgs.coreutils}/bin/cat "$state" 2>/dev/null || true)"
                   if [[ "$new" != "$old" ]]; then
-                    install -d -m 700 '${stateDir}'
+                    ${pkgs.coreutils}/bin/install -d -m 700 '${stateDir}'
                     printf '%s\n' "$new" > "$state"
-                    systemctl try-restart ladder-snell.service
+                    /run/current-system/sw/bin/systemctl try-restart ladder-snell.service
                   fi
                 '';
               };

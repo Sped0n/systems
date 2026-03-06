@@ -95,11 +95,6 @@ in
     systemd = {
       services.runner-cache-purge = {
         description = "Purge Forgejo runner actcache if it exceeds configured size";
-        path = [
-          pkgs-unstable.coreutils
-          pkgs-unstable.util-linux
-          config.systemd.package
-        ];
         serviceConfig = {
           User = "root";
           Group = "root";
@@ -129,13 +124,13 @@ in
               mkdir -p "$LOCKDIR"
 
               exec 9>"$LOCKFILE"
-              flock -n 9 || exit 0
+              ${pkgs-unstable.util-linux}/bin/flock -n 9 || exit 0
 
               if [ ! -d "$CACHEDIR" ]; then
                 exit 0
               fi
 
-              size_bytes="$(du -sb "$CACHEDIR" | cut -f1)"
+              size_bytes="$(${pkgs-unstable.coreutils}/bin/du -sb "$CACHEDIR" | ${pkgs-unstable.coreutils}/bin/cut -f1)"
               limit_bytes="$(( LIMIT_GIB * 1024 * 1024 * 1024 ))"
 
               if [ "$size_bytes" -le "$limit_bytes" ]; then
@@ -145,15 +140,15 @@ in
               echo "runner cache purge: $CACHEDIR is ''${size_bytes} bytes (> ''${limit_bytes}); purging by reset"
 
               was_active=0
-              if systemctl is-active --quiet "$RUNNER_UNIT"; then
+              if /run/current-system/sw/bin/systemctl is-active --quiet "$RUNNER_UNIT"; then
                 was_active=1
-                systemctl stop "$RUNNER_UNIT"
+                /run/current-system/sw/bin/systemctl stop "$RUNNER_UNIT"
               fi
 
-              rm -rf -- "$CACHEDIR"
+              ${pkgs-unstable.coreutils}/bin/rm -rf -- "$CACHEDIR"
 
               if [ "$was_active" -eq 1 ]; then
-                systemctl start "$RUNNER_UNIT"
+                /run/current-system/sw/bin/systemctl start "$RUNNER_UNIT"
               fi
 
               echo "runner cache purge: done"
