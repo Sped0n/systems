@@ -39,6 +39,7 @@ jobs:
             lazy-trees = true
             eval-cores = 0
             extra-experimental-features = external-builders
+            external-builders = [{"args":["builder","--memory-size","8589934592","--cpu-count","1"],"program":"/usr/local/bin/determinate-nixd","systems":["aarch64-linux","x86_64-linux"]}]
             fallback = true
             builders-use-substitutes = true
             connect-timeout = 5
