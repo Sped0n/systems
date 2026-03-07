@@ -15,6 +15,7 @@
           "options": {
             "provider": {
               "sort": "throughput",
+              "only": ["fireworks", "inceptron"],
             },
             "reasoning": {
               "enabled": true,
@@ -32,6 +33,7 @@
           "options": {
             "provider": {
               "sort": "throughput",
+              "only": ["fireworks", "minimax", "inceptron"],
             },
             "reasoning": {
               "enabled": true,
