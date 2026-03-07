@@ -32,7 +32,11 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "$SECRETS_REPO_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+
+          cat > ~/.ssh/known_hosts <<'EOF'
+          github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+          github.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
+          EOF
           chmod 644 ~/.ssh/known_hosts
 
       - name: Set up Nix
@@ -51,6 +55,8 @@ jobs:
 
       - name: Set up Magic Nix Cache
         uses: DeterminateSystems/magic-nix-cache-action@main
+        with:
+          use-flakehub: false
 
       - name: Build ISO
         run: nix run nixpkgs#just -- make-iso ".#${{ github.event.inputs.iso_config }}"
@@ -79,24 +85,45 @@ jobs:
           echo "Resolved ISO: $iso_path"
           echo "Destination key: $object_key"
 
-      - name: Upload ISO to Cloudflare R2
+      - name: Upload ISO via sftp
         env:
-          R2_BUCKET: ${{ secrets.R2_BUCKET }}
-          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: auto
-          AWS_DEFAULT_REGION: auto
+          ISO_UPLOAD_HOST: ${{ secrets.ISO_UPLOAD_HOST }}
+          ISO_UPLOAD_KEY: ${{ secrets.ISO_UPLOAD_KEY }}
+          ISO_UPLOAD_KNOWN_HOSTS: ${{ secrets.ISO_UPLOAD_KNOWN_HOSTS }}
+          ISO_UPLOAD_PORT: "12222"
         run: |
           set -euo pipefail
 
-          : "${R2_BUCKET:?Repository variable R2_BUCKET is required}"
-          : "${R2_ENDPOINT:?Repository variable R2_ENDPOINT is required}"
-          : "${AWS_ACCESS_KEY_ID:?Repository secret R2_ACCESS_KEY_ID is required}"
-          : "${AWS_SECRET_ACCESS_KEY:?Repository secret R2_SECRET_ACCESS_KEY is required}"
+          : "${ISO_UPLOAD_HOST:?Repository secret ISO_UPLOAD_HOST is required}"
+          : "${ISO_UPLOAD_KEY:?Repository secret ISO_UPLOAD_KEY is required}"
+          : "${ISO_UPLOAD_KNOWN_HOSTS:?Repository secret ISO_UPLOAD_KNOWN_HOSTS is required}"
 
-          destination="s3://${R2_BUCKET}/${{ steps.iso.outputs.object_key }}"
-          nix run nixpkgs#awscli2 -- s3 cp \
-            "${{ steps.iso.outputs.iso_path }}" \
-            "$destination" \
-            --endpoint-url "$R2_ENDPOINT"
+          install -m 700 -d ~/.ssh
+          key_path="$HOME/.ssh/id_ed25519_iso_upload"
+          printf '%s\n' "$ISO_UPLOAD_KEY" > "$key_path"
+          chmod 600 "$key_path"
+          printf '%s\n' "$ISO_UPLOAD_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+          file_path="${{ steps.iso.outputs.iso_path }}"
+          file_name="${{ steps.iso.outputs.object_key }}"
+          remote_path="/home/spedon/storage/isohub/${file_name}"
+
+          batch_file="$(mktemp)"
+          trap 'rm -f "$batch_file"' EXIT
+          {
+            printf -- '-rm "%s"\n' "$remote_path"
+            printf -- 'put "%s" "%s"\n' "$file_path" "$remote_path"
+            printf 'bye\n'
+          } > "$batch_file"
+
+          sftp \
+            -P "$ISO_UPLOAD_PORT" \
+            -i "$key_path" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -o UserKnownHostsFile="$HOME/.ssh/known_hosts" \
+            -b "$batch_file" \
+            "isohub@${ISO_UPLOAD_HOST}"
+
+          echo "SFTP upload completed: ${file_name}"
