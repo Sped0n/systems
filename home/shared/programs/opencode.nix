@@ -36,6 +36,9 @@ in
     "opencode/skills".source = (
       config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/raw/opencode/skills"
     );
+    "opencode/codex_header.txt".source = (
+      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/raw/opencode/codex_header.txt"
+    );
   };
 
   age.secrets = lib.mkIf opencode.enable {
