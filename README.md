@@ -143,30 +143,31 @@ swapon --discard --priority 100 /dev/zram0
 
 #### NixOS (Desktop)
 
-1. Download the ISO from [NixOS download page](https://nixos.org/download).
-2. Boot from the ISO.
-3. Skip the graphical installer and open console.
-4. Run `sudo su` to switch to root.
-5. Follow the steps in [setup agenix](#setup-agenix).
-6. Use `ssh-keygen -t ed25519` to generate a temporary key pair.
-7. Add the temporary key to the ssh-agent with `eval '$(ssh-agent -s)' && ssh-add ~/.ssh/id_ed25519`.
-   - This key pair is different from "user key" in agenix setup.
-8. Add the temporary key (pubkey) to the GitHub.
+1. Boot from the custom ISO.
+   - It already includes `firefox`, `just`, and `agenix`.
+2. Use Firefox inside the ISO to log in to GitHub.
+3. Skip the graphical installer, open console, and run `sudo su` to switch to root.
+4. Use `ssh-keygen -t ed25519` to generate a temporary key pair.
+5. Add the temporary key to the ssh-agent with `eval '$(ssh-agent -s)' && ssh-add ~/.ssh/id_ed25519`.
+   - This key pair is different from the "user key" in [setup agenix](#setup-agenix).
+6. Add the temporary key (pubkey) to GitHub.
    - Settings > SSH and GPG keys > New SSH key.
-9. `cd tmp`.
-10. Clone the repo with `git clone git@github.com:Sped0n/systems.git`.
-11. `nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount machines/<configuration name>/disko.nix`
-
-- Change `<configuration name>` to the hostname of the machine you are deploying to.
-
-12. Run `nixos-generate-config --no-filesystems --root /mnt`
-13. Copy over existing `/etc/ssh/ssh_host_*` host keys to the installation (agenix machine key).
+7. `cd /tmp`.
+8. Clone the secrets repo with `git clone git@github.com:Sped0n/secrets.git`.
+9. Add the machine key from `/etc/ssh/ssh_host_ed25519_key.pub` to the secrets repo, then edit the required secrets with `agenix`.
+10. Commit and push the secrets repo update to GitHub.
+11. Clone the repo with `git clone git@github.com:Sped0n/systems.git`.
+12. Run `just us secrets` under `/tmp/systems`.
+13. `nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode destroy,format,mount machines/<configuration name>/disko.nix`
+    - Change `<configuration name>` to the hostname of the machine you are deploying to.
+14. Run `nixos-generate-config --no-filesystems --root /mnt`.
+15. Copy over existing `/etc/ssh/ssh_host_*` host keys to the installation (agenix machine key).
     - `mkdir -m 755 -p /mnt/etc/ssh`.
     - `cp /etc/ssh/ssh_host_ed25519_key /mnt/etc/ssh && cp /etc/ssh/ssh_host_ed25519_key.pub /mnt/etc/ssh`.
     - `cp /etc/ssh/ssh_host_rsa_key /mnt/etc/ssh && cp /etc/ssh/ssh_host_rsa_key.pub /mnt/etc/ssh`.
-14. `mv /tmp/systems /mnt/etc/nixos && cd /mnt/etc/nixos/systems`.
-15. Update `machines/<configuration name>/system.nix` according to `/mnt/etc/nixos/hardware-configuration.nix`.
-16. Run `nixos-install --option extra-substituters https://install.determinate.systems?priority=100 --option extra-trusted-public-keys cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= --flake .#<configuration name>`.
+16. `mv /tmp/systems /mnt/etc/nixos && cd /mnt/etc/nixos/systems`.
+17. Update `machines/<configuration name>/system.nix` according to `/mnt/etc/nixos/hardware-configuration.nix`.
+18. Run `nixos-install --option extra-substituters https://install.determinate.systems?priority=100 --option extra-trusted-public-keys cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= --flake .#<configuration name>`.
     - Change `<configuration name>` to the hostname of the machine you are deploying to.
-17. Reboot (and unmount the ISO).
-18. Remove the temporary key from the GitHub.
+19. Reboot (and unmount the ISO).
+20. Remove the temporary key from GitHub.
