@@ -5,6 +5,7 @@
     "beekeeper-studio"
     "virtualbuddy"
     "httpie-desktop"
+    "balenaetcher"
 
     # utility
     "syncthing-app"
