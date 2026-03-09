@@ -68,7 +68,6 @@
           "121".enabled = true; # Switch to Desktop 4
           "122".enabled = true; # Switch to Desktop 5
 
-          "60".enabled = false; # Select the previous input source
           "61".enabled = false; # Select next source in input menu
 
           "28".enabled = false; # Save picture of screen as a file
