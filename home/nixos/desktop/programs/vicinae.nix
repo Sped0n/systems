@@ -24,7 +24,11 @@
     "org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0" = {
       binding = "<Super>space";
       command = "vicinae toggle";
-      name = "albert";
+      name = "vicinae";
+    };
+
+    "org/gnome/mutter" = {
+      center-new-windows = true;
     };
   };
 }

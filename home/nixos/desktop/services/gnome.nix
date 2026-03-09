@@ -15,12 +15,14 @@
         disable-user-extensions = false;
         enabled-extensions = [
           "appindicatorsupport@rgcjonas.gmail.com"
+          "ding@rastersoft.com"
+          "ubuntu-dock@ubuntu.com"
+          "tiling-assistant@ubuntu.com"
         ];
-        favorite-apps = [
+        favorite-apps = lib.mkDefault [
           "org.gnome.Nautilus.desktop"
           "vivaldi-stable.desktop"
           "com.mitchellh.ghostty.desktop"
-          "teams-for-linux.desktop"
         ];
       };
 
@@ -30,25 +32,23 @@
             "xkb"
             "us"
           ])
-          (mkTuple [
-            "ibus"
-            "rime"
-          ])
         ];
         sources = [
           (mkTuple [
             "xkb"
             "us"
           ])
-          (mkTuple [
-            "ibus"
-            "rime"
-          ])
         ];
         xkb-options = [
-          "grp:caps_toggle"
-          "caps:none"
+          "caps:escape"
         ];
+      };
+
+      "org/gnome/shell/extensions/dash-to-dock" = {
+        dock-fixed = false;
+        dock-position = "BOTTOM";
+        extend-height = false;
+        multi-monitor = true;
       };
 
       "org/gnome/desktop/wm/keybindings" = {

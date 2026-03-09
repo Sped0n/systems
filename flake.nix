@@ -108,6 +108,33 @@
           overlays = overlaysList;
         };
 
+      mkHomeConfiguration =
+        {
+          system,
+          username,
+          homeDirectory,
+          stateVersion,
+          modules,
+        }:
+        home-manager.lib.homeManagerConfiguration {
+          pkgs = import nixpkgs {
+            inherit system;
+            config.allowUnfree = true;
+            overlays = overlaysList;
+          };
+          extraSpecialArgs = (genSpecialArgs { inherit system; }) // {
+            pkgs-unstable = pkgsUnstableFor system;
+          };
+          modules = [
+            {
+              home = {
+                inherit username homeDirectory stateVersion;
+              };
+            }
+          ]
+          ++ modules;
+        };
+
       commonNixosModules = [
         nixpkgsModule
         determinate.nixosModules.default
@@ -158,14 +185,6 @@
             determinate.nixosModules.default
             ./machines/iso
           ];
-        };
-
-        "esp-0" = nixpkgs.lib.nixosSystem rec {
-          system = "x86_64-linux";
-          specialArgs = (genSpecialArgs { inherit system; }) // {
-            pkgs-unstable = pkgsUnstableFor system;
-          };
-          modules = commonNixosModules ++ [ ./machines/esp-0 ];
         };
 
         "srv-de-0" = nixpkgs.lib.nixosSystem rec {
@@ -222,6 +241,16 @@
             pkgs-unstable = pkgsUnstableFor system;
           };
           modules = commonNixosModules ++ [ ./machines/srv-us-0 ];
+        };
+      };
+
+      homeConfigurations = {
+        "esp-0" = mkHomeConfiguration {
+          system = "x86_64-linux";
+          username = "spedon";
+          homeDirectory = "/home/spedon";
+          stateVersion = "25.11";
+          modules = [ ./machines/esp-0/home ];
         };
       };
     };

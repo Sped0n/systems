@@ -1,12 +1,12 @@
-{ functions, vars, ... }:
+{ functions, ... }:
 {
-  home-manager.users.${vars.username} = {
-    imports = [
-      (functions.fromRoot "/home/nixos/desktop")
+  imports = [
+    (functions.fromRoot "/home/nixos/desktop")
 
-      ./programs
+    ./programs
 
-      ./packages.nix
-    ];
-  };
+    ./gc.nix
+    ./packages.nix
+    ./ubuntu.nix
+  ];
 }

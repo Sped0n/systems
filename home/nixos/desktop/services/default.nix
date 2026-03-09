@@ -1,6 +1,8 @@
+{ ... }:
 {
   imports = [
+    ./cjk.nix
     ./gnome.nix
-    ./misc.nix
+    ./kbd.nix
   ];
 }

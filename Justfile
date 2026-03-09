@@ -153,6 +153,11 @@ make-iso flake:
 switch:
     @just _switch
 
+# Switch a standalone home-manager configuration.
+hs flake:
+    @echo "Running: home-manager switch --flake .#{{flake}}"
+    @home-manager switch --flake .#{{flake}}
+
 # =============================================================================
 # Generation Management
 # =============================================================================

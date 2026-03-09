@@ -1,7 +1,7 @@
 {
   imports = [
     ./git.nix
-    ./gnome.nix
+    ./home-manager.nix
     ./neovim.nix
     ./opencode.nix
     ./ssh.nix
