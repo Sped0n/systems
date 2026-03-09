@@ -7,7 +7,7 @@
     "surge"
 
     # utility
-    "stats"
+    "istat-menus"
     "mac-mouse-fix"
     "localsend"
     "rectangle"
