@@ -7,5 +7,6 @@
     ./opencode.nix
     ./ssh.nix
     ./uv.nix
+    ./zsh.nix
   ];
 }
