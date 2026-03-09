@@ -11,9 +11,9 @@ let
 
   mkSigningKeySecret = fileName: {
     file = "${secrets}/ages/${fileName}";
-    owner = "root";
     mode = "0400";
   };
+
   mkGpgImportScript =
     {
       name,
@@ -22,7 +22,7 @@ let
     }:
     pkgs.writeShellScriptBin name ''
       #!${pkgs.bash}/bin/bash
-      set -e
+      set -euo pipefail
 
       if [ "$(id -u)" -eq 0 ]; then
         ${pkgs.coreutils}/bin/echo "Error: Do not run this script with sudo." >&2
@@ -31,7 +31,7 @@ let
 
       KEY_FILE="${keyPath}"
       ${pkgs.coreutils}/bin/echo "Importing ${keyLabel} signing key from ''${KEY_FILE}..."
-      sudo ${pkgs.coreutils}/bin/cat "''${KEY_FILE}" | ${pkgs.gnupg}/bin/gpg --import
+      ${pkgs.coreutils}/bin/cat "''${KEY_FILE}" | ${pkgs.gnupg}/bin/gpg --import
       ${pkgs.coreutils}/bin/echo "Key import successful."
     '';
 in
@@ -42,30 +42,28 @@ in
   };
 
   config = {
-    age.secrets = lib.mkMerge [
-      (lib.mkIf githubCfg.enable {
+    age.secrets =
+      lib.optionalAttrs githubCfg.enable {
         "github-signing-key" = mkSigningKeySecret "github-signing-key.age";
-      })
-      (lib.mkIf workCfg.enable {
+      }
+      // lib.optionalAttrs workCfg.enable {
         "espressif-signing-key" = mkSigningKeySecret "espressif-signing-key.age";
-      })
-    ];
+      };
 
-    environment.systemPackages = lib.mkMerge [
-      (lib.mkIf githubCfg.enable [
+    home.packages =
+      lib.optionals githubCfg.enable [
         (mkGpgImportScript {
           name = "gpg-import-github-key";
           keyPath = config.age.secrets."github-signing-key".path;
           keyLabel = "GitHub";
         })
-      ])
-      (lib.mkIf workCfg.enable [
+      ]
+      ++ lib.optionals workCfg.enable [
         (mkGpgImportScript {
           name = "gpg-import-work-key";
           keyPath = config.age.secrets."espressif-signing-key".path;
           keyLabel = "work";
         })
-      ])
-    ];
+      ];
   };
 }

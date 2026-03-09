@@ -7,6 +7,7 @@
     ./direnv.nix
     ./eza.nix
     ./fastfetch.nix
+    ./gpg-import.nix
     ./ghostty.nix
     ./git.nix
     ./neovim.nix

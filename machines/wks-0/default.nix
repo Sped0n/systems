@@ -8,6 +8,5 @@
 
     ./determinate.nix
     ./networking.nix
-    ./programs.nix
   ];
 }
