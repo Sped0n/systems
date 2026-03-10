@@ -1,20 +1,12 @@
+{ lib, ... }:
 {
-  lib,
-  pkgs,
-  ...
-}:
-{
-  home.packages = with pkgs; [
-    gnomeExtensions.appindicator
-  ];
-
   dconf = {
     enable = true;
     settings = {
       "org/gnome/shell" = {
         disable-user-extensions = false;
         enabled-extensions = [
-          "appindicatorsupport@rgcjonas.gmail.com"
+          "ubuntu-appindicators@ubuntu.com"
           "ding@rastersoft.com"
           "ubuntu-dock@ubuntu.com"
           "tiling-assistant@ubuntu.com"

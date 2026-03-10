@@ -1,4 +1,4 @@
-{ pkgs, pkgs-unstable, ... }:
+{ pkgs-unstable, ... }:
 {
   programs.vicinae = {
     enable = true;
@@ -6,16 +6,14 @@
     systemd.enable = true;
   };
 
-  home.packages = with pkgs; [
+  home.packages = with pkgs-unstable; [
     gnomeExtensions.vicinae
   ];
 
   dconf.settings = {
-    "org/gnome/shell" = {
-      enabled-extensions = [
-        "vicinae@dagimg-dot"
-      ];
-    };
+    "org/gnome/shell".enabled-extensions = [
+      "vicinae@dagimg-dot"
+    ];
 
     "org/gnome/settings-daemon/plugins/media-keys".custom-keybindings = [
       "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
