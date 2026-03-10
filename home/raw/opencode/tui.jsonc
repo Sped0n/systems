@@ -6,5 +6,11 @@
   "keybinds": {
     "input_submit": "shift+return,ctrl+return,alt+return",
     "input_newline": "return",
+    "input_select_line_home": "alt+a",
+    "input_select_line_end": "alt+e",
+    "input_visual_line_home": "none",
+    "input_visual_line_end": "none",
+    "input_delete_word_forward": "none",
+    "input_delete_line": "alt+d",
   },
 }
