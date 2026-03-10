@@ -5,6 +5,7 @@
       coreutils
       findutils
       diffutils
+      nvd
       inetutils
       gnused
       gnugrep

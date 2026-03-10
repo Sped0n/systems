@@ -4,7 +4,6 @@
   ...
 }:
 {
-  environment.systemPackages = with pkgs; [ nvd ];
   system.activationScripts.preActivation.text = ''
     incoming="''${systemConfig-}"
     if [[ -e /run/current-system && -e "''${incoming-}" ]]; then

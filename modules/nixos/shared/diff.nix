@@ -1,6 +1,5 @@
 { config, pkgs, ... }:
 {
-  environment.systemPackages = with pkgs; [ nvd ];
   system.preSwitchChecks.update-diff = ''
     incoming="''${1-}"
     if [[ -e /run/current-system && -e "''${incoming-}" ]]; then

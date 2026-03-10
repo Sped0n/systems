@@ -23,6 +23,7 @@ flakes_all := flake_shared + " nix-darwin nix-homebrew disko"
 current_system := "/run/current-system"
 result_link := "./result"
 system_profile := "/nix/var/nix/profiles/system"
+hm_switch_diff_target := "esp-0"
 
 # =============================================================================
 # Default Recipe
@@ -68,21 +69,76 @@ _build_with_diff:
     @echo "Removing {{result_link}} symlink..."
     @unlink {{result_link}}
 
+# Find the active standalone Home Manager profile, if it exists.
+_hm_find_profile:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    for profile in \
+        "$HOME/.local/state/nix/profiles/home-manager" \
+        "/nix/var/nix/profiles/per-user/$USER/home-manager"
+    do
+        if [ -L "$profile" ]; then
+            printf '%s\n' "$profile"
+            exit 0
+        fi
+    done
+
+# Print a diff between the active Home Manager profile and the build result.
+_hm_show_diff:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if ! command -v nvd >/dev/null 2>&1; then
+        echo "Skipping diff: 'nvd' is not available in PATH."
+        exit 0
+    fi
+
+    current_profile="$({{just_executable()}} _hm_find_profile || true)"
+    if [ -z "$current_profile" ]; then
+        echo "Skipping diff: no active Home Manager profile found."
+        exit 0
+    fi
+
+    if [ ! -e "{{result_link}}" ]; then
+        echo "Skipping diff: {{result_link}} does not exist."
+        exit 0
+    fi
+
+    echo "--------------------------------------------------"
+    echo "Comparing..."
+    nvd diff "$current_profile" "{{result_link}}"
+    echo "--------------------------------------------------"
+
+# Build the standalone Home Manager configuration and show closure changes.
+_hm_build_with_diff flake:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    echo "Running: home-manager build --flake .#{{flake}}"
+    home-manager build --flake .#{{flake}}
+    {{just_executable()}} _hm_show_diff
+
+    if [ -L "{{result_link}}" ] || [ -e "{{result_link}}" ]; then
+        echo "Removing {{result_link}} symlink..."
+        unlink "{{result_link}}"
+    fi
+
 # Apply the built system configuration.
 _switch:
     @echo "Running: sudo {{rebuild_cmd}} switch --flake ."
     @sudo {{rebuild_cmd}} switch --flake .
 
 # Validate that the rollback generation argument is present and numeric.
-_validate_generation gen_num:
+_validate_generation generation_id:
     #!/bin/sh -e
-    if [ -z "{{gen_num}}" ]; then
+    if [ -z "{{generation_id}}" ]; then
         echo "Error: Generation number argument is required."
         echo "Usage: just rollback <generation_number>"
         exit 1
     fi
-    if ! echo "{{gen_num}}" | grep -qE '^[0-9]+$'; then
-        echo "Error: Invalid input: '{{gen_num}}' is not a valid generation number."
+    if ! echo "{{generation_id}}" | grep -qE '^[0-9]+$'; then
+        echo "Error: Invalid input: '{{generation_id}}' is not a valid generation."
         exit 1
     fi
 
@@ -153,10 +209,21 @@ make-iso flake:
 switch:
     @just _switch
 
-# Switch a standalone home-manager configuration.
-hs flake:
-    @echo "Running: home-manager switch --flake .#{{flake}}"
-    @home-manager switch --flake .#{{flake}}
+# Build a standalone Home Manager configuration and show closure changes.
+hm-build flake:
+    @just _hm_build_with_diff {{flake}}
+
+# Switch a standalone Home Manager configuration.
+hm-switch flake:
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    if [ "{{flake}}" = "{{hm_switch_diff_target}}" ]; then
+        {{just_executable()}} _hm_build_with_diff "{{flake}}"
+    fi
+
+    echo "Running: home-manager switch --flake .#{{flake}}"
+    home-manager switch --flake .#{{flake}}
 
 # =============================================================================
 # Generation Management
@@ -168,36 +235,46 @@ list-generations:
     @echo "Available {{os}} generations (requires sudo):"
     @sudo {{rebuild_cmd}} {{ if os() == "macos" { "--list-generations" } else { "list-generations" } }}
 
+# List available standalone Home Manager generations.
+hm-list-generations:
+    @echo "Available Home Manager generations:"
+    @home-manager generations
+
 # Roll back to the specified system generation.
-rollback gen_num:
-    @just _validate_generation {{gen_num}}
+rollback generation_id:
+    @just _validate_generation {{generation_id}}
     @just _check_rebuild_prereqs
-    @just _rollback_{{os}} {{gen_num}}
+    @just _rollback_{{os}} {{generation_id}}
+
+# Roll back the standalone Home Manager configuration.
+hm-rollback:
+    @echo "Running: home-manager switch --rollback"
+    @home-manager switch --rollback
 
 # Perform rollback for nix-darwin systems.
 [macos]
-_rollback_darwin gen_num:
+_rollback_darwin generation_id:
     #!/bin/sh -e
-    PROFILE_PATH="{{system_profile}}-{{gen_num}}-link"
+    PROFILE_PATH="{{system_profile}}-{{generation_id}}-link"
     if ! sudo test -L "$PROFILE_PATH"; then
-        echo "Error: Generation {{gen_num}} does not exist."
+        echo "Error: Generation {{generation_id}} does not exist."
         exit 1
     fi
-    echo "Rolling back to generation {{gen_num}}..."
-    sudo darwin-rebuild switch -G "{{gen_num}}"
+    echo "Rolling back to generation {{generation_id}}..."
+    sudo darwin-rebuild switch -G "{{generation_id}}"
     echo "Rollback complete!"
 
 # Perform rollback for NixOS systems.
 [linux]
-_rollback_linux gen_num:
+_rollback_linux generation_id:
     #!/bin/sh -e
-    PROFILE_PATH="{{system_profile}}-{{gen_num}}-link"
+    PROFILE_PATH="{{system_profile}}-{{generation_id}}-link"
     if ! sudo test -L "$PROFILE_PATH"; then
-        echo "Error: Generation {{gen_num}} does not exist."
+        echo "Error: Generation {{generation_id}} does not exist."
         exit 1
     fi
-    echo "Rolling back to generation {{gen_num}}..."
-    sudo nix-env --switch-generation "{{gen_num}}" -p {{system_profile}}
+    echo "Rolling back to generation {{generation_id}}..."
+    sudo nix-env --switch-generation "{{generation_id}}" -p {{system_profile}}
     sudo {{system_profile}}/bin/switch-to-configuration switch
     echo "Rollback complete!"
 
@@ -305,3 +382,7 @@ alias ufa := update-flakes-all
 alias us := update-specific
 alias lg := list-generations
 alias rb := rollback
+alias hs := hm-switch
+alias hb := hm-build
+alias hlg := hm-list-generations
+alias hrb := hm-rollback
