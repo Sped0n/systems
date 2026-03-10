@@ -15,7 +15,7 @@
           "options": {
             "provider": {
               "sort": "throughput",
-              "only": ["fireworks", "inceptron"],
+              "only": ["fireworks", "inceptron", "moonshotai", "novita"],
             },
             "reasoning": {
               "enabled": true,
