@@ -86,6 +86,7 @@ in
       bind l select-pane -R
       bind k select-pane -U
       bind j select-pane -D
+      bind v copy-mode
 
       # --- Easy Reload ------------------------------------------------------
       bind r source-file ~/.config/tmux/tmux.conf \; display "Config reloaded!"
