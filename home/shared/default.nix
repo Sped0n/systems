@@ -7,7 +7,7 @@
     ./determinate.nix
     ./gc.nix
     ./packages.nix
+    ./services.nix
+    ./xdg.nix
   ];
-
-  xdg.enable = true;
 }
