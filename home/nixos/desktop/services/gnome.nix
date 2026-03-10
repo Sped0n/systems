@@ -44,6 +44,10 @@
         ];
       };
 
+      "org/gnome/desktop/session" = with lib.hm.gvariant; {
+        idle-delay = mkUint32 1800;
+      };
+
       "org/gnome/shell/extensions/dash-to-dock" = {
         dock-fixed = false;
         dock-position = "BOTTOM";
