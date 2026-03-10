@@ -95,8 +95,8 @@ in
       bind f display-popup -E -w 60% -h 70% "${tmuxPaneSearcher}/bin/tmux-pane-searcher"
 
       # --- Modifier Keys ----------------------------------------------------
-      set -s extended-keys off
-      bind-key -T root C-\; send-keys Escape "[59;5u"
+      set -s extended-keys on
+      set -as terminal-features 'xterm*:extkeys
 
       # --- VI ---------------------------------------------------------------
       unbind -T copy-mode-vi MouseDragEnd1Pane
