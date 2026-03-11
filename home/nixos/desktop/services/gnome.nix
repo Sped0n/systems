@@ -53,6 +53,12 @@
         switch-input-source = [ ];
         switch-input-source-backward = [ ];
       };
+
+      "org/gnome/shell/keybindings" = {
+        show-screenshot-ui = [ "F8" ];
+        screenshot-window = [ ];
+        screenshot = [ ];
+      };
     };
   };
 }
