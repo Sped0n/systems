@@ -48,6 +48,8 @@
       };
 
       "org/gnome/desktop/wm/keybindings" = {
+        switch-to-workspace-left = [ ];
+        switch-to-workspace-right = [ ];
         switch-input-source = [ ];
         switch-input-source-backward = [ ];
       };
