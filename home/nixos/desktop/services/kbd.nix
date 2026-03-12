@@ -1,9 +1,18 @@
 { pkgs, ... }:
 {
-  home.keyboard = {
-    layout = "us";
-    variant = "";
+  home = {
+    keyboard = {
+      layout = "us";
+      variant = "";
+    };
+    packages = with pkgs; [
+      gnomeExtensions.kimpanel
+    ];
   };
+
+  dconf.settings."org/gnome/shell".enabled-extensions = [
+    "kimpanel@kde.org"
+  ];
 
   i18n.inputMethod = {
     enable = true;
@@ -17,7 +26,7 @@
       ];
       settings = {
         globalOptions = {
-          "Hotkey/TriggerKeys"."0" = "Control+space";
+          "Hotkey/TriggerKeys"."0" = "Menu";
           Behavior = {
             ActiveByDefault = false;
             resetStateWhenFocusIn = "No";
@@ -54,8 +63,4 @@
       };
     };
   };
-
-  dconf.settings."org/gnome/shell".enabled-extensions = [
-    "kimpanel@kde.org"
-  ];
 }

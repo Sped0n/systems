@@ -32,7 +32,7 @@
           ])
         ];
         xkb-options = [
-          "caps:escape"
+          "caps:menu"
         ];
       };
 
