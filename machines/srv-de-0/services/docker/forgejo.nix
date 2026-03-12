@@ -25,6 +25,7 @@
           -p 12223 \
           -o StrictHostKeyChecking=no \
           -o UserKnownHostsFile=/dev/null \
+          -o LogLevel=ERROR \
           git@127.0.0.1 "SSH_ORIGINAL_COMMAND=\"$SSH_ORIGINAL_COMMAND\" $@"
       '')}/bin/forgejo-shell";
     };
@@ -40,6 +41,7 @@
         -p 12223 \
         -o StrictHostKeyChecking=no \
         -o UserKnownHostsFile=/dev/null \
+        -o LogLevel=ERROR \
         git@127.0.0.1 \
         /usr/local/bin/gitea keys -e git -u "$1" -t "$2" -k "$3"
     '';
