@@ -9,13 +9,14 @@
     "openrouter": {
       "options": {
         "baseURL": "https://aiproxy.sped0n.com/openrouter",
+        "setCacheKey": true,
       },
       "models": {
         "moonshotai/kimi-k2.5": {
           "options": {
             "provider": {
               "sort": "throughput",
-              "only": ["fireworks", "inceptron", "moonshotai", "novita"],
+              "only": ["fireworks", "inceptron", "moonshotai"],
             },
             "reasoning": {
               "enabled": true,
@@ -48,6 +49,7 @@
       "options": {
         "baseURL": "https://co.yes.vg/v1",
         "apiKey": "{env:YESCODE_API_KEY}",
+        "setCacheKey": true,
       },
       "models": {
         "gpt-5.4": {

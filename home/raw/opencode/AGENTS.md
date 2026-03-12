@@ -375,7 +375,7 @@ If a search is ambiguous, prefer:
 
 ### 10.2 Web search & URL reading (via Jina MCP server)
 
-Built-in `websearch` / `webfetch` are not available. When you need information from the internet, use the **Jina MCP server** (`jina-mcp-server`) instead.
+When you need information from the internet, use the **Jina MCP server** (`jina-mcp-server`) instead.
 
 Available tools:
 
@@ -390,3 +390,20 @@ Usage rules:
 - Use `search_web` to discover sources, then `read_url` to quote/ground details.
 - Never reveal or print the Jina API key; authentication is handled via `JINA_API_KEY` in the environment.
 - When you use web-derived facts, include the source URLs in the answer.
+
+### 10.3 CLI HTTP requests
+
+You are operating in an environment with `httpie`, and there is an agent skill for it (same name: `httpie-cli`).
+
+For direct CLI HTTP requests, API testing, and readable command examples, prefer HTTPie (`http`) over `curl`.
+
+Use the `httpie-cli` skill when you need request-item syntax, auth/session patterns, file uploads, downloads, or response inspection guidance.
+
+### 10.4 File system and content operations
+
+Prefer internal tools when they cover the task instead of shell equivalents.
+
+- Use `glob` for file pattern matching instead of `bash` with `find`, `fd`, or ad hoc listing commands where practical.
+- Use `grep` for content search instead of `bash` with `grep` or `rg`.
+- Use `read` for reading files or directories instead of `bash` with `cat`, `head`, or `tail`.
+- Use `bash` when the operation is genuinely terminal-native or no internal tool fits the task.
