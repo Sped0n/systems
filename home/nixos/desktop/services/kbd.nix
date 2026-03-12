@@ -20,7 +20,7 @@
     fcitx5 = {
       waylandFrontend = true;
       addons = with pkgs; [
-        rime-data
+        rime-ice
         fcitx5-gtk
         fcitx5-rime
       ];
