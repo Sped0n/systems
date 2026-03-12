@@ -2,22 +2,21 @@
 {
   home.packages =
     (with pkgs; [
+      bfg-repo-cleaner
+      cdecl
       docker
       minicom
-      cdecl
-      bfg-repo-cleaner
 
+      ffmpeg
+      imagemagick
+      pandoc
+      restic
       smartmontools
     ])
     ++ (with pkgs-unstable; [
       repomix
       hyperfine
       ast-grep
-
-      restic
-      pandoc
-
-      ffmpeg
-      imagemagick
+      httpie
     ]);
 }
