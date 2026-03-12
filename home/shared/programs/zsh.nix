@@ -7,7 +7,11 @@
 {
   programs.zsh = {
     enable = true;
-    completionInit = "autoload -Uz compinit && compinit";
+    completionInit = ''
+      autoload -Uz compinit bashcompinit
+      compinit
+      bashcompinit
+    '';
     enableCompletion = true;
     autosuggestion = {
       enable = true;
