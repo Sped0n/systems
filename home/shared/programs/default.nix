@@ -8,6 +8,7 @@
     ./eza.nix
     ./fastfetch.nix
     ./gpg-import.nix
+    ./gh.nix
     ./ghostty.nix
     ./git.nix
     ./neovim.nix

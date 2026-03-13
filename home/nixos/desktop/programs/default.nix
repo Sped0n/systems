@@ -1,6 +1,7 @@
 { ... }:
 {
   imports = [
+    ./gh.nix
     ./ghostty.nix
     ./nixos-deploy.nix
     ./vicinae.nix
