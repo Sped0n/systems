@@ -9,7 +9,7 @@
   disabledModules = [ "profiles/base.nix" ];
 
   imports = [
-    (functions.fromRoot "/modules/shared/nix.nix")
+    (functions.fromRoot "/modules/shared/nix")
     (modulesPath + "/installer/cd-dvd/installation-cd-graphical-gnome.nix")
 
     ./profiles-base-no-vim-and-zfs.nix

@@ -1,8 +1,15 @@
-{ pkgs, vars, ... }:
 {
-  nix = {
-    channel.enable = false;
-    settings = {
+  config,
+  lib,
+  vars,
+  ...
+}:
+let
+  standalone = config.services.standalone;
+in
+{
+  config = lib.mkIf standalone.enable {
+    nix.settings = {
       trusted-users = [
         "${vars.username}"
         "@admin"
@@ -33,8 +40,4 @@
       ];
     };
   };
-
-  environment.systemPackages = with pkgs; [
-    nixos-rebuild-ng
-  ];
 }

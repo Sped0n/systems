@@ -5,7 +5,6 @@
 
     ./programs
 
-    ./gc.nix
     ./packages.nix
     ./ubuntu.nix
   ];
