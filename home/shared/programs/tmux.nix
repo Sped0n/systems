@@ -96,7 +96,7 @@ in
 
       # --- Modifier Keys ----------------------------------------------------
       set -s extended-keys on
-      set -as terminal-features 'xterm*:extkeys
+      set -as terminal-features 'xterm*:extkeys'
 
       # --- VI ---------------------------------------------------------------
       unbind -T copy-mode-vi MouseDragEnd1Pane
