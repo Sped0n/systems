@@ -3,6 +3,7 @@
   functions,
   lib,
   pkgs,
+  pkgs-unstable,
   vars,
   ...
 }:
@@ -42,9 +43,7 @@ in
         StateDirectoryMode = "0750";
         WorkingDirectory = "/var/lib/diun";
 
-        ExecStart = "${
-          pkgs.callPackage (functions.fromRoot "/packages/diun.nix") { }
-        }/bin/diun serve --config ${
+        ExecStart = "${pkgs-unstable.diun}/bin/diun serve --config ${
           (yaml.generate "diun.yml" {
             db.path = "/var/lib/diun/diun.db";
             watch.schedule = "0 8 * * *";
