@@ -158,9 +158,6 @@ Corresponding strategies:
 
 ## 4 · Language and coding style
 
-- Explanations, discussion, analysis, summaries: use **Simplified Chinese**.
-- All code, comments, identifiers (variable names, function names, type names, etc.), commit messages, and content inside Markdown code blocks: use **English only**; no Chinese characters are allowed.
-- In Markdown documents: prose explanations use Chinese; everything inside code blocks uses English.
 - Naming and formatting:
   - Rust: `snake_case`; module and crate naming follow community conventions;
   - Go: exported identifiers start with an uppercase letter; follow Go style;
