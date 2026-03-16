@@ -12,6 +12,11 @@
       shell-integration = "zsh";
       macos-option-as-alt = true;
       mouse-hide-while-typing = true;
+      working-directory = "inherit";
+      window-inherit-working-directory = false;
+      tab-inherit-working-directory = false;
+      split-inherit-working-directory = true;
+      clipboard-read = "allow";
 
       font-family = lib.mkDefault "Lilex";
       font-size = lib.mkDefault 14;
@@ -29,12 +34,8 @@
       cursor-style = "bar";
       cursor-style-blink = false;
       macos-titlebar-style = "tabs";
-
       window-padding-x = 9;
       window-padding-y = 9;
-      window-inherit-working-directory = false;
-
-      clipboard-read = "allow";
 
       keybind = [
         "ctrl+shift+\\=new_split:right"
@@ -53,32 +54,30 @@
         "ctrl+shift+z=toggle_split_zoom"
       ];
     };
-    themes = {
-      kanagawa-dragon = {
-        palette = [
-          "0=#0d0c0c"
-          "1=#c4746e"
-          "2=#8a9a7b"
-          "3=#c4b28a"
-          "4=#8ba4b0"
-          "5=#a292a3"
-          "6=#8ea4a2"
-          "7=#c8c093"
-          "8=#a6a69c"
-          "9=#e46876"
-          "10=#87a987"
-          "11=#e6c384"
-          "12=#7fb4ca"
-          "13=#938aa9"
-          "14=#7aa89f"
-          "15=#c5c9c5"
-        ];
-        background = "181616";
-        foreground = "c5c9c5";
-        cursor-color = "c8c093";
-        selection-background = "2d4f67";
-        selection-foreground = "c8c093";
-      };
+    themes.kanagawa-dragon = {
+      palette = [
+        "0=#0d0c0c"
+        "1=#c4746e"
+        "2=#8a9a7b"
+        "3=#c4b28a"
+        "4=#8ba4b0"
+        "5=#a292a3"
+        "6=#8ea4a2"
+        "7=#c8c093"
+        "8=#a6a69c"
+        "9=#e46876"
+        "10=#87a987"
+        "11=#e6c384"
+        "12=#7fb4ca"
+        "13=#938aa9"
+        "14=#7aa89f"
+        "15=#c5c9c5"
+      ];
+      background = "181616";
+      foreground = "c5c9c5";
+      cursor-color = "c8c093";
+      selection-background = "2d4f67";
+      selection-foreground = "c8c093";
     };
   };
 
