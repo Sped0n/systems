@@ -14,11 +14,6 @@
         "https://gist.github.com"
       ];
     };
-    hosts."github.com" = {
-      git_protocol = "https";
-      users.Sped0n = { };
-      user = "Sped0n";
-    };
     settings = {
       git_protocol = "https";
       spinner = "enabled";
