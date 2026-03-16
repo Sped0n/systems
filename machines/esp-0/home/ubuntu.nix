@@ -1,9 +1,5 @@
-{ functions, ... }:
+{ ... }:
 {
-  disabledModules = [
-    (functions.fromRoot "/home/shared/gc.nix")
-  ];
-
   services.standalone.enable = true;
 
   # bootstrap
