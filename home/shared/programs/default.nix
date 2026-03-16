@@ -13,7 +13,7 @@
     ./git.nix
     ./neovim.nix
     ./nixos-deploy.nix
-    ./opencode.nix
+    ./opencode
     ./ssh.nix
     ./starship.nix
     ./tmux.nix

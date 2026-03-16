@@ -1,3 +1,7 @@
+# misc
 result*
 .opencode
 repomix*
+
+# python
+__pycache__

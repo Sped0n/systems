@@ -10,14 +10,9 @@ let
   opencode = config.programs.opencode;
 in
 {
-  programs = {
-    opencode = {
-      enable = lib.mkDefault false;
-      package = pkgs.llm-agents.opencode;
-    };
-    zsh.shellAliases = lib.mkIf opencode.enable {
-      ocommit = "oc-ephemeral-run --agent commit-message-writer \"STAGED CHANGE ONLY\" 2>/dev/null && git commit -s -e -F \"$(git rev-parse --git-path COMMIT_EDITMSG)\"";
-    };
+  programs.opencode = {
+    enable = lib.mkDefault false;
+    package = pkgs.llm-agents.opencode;
   };
 
   xdg.configFile = lib.mkIf opencode.enable {
@@ -152,6 +147,10 @@ in
       fi
 
       exit "$oc_status"
+    '')
+
+    (pkgs.writeShellScriptBin "ocommit" ''
+      exec ${lib.getExe pkgs.python3} "${./ocommit.py}" "$@"
     '')
   ];
 }
