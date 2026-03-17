@@ -19,6 +19,7 @@
       ast-grep
       httpie
 
+      httpie-desktop
       bitwarden-desktop
       obsidian
       gimp3-with-plugins
