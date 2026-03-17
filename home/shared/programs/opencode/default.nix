@@ -31,9 +31,6 @@ in
     "opencode/skills".source = (
       config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/raw/opencode/skills"
     );
-    "opencode/plugin".source = (
-      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/raw/opencode/plugin"
-    );
     "opencode/codex_header.txt".source = (
       config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/raw/opencode/codex_header.txt"
     );

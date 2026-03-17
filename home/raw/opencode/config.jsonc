@@ -8,7 +8,7 @@
   "provider": {
     "openrouter": {
       "options": {
-        // "baseURL": "https://aiproxy.sped0n.com/openrouter",
+        "baseURL": "https://aiproxy.sped0n.com/openrouter",
         "setCacheKey": true,
       },
       "models": {
@@ -47,8 +47,8 @@
       "npm": "@ai-sdk/openai",
       "name": "IAnepO",
       "options": {
-        // "baseURL": "https://api.ikuncode.cc/v1",
-        "baseURL": "https://co.yes.vg/v1",
+        "baseURL": "https://aiproxy.sped0n.com/yescode",
+        "apiKey": "{env:IANEPO_API_KEY}",
         "setCacheKey": true,
       },
       "models": {
