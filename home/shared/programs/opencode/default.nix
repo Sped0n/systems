@@ -31,6 +31,9 @@ in
     "opencode/skills".source = (
       config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/raw/opencode/skills"
     );
+    "opencode/plugin".source = (
+      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/raw/opencode/plugin"
+    );
     "opencode/codex_header.txt".source = (
       config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/home/raw/opencode/codex_header.txt"
     );
@@ -41,7 +44,7 @@ in
       file = "${secrets}/ages/openrouter-api-key.age";
       mode = "0400";
     };
-    "yescode-api-key" = {
+    "ianepo-api-key" = {
       file = "${secrets}/ages/yescode-api-key.age";
       mode = "0400";
     };
@@ -59,7 +62,7 @@ in
       export OPENROUTER_API_KEY="$(${pkgs.coreutils}/bin/cat ${
         config.age.secrets."openrouter-api-key".path
       })"
-      export YESCODE_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."yescode-api-key".path})"
+      export IANEPO_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."ianepo-api-key".path})"
       export JINA_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."jina-api-key".path})"
       exec ${lib.getExe opencode.package} "$@"
     '')

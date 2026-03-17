@@ -8,7 +8,7 @@
   "provider": {
     "openrouter": {
       "options": {
-        "baseURL": "https://aiproxy.sped0n.com/openrouter",
+        // "baseURL": "https://aiproxy.sped0n.com/openrouter",
         "setCacheKey": true,
       },
       "models": {
@@ -43,21 +43,21 @@
         },
       },
     },
-    "yescode": {
+    "ianepo": {
       "npm": "@ai-sdk/openai",
-      "name": "YesCode",
+      "name": "IAnepO",
       "options": {
+        // "baseURL": "https://api.ikuncode.cc/v1",
         "baseURL": "https://co.yes.vg/v1",
-        "apiKey": "{env:YESCODE_API_KEY}",
         "setCacheKey": true,
       },
       "models": {
         "gpt-5.4": {
           "name": "GPT-5.4",
           "cost": {
-            "input": 1.5,
-            "output": 9,
-            "cache_read": 0.15,
+            "input": 0.5,
+            "output": 3,
+            "cache_read": 0.05,
           },
           "limit": {
             "context": 1050000,
@@ -85,7 +85,7 @@
   // agents
   "agent": {
     "plan": {
-      "model": "yescode/gpt-5.4",
+      "model": "ianepo/gpt-5.4",
       "temperature": 0.1,
       "permission": {
         "skill": {
@@ -95,7 +95,7 @@
       },
     },
     "build": {
-      "model": "yescode/gpt-5.4",
+      "model": "ianepo/gpt-5.4",
       "temperature": 0.3,
       "permission": {
         "bash": {
@@ -127,7 +127,7 @@
       },
     },
     "ask": {
-      "model": "yescode/gpt-5.4",
+      "model": "ianepo/gpt-5.4",
     },
     "commit-message-writer": {
       "model": "openrouter/minimax/minimax-m2.5",
