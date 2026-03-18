@@ -1,8 +1,6 @@
-{ ... }:
+{ inputs, ... }:
 final: prev: {
-  zap-cli-bin = final.callPackage ../packages/zap-cli-bin.nix { };
-
-  chip-host-tools = final.callPackage ../packages/chip-host-tools.nix {
-    callPackage = final.callPackage;
-  };
+  zap-cli-bin = inputs.chip-host-tools.packages.${final.stdenv.hostPlatform.system}.zap-cli-bin;
+  chip-host-tools =
+    inputs.chip-host-tools.packages.${final.stdenv.hostPlatform.system}.chip-host-tools;
 }
