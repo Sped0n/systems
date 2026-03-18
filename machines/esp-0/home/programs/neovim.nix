@@ -10,5 +10,8 @@
 
     # zig
     zls_0_15
+
+    # javascript
+    vtsls
   ];
 }
