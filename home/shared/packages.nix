@@ -41,7 +41,7 @@
 
       nali
       nexttrace
-
       croc
+      cachix
     ]);
 }
