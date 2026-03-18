@@ -30,7 +30,7 @@
             },
           },
         },
-        "minimax/minimax-m2.5": {
+        "minimax/minimax-m2.7": {
           "options": {
             "provider": {
               "sort": "throughput",
@@ -130,10 +130,10 @@
       "model": "ianepo/gpt-5.4",
     },
     "commit-message-writer": {
-      "model": "openrouter/minimax/minimax-m2.5",
+      "model": "openrouter/minimax/minimax-m2.7",
     },
     "50": {
-      "model": "openrouter/minimax/minimax-m2.5",
+      "model": "openrouter/minimax/minimax-m2.7",
     },
     "99": {
       "model": "openrouter/moonshotai/kimi-k2.5",
