@@ -36,27 +36,21 @@ Optimize for low latency suitable for CLI usage.
 
 1. If there are no staged changes, do not commit. Output:
    `No staged changes.`
-2. Read recent commit messages to learn style:
-   `git log -n 15 --pretty=format:$'- %s%n%b%n'`
-3. Read staged diff:
-   `git diff --cached`
-4. Generate one commit message and resolve the message file path:
-
+2. Read recent commit messages to learn style.
+3. Read staged diff.
+4. Explore codebase if needed.
+5. Generate one commit message and resolve the message file path:
    `git rev-parse --git-path COMMIT_EDITMSG`
-
-5. Write the commit message to that file via:
-
-```
-tee "$(git rev-parse --git-path COMMIT_EDITMSG)" >/dev/null <<'EOF'
-<THE EXACT COMMIT MESSAGE YOU GENERATED>
-EOF
-```
-
-Do not write to any path other than `git rev-parse --git-path COMMIT_EDITMSG`.
-
-6. Final assistant output must include:
+6. Write the commit message to that file via below command, do not write to any path other than `git rev-parse --git-path COMMIT_EDITMSG`.
+   ```
+   tee "$(git rev-parse --git-path COMMIT_EDITMSG)" >/dev/null <<'EOF'
+   <THE EXACT COMMIT MESSAGE YOU GENERATED>
+   EOF
+   ```
+7. Final assistant output must include:
    - First line: `Wrote commit message to <resolved path>`
    - Then the commit message content.
+8. No need to waste to tool call to check the written result.
 
 ## Optional hint
 
