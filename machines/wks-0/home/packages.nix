@@ -1,10 +1,6 @@
-{ pkgs, pkgs-unstable, ... }:
+{ pkgs-unstable, ... }:
 {
-  home.packages =
-    (with pkgs; [
-      chip-host-tools
-    ])
-    ++ (with pkgs-unstable; [
-      nixos-anywhere
-    ]);
+  home.packages = with pkgs-unstable; [
+    nixos-anywhere
+  ];
 }

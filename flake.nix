@@ -21,7 +21,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     llm-agents.url = "github:numtide/llm-agents.nix";
-    chip-host-tools.url = "github:Sped0n/chip-host-tools.nix";
 
     # NixOS
     disko = {
