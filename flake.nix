@@ -250,7 +250,7 @@
           username = "spedon";
           homeDirectory = "/home/spedon";
           stateVersion = "25.11";
-          modules = [ ./machines/esp-0/home ];
+          modules = [ ./machines/esp-0/hm ];
         };
       };
     };

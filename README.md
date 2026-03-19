@@ -7,7 +7,7 @@
 ```
 .
 ├── functions  # utility functions
-├── home       # home manager configurations
+├── hm         # home manager configurations
 ├── machines   # per device configurations
 ├── modules    # reuseable nix modules
 ├── overlays   # nixpkgs overlays

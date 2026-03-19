@@ -3,7 +3,7 @@
   imports = [
     (functions.fromRoot "/modules/nixos/server")
 
-    ./home
+    ./hm
     ./networking
     ./services
 

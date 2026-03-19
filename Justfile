@@ -14,7 +14,7 @@ combined_channels := "nixpkgs nixpkgs-unstable"
 pkgs_unstable := unstable_channel
 pkgs_all := combined_channels
 
-flake_shared := "determinate home-manager agenix llm-agents chip-host-tools"
+flake_shared := "determinate home-manager agenix llm-agents"
 flake_darwin := flake_shared + " nix-darwin nix-homebrew"
 flake_linux := flake_shared + " disko"
 flakes := if os == "darwin" { flake_darwin } else { flake_linux }

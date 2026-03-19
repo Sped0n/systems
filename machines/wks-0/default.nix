@@ -4,7 +4,7 @@
     (functions.fromRoot "/modules/darwin")
 
     ./brew
-    ./home
+    ./hm
 
     ./determinate.nix
     ./networking.nix
