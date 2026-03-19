@@ -8,6 +8,7 @@ import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 from collections import deque
 from typing import NoReturn
 
@@ -178,21 +179,63 @@ def run_oc(prompt: str) -> int:
     return return_code
 
 
-def run_git_commit() -> NoReturn:
+def ensure_git_repo() -> None:
+    try:
+        subprocess.run(
+            ["git", "rev-parse", "--is-inside-work-tree"],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError("current directory is not a git repository") from exc
+
+
+def resolve_commit_message_path() -> str:
     result = subprocess.run(
         ["git", "rev-parse", "--git-path", "COMMIT_EDITMSG"],
         check=True,
         capture_output=True,
         text=True,
     )
-    commit_message_path = result.stdout.strip()
+    return result.stdout.strip()
+
+
+def run_git_commit() -> NoReturn:
+    global child_process
+
+    commit_message_path = resolve_commit_message_path()
     try:
-        os.execvp(
-            "git",
-            ["git", "commit", "-s", "-e", "-F", commit_message_path],
+        with open(commit_message_path, encoding="utf-8") as file:
+            commit_message = file.read()
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            f"commit message file not found: {commit_message_path}"
+        ) from exc
+
+    os.remove(commit_message_path)
+
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as file:
+        file.write(commit_message)
+        temp_commit_message_path = file.name
+
+    try:
+        process = subprocess.Popen(
+            ["git", "commit", "-s", "-e", "-F", temp_commit_message_path],
+            text=True,
         )
+        child_process = process
+        return_code = process.wait()
     except OSError as exc:
-        raise RuntimeError("failed to exec git commit") from exc
+        raise RuntimeError("failed to run git commit") from exc
+    finally:
+        child_process = None
+        try:
+            os.remove(temp_commit_message_path)
+        except FileNotFoundError:
+            pass
+
+    raise SystemExit(return_code)
 
 
 def main(argv: list[str]) -> int:
@@ -200,6 +243,7 @@ def main(argv: list[str]) -> int:
 
     max_lines, hint_args = parse_args(argv)
     renderer = InlineRenderer(max_lines)
+    ensure_git_repo()
     prompt = build_prompt(hint_args)
 
     signal.signal(signal.SIGINT, handle_signal)
