@@ -1,4 +1,12 @@
-{ vars, ... }:
+{
+  config,
+  lib,
+  vars,
+  ...
+}:
+let
+  linesToText = lines: lib.concatStringsSep "\n" lines + "\n";
+in
 {
   programs.git.includes = [
     {
@@ -14,8 +22,15 @@
     }
   ];
 
-  xdg.configFile."git/ignore-work".text = ''
-    .envrc
-    .clangd
-  '';
+  xdg.configFile."git/ignore-work".text = linesToText (
+    config.programs.git.ignores
+    ++ [
+      ".envrc"
+      ".clangd"
+      "flake.nix"
+      "flake.lock"
+      ".opencode"
+      "opencode.json"
+    ]
+  );
 }
