@@ -139,14 +139,4 @@
       "model": "openrouter/moonshotai/kimi-k2.5",
     },
   },
-  // mcp servers
-  "mcp": {
-    "jina-mcp-server": {
-      "type": "remote",
-      "url": "https://mcp.jina.ai/v1?include_tools=search_web,read_url,parallel_search_web,parallel_read_url",
-      "headers": {
-        "Authorization": "{env:JINA_API_KEY}",
-      },
-    },
-  },
 }

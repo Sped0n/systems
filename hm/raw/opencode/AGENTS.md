@@ -370,22 +370,13 @@ If a search is ambiguous, prefer:
 - `ast-grep` for AST- and structure-aware queries (preferred default).
 - `grep` tool only for raw text matching (comments, strings, logs, docs) or when explicitly requested.
 
-### 10.2 Web search & URL reading (via Jina MCP server)
+### 10.2 Web search & URL reading (via Jina CLI)
 
-When you need information from the internet, use the **Jina MCP server** (`jina-mcp-server`) instead.
+When you need information from the internet, load the `jina-cli` skill and use the `jina` CLI through the shell.
 
-Available tools:
-
-- `search_web`: search the web for relevant pages.
-- `read_url`: fetch and extract the content of a single URL.
-- `parallel_search_web`: run multiple independent searches concurrently.
-- `parallel_read_url`: fetch multiple URLs concurrently.
-
-Usage rules:
-
-- Prefer `parallel_*` tools whenever requests are independent (e.g., compare multiple sources, fetch multiple pages).
-- Use `search_web` to discover sources, then `read_url` to quote/ground details.
-- Never reveal or print the Jina API key; authentication is handled via `JINA_API_KEY` in the environment.
+- Prefer `jina search` for discovery, `jina read` for extraction, and `jina pdf` for PDFs.
+- The detailed workflow and command patterns is in the `jina-cli` skill.
+- Do not use `--local` unless the user explicitly asks for it.
 - When you use web-derived facts, include the source URLs in the answer.
 
 ### 10.3 CLI HTTP requests

@@ -14,6 +14,9 @@ permission:
   task:
     "*": deny
     "explore": allow
+  skill:
+    "*": deny
+    "ast-grep": allow
   bash:
     "*": deny
     "ast-grep *": allow

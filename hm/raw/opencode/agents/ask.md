@@ -12,14 +12,18 @@ tools:
   "bash": true
   "task": true
   "question": true
-  "jina-mcp-server*": true
 permission:
   edit: deny
   task:
     "*": deny
     "explore": allow
+  skill:
+    "*": deny
+    "jina-cli": allow
+    "ast-grep": allow
   bash:
     "*": ask
+    "jina *": allow
     "ast-grep *": allow
     "git log*": allow
     "git diff*": allow

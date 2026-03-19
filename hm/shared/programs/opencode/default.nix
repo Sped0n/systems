@@ -45,10 +45,6 @@ in
       file = "${secrets}/ages/yescode-api-key.age";
       mode = "0400";
     };
-    "jina-api-key" = {
-      file = "${secrets}/ages/jina-api-key.age";
-      mode = "0400";
-    };
   };
 
   home.packages = lib.mkIf opencode.enable [

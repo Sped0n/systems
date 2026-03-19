@@ -11,6 +11,7 @@
     ./gh.nix
     ./ghostty.nix
     ./git.nix
+    ./jina.nix
     ./neovim.nix
     ./nixos-deploy.nix
     ./opencode
