@@ -33,7 +33,6 @@
       ignores = [
         ".DS_Store"
         "*.swp"
-        ".direnv"
       ];
     };
 
