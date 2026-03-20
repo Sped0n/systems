@@ -50,9 +50,7 @@ Optimize for low latency suitable for CLI usage.
    <THE EXACT COMMIT MESSAGE YOU GENERATED>
    EOF
    ```
-7. Final assistant output must include:
-   - First line: `Wrote commit message to <resolved path>`
-   - Then the commit message content.
+7. Final assistant output: `Done.`.
 8. No need to waste to tool call to check the written result.
 
 ## Optional hint
@@ -63,10 +61,8 @@ Optimize for low latency suitable for CLI usage.
 ## Hard output rules (final response)
 
 - Output plain text only (no code blocks, no extra commentary).
-- If no staged changes, output exactly: `No staged changes.`
-- Otherwise output:
-  - `Wrote commit message to <resolved path>`
-  - Then the commit message (subject + optional body).
+- If no staged changes, output exactly: `No staged changes.`.
+- Otherwise output: `Done.`.
 - Conventional Commits: `type(scope)!: subject`
   - Omit `(scope)` if repo style typically does.
   - Use `!` only for breaking changes.
