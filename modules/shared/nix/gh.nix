@@ -1,9 +1,10 @@
-{ secrets, vars, ... }:
+{ secrets, ... }:
 {
   age.secrets."nix-gh-rate-limit-bypass" = {
+    owner = "root";
     mode = "0400";
     file = "${secrets}/ages/nix-gh-rate-limit-bypass.age";
-    path = "${vars.home}/.config/nix/nix-gh-rate-limit-bypass.conf";
+    path = "/etc/nix/nix-gh-rate-limit-bypass.conf";
   };
 
   nix.extraOptions = ''

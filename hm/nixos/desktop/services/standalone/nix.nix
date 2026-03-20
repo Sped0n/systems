@@ -2,6 +2,7 @@
   config,
   functions,
   lib,
+  secrets,
   vars,
   ...
 }:
@@ -10,6 +11,18 @@ let
 in
 {
   config = lib.mkIf standalone.enable (
-    import (functions.fromRoot "/modules/shared/nix/settings.nix") { inherit vars; }
+    lib.recursiveUpdate
+      (import (functions.fromRoot "/modules/shared/nix/settings.nix") { inherit vars; })
+      {
+        age.secrets."nix-gh-rate-limit-bypass" = {
+          mode = "0400";
+          file = "${secrets}/ages/nix-gh-rate-limit-bypass.age";
+          path = "${vars.home}/.config/nix/nix-gh-rate-limit-bypass.conf";
+        };
+
+        nix.extraOptions = ''
+          !include nix-gh-rate-limit-bypass.conf
+        '';
+      }
   );
 }

@@ -6,7 +6,11 @@
   ...
 }:
 {
-  disabledModules = [ "profiles/base.nix" ];
+  disabledModules = [
+    "profiles/base.nix"
+
+    (functions.fromRoot "/modules/shared/nix/gh.nix")
+  ];
 
   imports = [
     (functions.fromRoot "/modules/shared/nix")
