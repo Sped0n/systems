@@ -17,18 +17,6 @@ jobs:
   flake-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Cleanup
-        run: |
-          echo "::group::Free space before cleanup"
-          df -h
-          echo "::endgroup::"
-          echo "::group::Cleaned Files"
-          sudo rm -rfv ${{ runner.os == 'Linux' && '/usr/local/lib/android' || '/Users/runner/Library/Android/sdk' }}
-          echo "::endgroup::"
-          echo "::group::Free space after cleanup"
-          df -h
-          echo "::endgroup::"
-
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -77,7 +65,7 @@ jobs:
         run: nix flake check -L --keep-going --all-systems
 
       - name: Move Determinate runtime state out of cache path
-        if: ${{ always() }}
+        if: ${{ always() && steps.nix-cache-restore.outputs.hit-primary-key != 'true' }}
         run: |
           set -euo pipefail
           temp_dir="/tmp/determinate-state-for-cache"
@@ -98,10 +86,10 @@ jobs:
           purge-prefixes: nix-${{ runner.os }}-
           purge-created: 0
           purge-last-accessed: P1DT12H
-          purge-primary-key: never
+          purge-primary-key: true
 
       - name: Restore Determinate runtime state
-        if: ${{ always() }}
+        if: ${{ always() && steps.nix-cache-restore.outputs.hit-primary-key != 'true' }}
         run: |
           set -euo pipefail
           temp_dir="/tmp/determinate-state-for-cache"
