@@ -383,9 +383,13 @@ When you need information from the internet, load the `jina-cli` skill and use t
 
 You are operating in an environment with `httpie`, and there is an agent skill for it (same name: `httpie-cli`).
 
-For direct CLI HTTP requests, API testing, and readable command examples, prefer HTTPie (`http`) over `curl`.
+For direct CLI HTTP requests, API testing, readable command examples, and simple URL fetching, prefer HTTPie (`http`) over `curl` or ad hoc Python such as `python -c` or `from urllib.request import urlopen`, unless the user explicitly wants Python code or HTTPie cannot express the request cleanly.
+
+If `http` is not available in `PATH`, try `nix run nixpkgs#httpie -- http ...` before falling back to Python or another HTTP client.
 
 Use the `httpie-cli` skill when you need request-item syntax, auth/session patterns, file uploads, downloads, or response inspection guidance.
+
+For complex web fetching, discovery, or content extraction, prefer the `jina-cli` workflow instead of plain HTTPie.
 
 ### 10.4 File system and content operations
 
@@ -395,3 +399,9 @@ Prefer internal tools when they cover the task instead of shell equivalents.
 - Use `grep` for content search instead of `bash` with `grep` or `rg`.
 - Use `read` for reading files or directories instead of `bash` with `cat`, `head`, or `tail`.
 - Use `bash` when the operation is genuinely terminal-native or no internal tool fits the task.
+
+### 10.5 Missing tools in PATH
+
+If a CLI tool you want is not available in `PATH`, you may try `nix run nixpkgs#<package> -- <arg1> <arg2> ...` before giving up or switching to a less suitable workaround.
+
+Prefer this fallback for standard packaged tools when it keeps the workflow aligned with the task's intent.
