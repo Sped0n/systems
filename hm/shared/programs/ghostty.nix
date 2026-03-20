@@ -12,7 +12,7 @@
       shell-integration = "zsh";
       macos-option-as-alt = true;
       mouse-hide-while-typing = true;
-      working-directory = "inherit";
+      working-directory = "home";
       window-inherit-working-directory = false;
       tab-inherit-working-directory = false;
       split-inherit-working-directory = true;
