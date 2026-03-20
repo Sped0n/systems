@@ -79,7 +79,7 @@ jobs:
         uses: nix-community/cache-nix-action/save@v7
         with:
           primary-key: ${{ steps.nix-cache-restore.outputs.primary-key }}
-          gc-max-store-size-linux: 1G
+          gc-max-store-size-linux: 2G
           paths-linux: |
             ~/.cache/nix
           purge: true
