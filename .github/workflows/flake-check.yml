@@ -9,6 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   id-token: write
   contents: read
 
@@ -16,6 +17,18 @@ jobs:
   flake-check:
     runs-on: ubuntu-latest
     steps:
+      - name: Cleanup
+        run: |
+          echo "::group::Free space before cleanup"
+          df -h
+          echo "::endgroup::"
+          echo "::group::Cleaned Files"
+          sudo rm -rfv ${{ runner.os == 'Linux' && '/usr/local/lib/android' || '/Users/runner/Library/Android/sdk' }}
+          echo "::endgroup::"
+          echo "::group::Free space after cleanup"
+          df -h
+          echo "::endgroup::"
+
       - name: Checkout
         uses: actions/checkout@v6
 
@@ -47,13 +60,53 @@ jobs:
             connect-timeout = 5
             http-connections = 64
             max-substitution-jobs = 64
-            extra-substituters = http://127.0.0.1:37515/?trusted=1&compression=zstd&parallel-compression=true&priority=1 https://nix-community.cachix.org?priority=50 https://install.determinate.systems?priority=60 https://cache.numtide.com?priority=70
-            extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
+            substituters = https://cache.nixos.org?priority=10 https://sped0n.cachix.org?priority=40 https://nix-community.cachix.org?priority=50 https://install.determinate.systems?priority=60 https://cache.numtide.com?priority=70
+            trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= sped0n.cachix.org-1:Hc94uahq5qcwbGBZ2+VCq1mGEV/c3AbSsPU+sb2ZI+U= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
 
-      - name: Set up Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Restore Nix store
+        id: nix-cache-restore
+        uses: nix-community/cache-nix-action/restore@v7
         with:
-          use-flakehub: false
+          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix', 'flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-
+          restore-prefixes-all-matches: nix-${{ runner.os }}-
+          paths-linux: |
+            ~/.cache/nix
 
       - name: Run flake check
         run: nix flake check -L --keep-going --all-systems
+
+      - name: Move Determinate runtime state out of cache path
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          temp_dir="/tmp/determinate-state-for-cache"
+          sudo rm -rf "$temp_dir"
+          if [ -d /nix/var/determinate ]; then
+            sudo mv /nix/var/determinate "$temp_dir"
+          fi
+
+      - name: Save Nix store
+        if: ${{ always() && steps.nix-cache-restore.outputs.hit-primary-key != 'true' }}
+        uses: nix-community/cache-nix-action/save@v7
+        with:
+          primary-key: ${{ steps.nix-cache-restore.outputs.primary-key }}
+          gc-max-store-size-linux: 1G
+          paths-linux: |
+            ~/.cache/nix
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-
+          purge-created: 0
+          purge-last-accessed: P1DT12H
+          purge-primary-key: never
+
+      - name: Restore Determinate runtime state
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          temp_dir="/tmp/determinate-state-for-cache"
+          if [ -d "$temp_dir" ]; then
+            sudo mkdir -p /nix/var
+            sudo rm -rf /nix/var/determinate
+            sudo mv "$temp_dir" /nix/var/determinate
+          fi
