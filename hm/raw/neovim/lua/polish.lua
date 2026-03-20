@@ -36,3 +36,23 @@ vim.filetype.add {
     base = "yaml", -- obsidian base
   },
 }
+
+-- restore plugins without touching the lockfile
+vim.api.nvim_create_user_command("LazyRestoreNoLockOverwrite", function()
+  local lockfile = require("lazy.core.config").options.lockfile
+  local f = io.open(lockfile, "rb")
+  local old = nil
+  if f then
+    old = f:read "*a"
+    f:close()
+  end
+  local ok, err = pcall(function() require("lazy").restore { wait = true } end)
+  if old ~= nil then
+    f = assert(io.open(lockfile, "wb"))
+    f:write(old)
+    f:close()
+  else
+    vim.fn.delete(lockfile)
+  end
+  if not ok then error(err) end
+end, {})
