@@ -33,6 +33,7 @@
       ignores = [
         ".DS_Store"
         "*.swp"
+        "__pycache__/"
       ];
     };
 
