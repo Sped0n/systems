@@ -34,7 +34,7 @@
           "options": {
             "provider": {
               "sort": "throughput",
-              "only": ["fireworks", "minimax", "inceptron"],
+              "only": ["minimax", "novita"],
             },
             "reasoning": {
               "enabled": true,
