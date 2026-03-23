@@ -4,6 +4,7 @@
   "autoupdate": false,
   "model": "openrouter/moonshotai/kimi-k2.5",
   "default_agent": "ask",
+  "lsp": false,
   // providers
   "provider": {
     "openrouter": {
@@ -78,7 +79,6 @@
   },
   // global settings
   "tools": {
-    "lsp": false,
     "websearch": false,
     "webfetch": false,
   },
