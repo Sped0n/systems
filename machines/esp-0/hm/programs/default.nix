@@ -6,6 +6,7 @@
     ./home-manager.nix
     ./neovim.nix
     ./opencode.nix
+    ./solaar.nix
     ./ssh.nix
     ./uv.nix
     ./vivaldi.nix

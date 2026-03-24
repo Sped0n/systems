@@ -6,6 +6,5 @@
     ])
     ++ (with pkgs-unstable; [
       popsicle
-      solaar
     ]);
 }
