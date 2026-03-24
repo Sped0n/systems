@@ -10,6 +10,7 @@
     package = lib.mkDefault pkgs-unstable.ghostty;
     settings = {
       shell-integration = "zsh";
+      shell-integration-features = true;
       macos-option-as-alt = true;
       mouse-hide-while-typing = true;
       working-directory = "home";
