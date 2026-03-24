@@ -2,6 +2,7 @@
 {
   imports = [
     ./grub.nix
+    ./kernel.nix
     ./misc.nix
     ./security.nix
     ./swap.nix
