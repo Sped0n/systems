@@ -5,7 +5,7 @@ return {
     opts = {
       formatters_by_ft = {
         nix = { "nixfmt" },
-        json = { "jq", "prettierd", stop_after_first = true },
+        json = { "prettierd", "jq", stop_after_first = true },
       },
     },
   },
