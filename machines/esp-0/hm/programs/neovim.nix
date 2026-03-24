@@ -5,6 +5,7 @@
     rust-analyzer
 
     # c/cpp
+    astyle
     clang-tools
     neocmakelsp
 
