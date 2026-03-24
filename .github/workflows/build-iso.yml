@@ -66,15 +66,20 @@ jobs:
             extra-substituters = https://nix-community.cachix.org?priority=50 https://install.determinate.systems?priority=60 https://cache.numtide.com?priority=70
             extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
 
+      - name: Restore ~/.cache/nix
+        id: nix-dotcache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: ~/.cache/nix
+          key: nix-dotcache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock') }}
+
       - name: Restore Nix store
         id: nix-cache-restore
         uses: nix-community/cache-nix-action/restore@v7
         with:
-          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', 'flake.lock') }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-
-          restore-prefixes-all-matches: nix-${{ runner.os }}-${{ runner.arch }}-
-          paths-linux: |
-            ~/.cache/nix
+          primary-key: nix-store-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', 'flake.lock') }}
+          restore-prefixes-first-match: nix-store-${{ runner.os }}-${{ runner.arch }}-
+          restore-prefixes-all-matches: nix-store-${{ runner.os }}-${{ runner.arch }}-
 
       - name: Build ISO
         run: nix run nixpkgs#just -- make-iso ".#${{ github.event.inputs.iso_config }}"
@@ -162,10 +167,8 @@ jobs:
         with:
           primary-key: ${{ steps.nix-cache-restore.outputs.primary-key }}
           gc-max-store-size-linux: 8G
-          paths-linux: |
-            ~/.cache/nix
           purge: true
-          purge-prefixes: nix-${{ runner.os }}-${{ runner.arch }}-
+          purge-prefixes: nix-store-${{ runner.os }}-${{ runner.arch }}-
           purge-created: 0
           purge-last-accessed: P1DT12H
           purge-primary-key: never
@@ -180,3 +183,10 @@ jobs:
             sudo rm -rf /nix/var/determinate
             sudo mv "$temp_dir" /nix/var/determinate
           fi
+
+      - name: Save ~/.cache/nix
+        if: ${{ always() && steps.nix-dotcache-restore.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v4
+        with:
+          path: ~/.cache/nix
+          key: ${{ steps.nix-dotcache-restore.outputs.cache-primary-key }}
