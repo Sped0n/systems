@@ -40,6 +40,11 @@
         idle-delay = mkUint32 1800;
       };
 
+      "org/gnome/desktop/interface" = {
+        clock-show-weekday = true;
+        clock-show-date = true;
+      };
+
       "org/gnome/shell/extensions/dash-to-dock" = {
         dock-fixed = false;
         dock-position = "BOTTOM";
