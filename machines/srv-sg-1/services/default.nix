@@ -3,7 +3,6 @@
   imports = [
     ./cloudflared.nix
     ./docker.nix
-    ./isohub.nix
     ./ladder.nix
     ./restic.nix
     ./runner.nix
