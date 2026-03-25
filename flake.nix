@@ -163,7 +163,7 @@
       };
 
       nixosConfigurations = {
-        "iso-x86_64" = nixpkgs.lib.nixosSystem rec {
+        "iso-0-x86_64" = nixpkgs.lib.nixosSystem rec {
           system = "x86_64-linux";
           specialArgs = (genSpecialArgs { inherit system; }) // {
             pkgs-unstable = pkgsUnstableFor system;
@@ -171,11 +171,11 @@
           modules = [
             nixpkgsModule
             determinate.nixosModules.default
-            ./machines/iso
+            ./machines/iso-0
           ];
         };
 
-        "iso-aarch64" = nixpkgs.lib.nixosSystem rec {
+        "iso-0-aarch64" = nixpkgs.lib.nixosSystem rec {
           system = "aarch64-linux";
           specialArgs = (genSpecialArgs { inherit system; }) // {
             pkgs-unstable = pkgsUnstableFor system;
@@ -183,7 +183,7 @@
           modules = [
             nixpkgsModule
             determinate.nixosModules.default
-            ./machines/iso
+            ./machines/iso-0
           ];
         };
 

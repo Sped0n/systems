@@ -6,11 +6,11 @@ on:
       iso_config:
         description: "ISO target to build"
         required: true
-        default: iso-x86_64
+        default: iso-0-x86_64
         type: choice
         options:
-          - iso-x86_64
-          - iso-aarch64
+          - iso-0-x86_64
+          - iso-0-aarch64
 
 permissions:
   actions: write
