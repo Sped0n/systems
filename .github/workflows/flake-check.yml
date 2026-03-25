@@ -17,6 +17,18 @@ jobs:
   flake-check:
     runs-on: ubuntu-latest
     steps:
+      - name: Cleanup
+        run: |
+          echo "::group::Free space before cleanup"
+          df -h
+          echo "::endgroup::"
+          echo "::group::Cleaned Files"
+          sudo rm -rfv ${{ runner.os == 'Linux' && '/usr/local/lib/android' || '/Users/runner/Library/Android/sdk' }}
+          echo "::endgroup::"
+          echo "::group::Free space after cleanup"
+          df -h
+          echo "::endgroup::"
+
       - name: Checkout
         uses: actions/checkout@v6
 
