@@ -23,14 +23,33 @@ jobs:
     steps:
       - name: Cleanup
         run: |
+          set -euo pipefail
           echo "::group::Free space before cleanup"
+          before_kib=$(df --output=avail / | {
+            read -r _
+            read -r value
+            printf '%s' "$value"
+          })
           df -h
           echo "::endgroup::"
+
           echo "::group::Cleaned Files"
-          sudo rm -rfv ${{ runner.os == 'Linux' && '/usr/local/lib/android' || '/Users/runner/Library/Android/sdk' }}
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          sudo rm -rf /opt/hostedtoolcache
+          sudo rm -rf /usr/local/.ghcup/ghc
           echo "::endgroup::"
+
           echo "::group::Free space after cleanup"
+          after_kib=$(df --output=avail / | {
+            read -r _
+            read -r value
+            printf '%s' "$value"
+          })
+          reclaimed_tenths_gib=$(( (after_kib - before_kib) * 10 / 1024 / 1024 ))
           df -h
+          printf 'Reclaimed: %d.%d GiB\n' \
+            "$((reclaimed_tenths_gib / 10))" \
+            "$((reclaimed_tenths_gib % 10))"
           echo "::endgroup::"
 
       - name: Checkout
