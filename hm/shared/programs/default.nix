@@ -1,6 +1,11 @@
 { ... }:
 {
   imports = [
+    ./opencode
+    ./neovim
+    ./yazi
+    ./zsh
+
     ./atuin.nix
     ./bat.nix
     ./delta.nix
@@ -12,15 +17,11 @@
     ./ghostty.nix
     ./git.nix
     ./jina.nix
-    ./neovim.nix
     ./nixos-deploy.nix
-    ./opencode
     ./ssh.nix
     ./starship.nix
     ./tmux.nix
     ./uv.nix
-    ./yazi.nix
     ./zoxide.nix
-    ./zsh.nix
   ];
 }
