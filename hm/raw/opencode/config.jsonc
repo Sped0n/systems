@@ -70,7 +70,7 @@
             "textVerbosity": "low",
             "reasoningSummary": "auto",
             "include": ["reasoning.encrypted_content"],
-            "instructions": "{file:~/.config/opencode/codex_header.txt}",
+            "instructions": "{file:~/.config/opencode/instructions/gpt.txt}",
             "service_tier": "default",
           },
         },

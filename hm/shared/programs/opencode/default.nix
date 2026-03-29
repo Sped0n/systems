@@ -15,26 +15,24 @@ in
     package = pkgs.llm-agents.opencode;
   };
 
-  xdg.configFile = lib.mkIf opencode.enable {
-    "opencode/opencode.jsonc".source = (
-      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/hm/raw/opencode/config.jsonc"
+  xdg.configFile =
+    let
+      mkOpencodeSymlink = path: {
+        "opencode/${path}".source =
+          config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/hm/raw/opencode/${path}";
+      };
+    in
+    lib.mkIf opencode.enable (
+      lib.mkMerge [
+        (mkOpencodeSymlink "opencode.jsonc")
+        (mkOpencodeSymlink "tui.jsonc")
+        (mkOpencodeSymlink "AGENTS.md")
+        (mkOpencodeSymlink "agents")
+        (mkOpencodeSymlink "skills")
+        (mkOpencodeSymlink "instructions")
+        (mkOpencodeSymlink "plugins")
+      ]
     );
-    "opencode/tui.jsonc".source = (
-      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/hm/raw/opencode/tui.jsonc"
-    );
-    "opencode/AGENTS.md".source = (
-      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/hm/raw/opencode/AGENTS.md"
-    );
-    "opencode/agents".source = (
-      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/hm/raw/opencode/agents"
-    );
-    "opencode/skills".source = (
-      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/hm/raw/opencode/skills"
-    );
-    "opencode/codex_header.txt".source = (
-      config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/hm/raw/opencode/codex_header.txt"
-    );
-  };
 
   age.secrets = lib.mkIf opencode.enable {
     "openrouter-api-key" = {
