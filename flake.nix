@@ -20,6 +20,10 @@
       url = "github:ryantm/agenix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    nix-cache-push = {
+      url = "github:Sped0n/nix-cache-push";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     llm-agents.url = "github:numtide/llm-agents.nix";
 
     # NixOS
@@ -57,7 +61,11 @@
           extraArgs ? { },
         }:
         rec {
-          inherit agenix determinate secrets;
+          inherit
+            agenix
+            determinate
+            secrets
+            ;
 
           vars = import "${secrets}/vars" // rec {
             username = "spedon";

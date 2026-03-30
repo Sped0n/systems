@@ -5,6 +5,7 @@
     ./ghostty.nix
     ./home-manager.nix
     ./neovim.nix
+    ./nix-cache-push.nix
     ./opencode.nix
     ./solaar.nix
     ./ssh.nix

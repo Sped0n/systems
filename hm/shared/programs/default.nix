@@ -17,6 +17,7 @@
     ./ghostty.nix
     ./git.nix
     ./jina.nix
+    ./nix-cache-push.nix
     ./nixos-deploy.nix
     ./ssh.nix
     ./starship.nix
