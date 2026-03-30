@@ -20,6 +20,12 @@ python3Packages.buildPythonApplication rec {
   postPatch = ''
     substituteInPlace jina_cli/__init__.py \
       --replace-fail '__version__ = "0.1.0"' '__version__ = "${version}"'
+    substituteInPlace jina_cli/api.py \
+      --replace-fail 'API_BASE = "https://api.jina.ai"' 'API_BASE = "https://jina.sped0n.com/api"'
+    substituteInPlace jina_cli/api.py \
+      --replace-fail 'READER_BASE = "https://r.jina.ai"' 'READER_BASE = "https://jina.sped0n.com/r"'
+    substituteInPlace jina_cli/api.py \
+      --replace-fail 'SEARCH_SVIP_BASE = "https://svip.jina.ai"' 'SEARCH_SVIP_BASE = "https://jina.sped0n.com/svip"'
   '';
 
   build-system = with python3Packages; [
