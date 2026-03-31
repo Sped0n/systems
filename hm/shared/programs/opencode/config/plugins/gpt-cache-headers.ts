@@ -13,7 +13,7 @@ const parse = (value: unknown) => {
         .map((item) => item.trim())
         .filter(Boolean)
     : [];
-  return { providers: providers.length ? providers : ["__PROVIDER_ID__"] };
+  return { providers: providers.length ? providers : ["newapi-responses"] };
 };
 
 const key = (input: { sessionID: string; message: { id: string } }) =>

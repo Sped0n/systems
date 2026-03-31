@@ -10,12 +10,8 @@ let
 in
 {
   age.secrets = lib.mkIf opencode.enable {
-    "openrouter-api-key" = {
-      file = "${secrets}/ages/openrouter-api-key.age";
-      mode = "0400";
-    };
-    "ianepo-api-key" = {
-      file = "${secrets}/ages/yescode-api-key.age";
+    "newapi-api-key" = {
+      file = "${secrets}/ages/newapi-api-key.age";
       mode = "0400";
     };
   };
@@ -25,11 +21,7 @@ in
       set -euo pipefail
       export OPENCODE_EXPERIMENTAL_MARKDOWN=1
       export OPENCODE_EXPERIMENTAL_PLAN_MODE=1
-      export OPENROUTER_API_KEY="$(${pkgs.coreutils}/bin/cat ${
-        config.age.secrets."openrouter-api-key".path
-      })"
-      export IANEPO_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."ianepo-api-key".path})"
-      export JINA_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."jina-api-key".path})"
+      export NEWAPI_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."newapi-api-key".path})"
       exec ${lib.getExe opencode.package} "$@"
     '')
 
