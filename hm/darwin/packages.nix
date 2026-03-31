@@ -19,6 +19,5 @@
       repomix
       hyperfine
       ast-grep
-      httpie
     ]);
 }

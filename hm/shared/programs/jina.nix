@@ -8,14 +8,9 @@
 }:
 let
   jina = config.programs.jina;
-  opencode = config.programs.opencode;
 in
 {
-  options.programs.jina.enable = lib.mkOption {
-    type = lib.types.bool;
-    default = opencode.enable;
-    description = "Jina CLI";
-  };
+  options.programs.jina.enable = lib.mkEnableOption "Whether to enable Jina CLI";
 
   config = lib.mkIf jina.enable {
     age.secrets = {

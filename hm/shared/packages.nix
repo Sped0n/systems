@@ -42,5 +42,6 @@
       nali
       nexttrace
       croc
+      httpie
     ]);
 }

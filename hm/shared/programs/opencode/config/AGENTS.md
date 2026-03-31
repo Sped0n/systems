@@ -383,7 +383,8 @@ If a search is ambiguous, prefer:
 
 When you need information from the internet, load the `jina-cli` skill and use the `jina` CLI through the shell.
 
-- Prefer `jina search` for discovery, `jina read` for extraction, and `jina pdf` for PDFs.
+- Prefer `jina search` for discovery, `jina read` for extraction, and `jina pdf` for small PDFs.
+- For local large PDF extraction, prefer `poppler-utils` tools such as `pdftotext`.
 - The detailed workflow and command patterns are in the `jina-cli` skill.
 - Do not use `--local` unless the user explicitly asks for it.
 - When you use web-derived facts, include the source URLs in the answer.

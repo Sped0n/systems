@@ -19,7 +19,6 @@
       repomix
       hyperfine
       ast-grep
-      httpie
 
       httpie-desktop
       bitwarden-desktop

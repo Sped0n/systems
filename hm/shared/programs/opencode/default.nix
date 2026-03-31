@@ -11,6 +11,8 @@ in
 {
   imports = [
     ./wrappers
+
+    ./dependencies.nix
   ];
 
   programs.opencode = {
