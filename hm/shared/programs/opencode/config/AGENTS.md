@@ -409,6 +409,7 @@ Prefer internal tools over shell equivalents when they cover the task.
 - Use `grep` for content search instead of `bash` with `grep` or `rg`.
 - Use `read` for reading files or directories instead of `bash` with `cat`, `head`, or `tail`.
 - Use `bash` when the operation is genuinely terminal-native or no internal tool fits the task.
+- When applying a large amount of code with `apply_patch`, prefer a few smaller, coherent patches over one very large patch, since smaller requests are less likely to hit transient network or tool failures. Do not over-fragment related edits: keep each patch logically grouped and reviewable.
 
 ### 10.5 Missing tools in PATH
 
