@@ -3,17 +3,9 @@ description: Collaborative codebase discussion agent for discovery and understan
 mode: primary
 temperature: 0.3
 top_p: 0.95
-tools:
-  "*": false
-  "read": true
-  "glob": true
-  "grep": true
-  "list": true
-  "bash": true
-  "task": true
-  "question": true
 permission:
   edit: deny
+  todowrite: deny
   task:
     "*": deny
     "explore": allow

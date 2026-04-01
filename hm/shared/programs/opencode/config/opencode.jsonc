@@ -73,9 +73,9 @@
     },
   },
   // global settings
-  "tools": {
-    "websearch": false,
-    "webfetch": false,
+  "permission": {
+    "websearch": "deny",
+    "webfetch": "deny",
   },
   // agents
   "agent": {

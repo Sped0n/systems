@@ -3,14 +3,9 @@ description: Fast Conventional Commit message writer for staged diffs (optimized
 mode: primary
 temperature: 0.1
 top_p: 0.9
-tools:
-  "*": false
-  bash: true
-  read: true
-  task: true
-  skill: true
 permission:
   edit: deny
+  todowrite: deny
   task:
     "*": deny
     "explore": allow
