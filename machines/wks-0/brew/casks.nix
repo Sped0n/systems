@@ -11,7 +11,6 @@
     "syncthing-app"
     "soundsource"
     "betterdisplay"
-    "aldente"
     "shottr"
     "windows-app"
     "handbrake-app"
