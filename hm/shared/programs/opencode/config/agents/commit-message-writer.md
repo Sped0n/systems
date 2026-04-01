@@ -22,6 +22,7 @@ permission:
     "ast-grep *": allow
     "tee *": allow
     "git log*": allow
+    "git show*": allow
     "git diff*": allow
     "git status*": allow
     "git rev-parse*": allow
