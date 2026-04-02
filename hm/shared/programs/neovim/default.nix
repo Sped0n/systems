@@ -1,5 +1,6 @@
 {
   config,
+  pkgs,
   pkgs-unstable,
   vars,
   ...
@@ -8,6 +9,7 @@
   programs.neovim = {
     enable = true;
     package = pkgs-unstable.neovim-unwrapped;
+    extraPackages = [ pkgs.gcc ];
     defaultEditor = true;
     vimAlias = false;
   };
