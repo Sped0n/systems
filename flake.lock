@@ -390,11 +390,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1774861548,
-        "narHash": "sha256-0GaaGuBCLyVSYJSO7+8iRrih90bThxHYb5jlRf8bgQ8=",
+        "lastModified": 1775145164,
+        "narHash": "sha256-mqLkNPMYd96taKCMyGl+i6P0TdNChILXa2PsiRWJY9Y=",
         "owner": "Sped0n",
         "repo": "nix-cache-push",
-        "rev": "2702af7ed3915663a11c95eb5680172035bd3579",
+        "rev": "9642c30d497115b90c581910aad1ddd2f5451a19",
         "type": "github"
       },
       "original": {
