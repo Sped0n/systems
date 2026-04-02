@@ -1,6 +1,5 @@
 {
   config,
-  functions,
   lib,
   pkgs,
   secrets,
@@ -24,7 +23,7 @@ in
       (pkgs.writeShellScriptBin "jina" ''
         set -euo pipefail
         export JINA_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."jina-api-key".path})"
-        exec ${lib.getExe (pkgs.callPackage (functions.fromRoot "/packages/jina-cli.nix") { })} "$@"
+        exec ${lib.getExe pkgs.jina-cli} "$@"
       '')
     ];
   };

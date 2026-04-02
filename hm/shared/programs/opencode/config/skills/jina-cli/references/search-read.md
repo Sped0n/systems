@@ -1,8 +1,3 @@
----
-urls:
-  - https://github.com/jina-ai/cli#readme
----
-
 # Search and Read
 
 ## Goals
@@ -18,6 +13,7 @@ urls:
 - Add `--links` or `--images` only when you need richer extraction output.
 - Use `jina pdf` for PDF-specific extraction rather than `jina read` when figures, tables, or equations matter.
 - Prefer `--json` if the results will be filtered or fed into a follow-up command.
+- Use the global `--timeout` flag when large pages or PDFs need a longer request window.
 
 ## Examples
 
@@ -35,15 +31,22 @@ jina search --arxiv "attention mechanism" -n 10
 
 Read a page as markdown:
 
-```bash
+````bash
 jina read https://example.com
-```
+
+Use a longer timeout for a slow or large page:
+
+```bash
+jina --timeout 60 read https://example.com/large.pdf
+````
+
+````
 
 Read multiple URLs from stdin:
 
 ```bash
 cat urls.txt | jina read
-```
+````
 
 Extract from a PDF:
 

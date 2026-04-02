@@ -1,9 +1,3 @@
----
-urls:
-  - https://github.com/jina-ai/cli#readme
-  - https://pypi.org/project/jina-cli/
----
-
 # Basics
 
 ## Goals
@@ -15,10 +9,11 @@ urls:
 
 - Treat `jina` as the primary interface; prefer `jina <subcommand>` over ad hoc API requests when the CLI already covers the task.
 - Use `jina --help` first, then `jina <subcommand> --help` for flag details.
-- Assume `JINA_API_KEY` is required for most remote commands unless you are explicitly using local mode.
-- Do not use `--local`; stick to the normal remote CLI behavior unless the user explicitly asks for local execution.
+- Assume `JINA_API_KEY` is required for most commands that call Jina services.
+- Use the standard remote CLI behavior for all commands.
 - Prefer positional arguments for simple one-shot commands and stdin for batch flows.
 - Use `--json` whenever the output will be piped into `jq` or another parser.
+- Use the global `--timeout SECONDS` flag when a request needs more or less time than the built-in default.
 - Keep `stderr` intact; Jina CLI uses it for diagnostics and recovery hints.
 
 ## Examples
@@ -49,6 +44,15 @@ printf '%s\n' "https://example.com" | jina read
 
 Structured output for downstream parsing:
 
-```bash
+````bash
 jina search "BERT" --json | jq '.results[0].url'
+
+Override the default timeout globally:
+
+```bash
+jina --timeout 45 search "complex query"
+````
+
+```
+
 ```
