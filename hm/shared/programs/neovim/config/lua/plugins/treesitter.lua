@@ -8,7 +8,6 @@ return {
       ensure_installed = {
         "dockerfile",
         "gn",
-        "jsonc",
         "just",
         "kconfig",
         "nix",
