@@ -56,3 +56,33 @@ vim.api.nvim_create_user_command("LazyRestoreNoLockOverwrite", function()
   end
   if not ok then error(err) end
 end, {})
+
+-- sync treesitter parsers from plugin configs
+vim.api.nvim_create_user_command("TSSync", function()
+  local installed = {}
+  local languages = {}
+  local plugins = require("lazy.core.config").plugins
+
+  local function add(list)
+    if type(list) ~= "table" then return end
+    for _, lang in ipairs(list) do
+      if type(lang) == "string" and not installed[lang] then
+        installed[lang] = true
+        table.insert(languages, lang)
+      end
+    end
+  end
+
+  for _, plugin in pairs(plugins) do
+    if plugin.name == "nvim-treesitter" then
+      add(plugin.opts and plugin.opts.ensure_installed)
+    elseif plugin.name == "astrocore" then
+      add(plugin.opts and plugin.opts.treesitter and plugin.opts.treesitter.ensure_installed)
+    end
+  end
+
+  if #languages == 0 then return end
+
+  vim.cmd("TSInstall " .. table.concat(languages, " "))
+  vim.cmd "TSUpdate"
+end, {})
