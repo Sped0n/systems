@@ -13,17 +13,27 @@
       invert = false;
       enter_accept = false;
       history_filter = [
+        "^export\\s+.*[A-Z_]*(KEY|TOKEN|SECRET|PASSWORD|AUTH)[A-Z_]*="
+
         "^cd(\\s|$)"
         "^ls(\\s|$)"
         "^exa(\\s|$)"
-        "^rm(\\s|$)"
         "^(sudo\s+)?rm(\\s|$)"
-        "^cat(\\s|$)"
         "^(sudo\s+)?cat(\\s|$)"
-        "^bat(\\s|$)"
+        "^(sudo\s+)?bat(\\s|$)"
         "(?i)^clear(\\s|$)"
         "^open(\\s|$)"
-        "pbcopy"
+        "^ocommit(\\s|$)"
+        "^nvim\\s*$"
+        "^(python|python3)\\s*$"
+        "^tldr\\s+"
+        "^atuin\\s+key\\s*$"
+
+        "^git\\s+commit(\\s|$)"
+        "^git\\s+clone(\\s|$)"
+        "^git\\s+(status|st|log|show)\\s*$"
+        "^glo(\\s|$)"
+        "^git\\s+rebase(\\s+.*)?\\s(-i|--interactive)(\\s|$)"
       ];
     };
   };
