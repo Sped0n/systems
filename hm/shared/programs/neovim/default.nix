@@ -15,43 +15,48 @@
   xdg.configFile."nvim".source =
     config.lib.file.mkOutOfStoreSymlink "${vars.home}/.config/systems/hm/shared/programs/neovim/config";
 
-  # language supports
-  home.packages = with pkgs-unstable; [
-    # nix
-    nixd
-    nixfmt
+  home.packages =
+    with pkgs-unstable;
+    # tree-sitter CLI
+    [ tree-sitter ]
+    ++
+      # language supports
+      [
+        # nix
+        nixd
+        nixfmt
 
-    # toml
-    taplo
+        # toml
+        taplo
 
-    # yaml
-    yaml-language-server
-    prettierd
+        # yaml
+        yaml-language-server
+        prettierd
 
-    # json
-    vscode-langservers-extracted
+        # json
+        vscode-langservers-extracted
 
-    # bash
-    bash-language-server
-    shellcheck
-    shfmt
+        # bash
+        bash-language-server
+        shellcheck
+        shfmt
 
-    # python
-    ruff
-    basedpyright
-    python313Packages.debugpy
+        # python
+        ruff
+        basedpyright
+        python313Packages.debugpy
 
-    # lua
-    lua-language-server
-    stylua
-    selene
+        # lua
+        lua-language-server
+        stylua
+        selene
 
-    # golang
-    gopls
-    delve
-    gofumpt
+        # golang
+        gopls
+        delve
+        gofumpt
 
-    # markdown
-    marksman
-  ];
+        # markdown
+        marksman
+      ];
 }
