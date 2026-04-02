@@ -9,7 +9,7 @@
   programs.neovim = {
     enable = true;
     package = pkgs-unstable.neovim-unwrapped;
-    extraPackages = [ pkgs.gcc ];
+    extraPackages = with pkgs; [ (if stdenv.isDarwin then llvmPackages.clang else gcc) ];
     defaultEditor = true;
     vimAlias = false;
   };
