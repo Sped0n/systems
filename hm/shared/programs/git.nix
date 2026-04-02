@@ -47,6 +47,7 @@
       '';
       "gai" = "git add -i && git status";
       "gsu" = "git submodule update --init --recursive --progress";
+      "gsync" = "git commit -sm \"sync $(date +\"%Y%m%d%H%M\")";
     };
   };
 }
