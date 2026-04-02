@@ -5,7 +5,7 @@
 
     ./cloudflared.nix
     ./builder.nix
-    ./cfgpull.nix
+    ./systems-sync.nix
     ./ladder.nix
     ./msmtp.nix
     ./restic.nix
