@@ -30,7 +30,7 @@
           "options": {
             "provider": {
               "sort": "throughput",
-              "only": ["fireworks", "moonshotai"],
+              "only": ["fireworks", "deepinfra", "moonshotai"],
             },
             "reasoning": {
               "enabled": true,
