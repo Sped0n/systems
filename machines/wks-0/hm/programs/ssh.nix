@@ -70,7 +70,11 @@
         // builderBlock;
 
         # --- routers ----------------------------------------------------------
-        "openwrt" = {
+        "openwrt-17" = {
+          hostname = "192.168.17.1";
+        }
+        // openwrtBlock;
+        "openwrt-31" = {
           hostname = "192.168.31.1";
         }
         // openwrtBlock;
