@@ -58,7 +58,7 @@
             fi
 
             echo "systems-sync: pulling from remote"
-            if ! git pull --ff-only; then
+            if ! git pull --ff-only >/dev/null 2>&1; then
               printf '%bsystems-sync: warning: git pull failed%b\n' "$WARN_YELLOW" "$WARN_RESET"
             fi
 
@@ -87,7 +87,7 @@
             echo "systems-sync: starting neovim restore"
           if ! HOME="${vars.home}" \
             XDG_CONFIG_HOME="${vars.home}/.config" \
-            "$NVIM_BIN" --headless '+LazyRestoreNoLockOverwrite' 'TSSync' '+qa'; then
+            "$NVIM_BIN" --headless '+LazyRestoreNoLockOverwrite' 'TSSync' '+qa' >/dev/null 2>&1; then
             printf '%bsystems-sync: warning: neovim lazy restore failed%b\n' "$WARN_YELLOW" "$WARN_RESET"
             fi
           else
