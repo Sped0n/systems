@@ -8,6 +8,7 @@
   ...
 }:
 let
+  hostname = config.networking.hostName;
   my-traefik = config.services.my-traefik;
   my-telegraf = config.services.my-telegraf;
 
@@ -146,7 +147,32 @@ in
           };
         };
         dynamicConfigOptions = functions.mergeToml {
-          http.middlewares.cftunnel.plugin.traefik-real-ip.excludednets = [ ];
+          http = {
+            middlewares = {
+              cftunnel.plugin.traefik-real-ip.excludednets = [ ];
+              authelia.forwardauth = {
+                address = "http://100.96.0.${vars."srv-de-0".meshId}:9091/api/authz/forward-auth";
+                trustForwardHeader = true;
+                authResponseHeaders = [
+                  "Remote-User"
+                  "Remote-Groups"
+                  "Remote-Name"
+                  "Remote-Email"
+                ];
+                maxBodySize = 1048576;
+              };
+            };
+            routers.dashboard = {
+              rule = "Host(`traefik-${lib.removePrefix "srv-" hostname}.sped0n.com`)";
+              entryPoints = [ "https" ];
+              tls = true;
+              service = "api@internal";
+              middlewares = [
+                "authelia@file"
+                "cftunnel@file"
+              ];
+            };
+          };
         } my-traefik.extraDynamicConfig;
       };
 
