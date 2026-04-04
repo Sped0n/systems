@@ -25,6 +25,7 @@
           WARN_YELLOW='\033[1;33m'
           WARN_RESET='\033[0m'
           CHANGED=0
+          LAZY_LOCK_CHANGED=0
 
           mkdir -p "$STATE_DIR" "$(dirname "$TARGET")"
 
@@ -46,6 +47,7 @@
             cd "$TARGET"
 
             OLD_HEAD="$(git rev-parse HEAD 2>/dev/null || printf 'missing')"
+            OLD_LAZY_LOCK="$(git rev-parse HEAD:lazy-lock.json 2>/dev/null || printf 'missing')"
             CURRENT_REMOTE="$(git remote get-url origin 2>/dev/null || printf "")"
             if [ "$CURRENT_REMOTE" != "$REPO" ]; then
               echo "systems-sync: updating remote URL to $REPO"
@@ -65,6 +67,10 @@
             NEW_HEAD="$(git rev-parse HEAD 2>/dev/null || printf 'missing')"
             if [ "$OLD_HEAD" != "$NEW_HEAD" ]; then
               CHANGED=1
+              NEW_LAZY_LOCK="$(git rev-parse HEAD:lazy-lock.json 2>/dev/null || printf 'missing')"
+              if [ "$OLD_LAZY_LOCK" != "$NEW_LAZY_LOCK" ]; then
+                LAZY_LOCK_CHANGED=1
+              fi
             fi
           elif [ -d "$TARGET" ]; then
             echo "systems-sync: replacing non-git directory at $TARGET"
@@ -72,27 +78,38 @@
             git clone "$REPO" "$TARGET" || true
             if [ -d "$TARGET/.git" ]; then
               CHANGED=1
+              LAZY_LOCK_CHANGED=1
             fi
           else
             echo "systems-sync: cloning repository into $TARGET"
             git clone "$REPO" "$TARGET" || true
             if [ -d "$TARGET/.git" ]; then
               CHANGED=1
+              LAZY_LOCK_CHANGED=1
             fi
           fi
 
           if [ "$CHANGED" = "1" ]; then
             printf '%s\n' "$NOW" > "$TIMESTAMP_FILE"
             if [ -x "$NVIM_BIN" ]; then
-            echo "systems-sync: starting neovim restore"
-          if ! HOME="${vars.home}" \
-            XDG_CONFIG_HOME="${vars.home}/.config" \
-            "$NVIM_BIN" --headless '+LazyRestoreNoLockOverwrite' 'TSSync' '+qa' >/dev/null 2>&1; then
-            printf '%bsystems-sync: warning: neovim lazy restore failed%b\n' "$WARN_YELLOW" "$WARN_RESET"
+              if [ "$LAZY_LOCK_CHANGED" = "1" ]; then
+                echo "systems-sync: starting neovim lazy restore"
+                if ! HOME="${vars.home}" \
+                  XDG_CONFIG_HOME="${vars.home}/.config" \
+                  "$NVIM_BIN" --headless '+LazyRestoreNoLockOverwrite' '+qa' >/dev/null 2>&1; then
+                  printf '%bsystems-sync: warning: neovim lazy restore failed%b\n' "$WARN_YELLOW" "$WARN_RESET"
+                fi
+              fi
+
+              echo "systems-sync: starting treesitter sync"
+              if ! HOME="${vars.home}" \
+                XDG_CONFIG_HOME="${vars.home}/.config" \
+                "$NVIM_BIN" --headless '+TSSync' '+qa' >/dev/null 2>&1; then
+                printf '%bsystems-sync: warning: neovim treesitter sync failed%b\n' "$WARN_YELLOW" "$WARN_RESET"
+              fi
+            else
+              echo "systems-sync: neovim binary not found at $NVIM_BIN, skipping restore"
             fi
-          else
-            echo "systems-sync: neovim binary not found at $NVIM_BIN, skipping restore"
-          fi
           fi
         '')
       }"}; then
