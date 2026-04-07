@@ -35,6 +35,9 @@ vim.filetype.add {
   extension = {
     base = "yaml", -- obsidian base
   },
+  pattern = {
+    ["sdkconfig%..+"] = "kconfig",
+  },
 }
 
 -- restore plugins without touching the lockfile
