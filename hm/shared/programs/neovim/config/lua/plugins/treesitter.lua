@@ -15,6 +15,7 @@ return {
         "sql",
         "ssh_config",
         "tmux",
+        "vim",
       },
     },
   },
