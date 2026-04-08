@@ -47,7 +47,7 @@
             cd "$TARGET"
 
             OLD_HEAD="$(git rev-parse HEAD 2>/dev/null || printf 'missing')"
-            OLD_LAZY_LOCK="$(git rev-parse HEAD:lazy-lock.json 2>/dev/null || printf 'missing')"
+            OLD_LAZY_LOCK="$(git rev-parse HEAD:hm/shared/programs/neovim/config/lazy-lock.json 2>/dev/null || printf 'missing')"
             CURRENT_REMOTE="$(git remote get-url origin 2>/dev/null || printf "")"
             if [ "$CURRENT_REMOTE" != "$REPO" ]; then
               echo "systems-sync: updating remote URL to $REPO"
@@ -67,7 +67,7 @@
             NEW_HEAD="$(git rev-parse HEAD 2>/dev/null || printf 'missing')"
             if [ "$OLD_HEAD" != "$NEW_HEAD" ]; then
               CHANGED=1
-              NEW_LAZY_LOCK="$(git rev-parse HEAD:lazy-lock.json 2>/dev/null || printf 'missing')"
+              NEW_LAZY_LOCK="$(git rev-parse HEAD:hm/shared/programs/neovim/config/lazy-lock.json 2>/dev/null || printf 'missing')"
               if [ "$OLD_LAZY_LOCK" != "$NEW_LAZY_LOCK" ]; then
                 LAZY_LOCK_CHANGED=1
               fi
