@@ -13,6 +13,9 @@
     };
 
     CustomUserPreferences = {
+      NSGlobalDomain = {
+        NSMenuEnableActionImages = false; # Disable action images in menus
+      };
       "com.apple.finder" = {
         ShowHardDrivesOnDesktop = false;
         ShowExternalHardDrivesOnDesktop = true;
