@@ -30,7 +30,7 @@
           "options": {
             "provider": {
               "sort": "throughput",
-              "only": ["inceptron", "moonshotai"],
+              "only": ["fireworks", "moonshotai"],
             },
             "reasoning": {
               "enabled": true,
