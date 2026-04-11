@@ -159,7 +159,6 @@ in
                   "Remote-Name"
                   "Remote-Email"
                 ];
-                maxBodySize = 1048576;
               };
             };
             routers.dashboard = {
