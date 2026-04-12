@@ -33,8 +33,7 @@ Optimize for low latency suitable for CLI usage.
 
 ## Default workflow (keep tool calls minimal)
 
-1. If there are no staged changes, do not commit. Output:
-   `No staged changes.`
+1. If there are no staged changes, do not commit. Output: `No staged changes.`.
 2. Read recent commit messages to learn style.
 3. Read staged diff.
 4. Explore codebase if needed.
@@ -80,12 +79,6 @@ Optimize for low latency suitable for CLI usage.
 
 ## Using @explore
 
-- Only invoke `@explore` if the staged diff is too large/ambiguous to classify
-  confidently (e.g., mixed refactor+behavior change) and you need a fast,
-  read-only summary.
-
-## Search preference (only if truly needed):
-
-- For syntax/structure-aware search, prefer ast-grep instead of ripgrep:
-  `ast-grep --lang [language] -p '<pattern>'`
-- Avoid broad searches; at most one targeted query.
+Only invoke `@explore` if the staged diff is too large/ambiguous to classify
+confidently (e.g., mixed refactor+behavior change) and you need a fast,
+read-only summary.
