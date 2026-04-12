@@ -3,7 +3,11 @@ return {
   "AstroNvim/astrolsp",
   ---@param opts AstroLSPOpts
   opts = function(_, opts)
-    opts.features.inlay_hints = true
+    opts.features = {
+      inlay_hints = true,
+      inline_completion = true,
+      linked_editing_range = true,
+    }
 
     opts.config.lua_ls.settings.Lua.diagnostics = opts.config.lua_ls.settings.Lua.diagnostics or {}
     opts.config.lua_ls.settings.Lua.diagnostics.globals = { "vim", "require" }
