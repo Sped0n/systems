@@ -61,12 +61,22 @@
             "output": 128000,
           },
           "options": {
-            "reasoningEffort": "high",
             "textVerbosity": "low",
             "reasoningSummary": "auto",
             "include": ["reasoning.encrypted_content"],
             "instructions": "{file:~/.config/opencode/instructions/gpt.txt}",
             "service_tier": "default",
+          },
+          "variants": {
+            "medium": {
+              "reasoningEffort": "medium",
+            },
+            "high": {
+              "reasoningEffort": "high",
+            },
+            "xhigh": {
+              "reasoningEffort": "xhigh",
+            },
           },
         },
       },
@@ -81,6 +91,7 @@
   "agent": {
     "plan": {
       "model": "newapi-responses/openai/gpt-5.4",
+      "variant": "high",
       "temperature": 0.1,
       "permission": {
         "skill": {
@@ -93,6 +104,7 @@
     },
     "build": {
       "model": "newapi-responses/openai/gpt-5.4",
+      "variant": "high",
       "temperature": 0.3,
       "permission": {
         "bash": {
@@ -127,6 +139,7 @@
     },
     "ask": {
       "model": "newapi-responses/openai/gpt-5.4",
+      "variant": "high",
     },
     "commit-message-writer": {
       "model": "newapi-completions/moonshotai/kimi-k2.5",
