@@ -16,6 +16,9 @@
           "vivaldi-stable.desktop"
           "com.mitchellh.ghostty.desktop"
         ];
+
+        # TODO: remove this when kimpanel and vicinae gnome extension support GNOME 50
+        disable-extension-version-validation = true;
       };
 
       "org/gnome/desktop/input-sources" = with lib.hm.gvariant; {
@@ -43,6 +46,10 @@
       "org/gnome/desktop/interface" = {
         clock-show-weekday = true;
         clock-show-date = true;
+      };
+
+      "org/gnome/desktop/background" = {
+        show-desktop-icons = false;
       };
 
       "org/gnome/shell/extensions/dash-to-dock" = {
