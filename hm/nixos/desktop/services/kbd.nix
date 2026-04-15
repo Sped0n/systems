@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 {
   home = {
     keyboard = {
@@ -8,6 +8,12 @@
     packages = with pkgs; [
       gnomeExtensions.kimpanel
     ];
+    sessionVariables = {
+      XMODIFIERS = "@im=fcitx";
+    };
+
+    file.".config/systemd/user/org.freedesktop.IBus.session.GNOME.service".source =
+      config.lib.file.mkOutOfStoreSymlink "/dev/null";
   };
 
   dconf.settings."org/gnome/shell".enabled-extensions = [
