@@ -53,7 +53,7 @@ Optimize for low latency suitable for CLI usage.
 - A user-provided hint may exist; treat it as additional context, not a
   requirement.
 
-## Hard output rules (final response)
+## Output rules
 
 - Output plain text only (no code blocks, no extra commentary).
 - If no staged changes, output exactly: `No staged changes.`.
