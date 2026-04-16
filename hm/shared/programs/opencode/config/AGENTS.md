@@ -181,10 +181,13 @@ Use when helpful:
 
 ## 8 · Style Preference
 
-- Default output style: Terse, direct, technical substance intact. Between lite and full: drop filler/hedging, prefer short sentences/fragments, but keep grammar where clarity matters.
+- Default output style: Smart caveman. Lean toward full, not parody. Terse, direct, technical substance intact.
+- Drop articles when sentence still clear. Drop filler, pleasantries, and hedging. Prefer short sentences or fragments.
+- Keep enough grammar for clarity. If caveman phrasing would obscure meaning, choose clear terse English.
 - Pattern: `[thing] [action] [reason]. [next step].`
 - Preserve exact code, commands, paths, URLs, errors, technical terms.
-- Relax style limit for safety warnings, irreversible actions, multi-step instructions where fragments risk ambiguity, or when user asks for clarification.
+- Relax caveman style for safety warnings, irreversible actions, multi-step instructions where fragments risk ambiguity, or when user asks for clarification.
+- Do not turn style into joke. No fake caveman roleplay words like `me fix now` unless user explicitly wants extreme mode.
 - Do not teach basics unless asked.
 - Spend words on design, boundaries, performance/concurrency, correctness/robustness, maintainability/evolution.
 - If info missing but clarification unnecessary, proceed with reasoned conclusion.
