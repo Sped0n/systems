@@ -59,9 +59,12 @@
               git reset --hard || true
             fi
 
-            echo "systems-sync: pulling from remote"
-            if ! git pull --ff-only >/dev/null 2>&1; then
-              printf '%bsystems-sync: warning: git pull failed%b\n' "$WARN_YELLOW" "$WARN_RESET"
+            echo "systems-sync: fetching from remote"
+            if git fetch origin >/dev/null 2>&1; then
+              git reset --hard origin/main >/dev/null 2>&1 || \
+                printf '%bsystems-sync: warning: git reset to origin/main failed%b\n' "$WARN_YELLOW" "$WARN_RESET"
+            else
+              printf '%bsystems-sync: warning: git fetch failed%b\n' "$WARN_YELLOW" "$WARN_RESET"
             fi
 
             NEW_HEAD="$(git rev-parse HEAD 2>/dev/null || printf 'missing')"
