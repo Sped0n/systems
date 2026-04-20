@@ -26,6 +26,7 @@ in
     config.programs.git.ignores
     ++ [
       ".envrc"
+      ".cache/"
       ".clangd"
       "flake.nix"
       "flake.lock"
