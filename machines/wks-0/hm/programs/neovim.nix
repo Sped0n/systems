@@ -1,4 +1,4 @@
-{ pkgs-unstable, ... }:
+{ pkgs, pkgs-unstable, ... }:
 {
   home.packages = with pkgs-unstable; [
     # rust
@@ -19,4 +19,6 @@
     zathura
     bibtex-tidy
   ];
+
+  programs.neovim.extraPackages = with pkgs; [ lldb ];
 }
