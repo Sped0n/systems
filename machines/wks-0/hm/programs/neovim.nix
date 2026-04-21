@@ -1,24 +1,20 @@
 { pkgs, pkgs-unstable, ... }:
 {
-  home.packages = with pkgs-unstable; [
-    # rust
-    rust-analyzer
+  programs.neovim.extraPackages =
+    (with pkgs; [ lldb ])
+    ++ (with pkgs-unstable; [
+      clang-tools
+      neocmakelsp
 
-    # c/cpp
-    clang-tools
-    neocmakelsp
+      rust-analyzer
 
-    # typescript
-    vtsls
-    eslint
+      zls_0_15
 
-    # zig
-    zls_0_15
+      vtsls
+      eslint
 
-    # latex
-    zathura
-    bibtex-tidy
-  ];
-
-  programs.neovim.extraPackages = with pkgs; [ lldb ];
+      gopls
+      delve
+      gofumpt
+    ]);
 }
