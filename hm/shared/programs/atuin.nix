@@ -15,7 +15,6 @@
       history_filter = [
         "^export\\s+.*[A-Z_]*(KEY|TOKEN|SECRET|PASSWORD|AUTH)[A-Z_]*="
 
-        "^cd(\\s|$)"
         "^ls(\\s|$)"
         "^exa(\\s|$)"
         "^(sudo\s+)?rm(\\s|$)"
@@ -25,12 +24,9 @@
         "^open(\\s|$)"
         "^ocommit(\\s|$)"
         "^nvim\\s*$"
-        "^(python|python3)\\s*$"
         "^tldr\\s+"
         "^atuin\\s+key\\s*$"
 
-        "^git\\s+commit(\\s|$)"
-        "^git\\s+clone(\\s|$)"
         "^git\\s+(status|st|log|show)\\s*$"
         "^glo(\\s|$)"
         "^git\\s+rebase(\\s+.*)?\\s(-i|--interactive)(\\s|$)"
