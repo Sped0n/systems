@@ -9,8 +9,15 @@ return {
       linked_editing_range = true,
     }
 
-    opts.config.lua_ls.settings.Lua.diagnostics = opts.config.lua_ls.settings.Lua.diagnostics or {}
-    opts.config.lua_ls.settings.Lua.diagnostics.globals = { "vim", "require" }
+    opts.config.lua_ls = vim.tbl_deep_extend("force", opts.config.lua_ls or {}, {
+      settings = {
+        Lua = {
+          diagnostics = {
+            globals = { "vim", "require" },
+          },
+        },
+      },
+    })
 
     opts.servers = opts.servers or {}
     vim.list_extend(opts.servers, {
