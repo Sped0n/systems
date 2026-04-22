@@ -31,7 +31,7 @@
           "options": {
             "provider": {
               "sort": "throughput",
-              "only": ["cloudflare", "moonshotai"],
+              "only": ["fireworks", "cloudflare", "moonshotai"],
             },
             "reasoning": {
               "enabled": true,
