@@ -34,5 +34,6 @@
     "moonlight"
     "bluestacks"
     "pikpak"
+    "lyric-fever"
   ];
 }
