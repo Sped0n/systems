@@ -6,6 +6,7 @@
   "small_model": "newapi-completions/moonshotai/kimi-k2.6",
   "default_agent": "ask",
   "lsp": false,
+  "formatter": false,
   // providers
   "provider": {
     "newapi-completions": {
