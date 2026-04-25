@@ -31,12 +31,12 @@ Purpose: generate a Conventional Commit message from the **staged diff** and
 write it to `.git/COMMIT_EDITMSG` so the user can run `git commit` directly.
 Optimize for low latency suitable for CLI usage.
 
-## Default workflow (keep tool calls minimal)
+## Default workflow
 
 1. If there are no staged changes, do not commit. Output: `No staged changes.`.
 2. Read recent commit messages to learn style.
-3. Read staged diff.
-4. Explore codebase if needed.
+3. Check the staged diff size.
+4. Read staged diff content (explore the diff and codebase yourself or invoke @explore if needed).
 5. Generate one commit message and resolve the message file path:
    `git rev-parse --git-path COMMIT_EDITMSG`
 6. Write the commit message to that file via below command, do not write to any path other than `git rev-parse --git-path COMMIT_EDITMSG`.
@@ -50,8 +50,8 @@ Optimize for low latency suitable for CLI usage.
 
 ## Optional hint
 
-- A user-provided hint may exist; treat it as additional context, not a
-  requirement.
+A user-provided hint may exist; treat it as additional context, not a
+requirement.
 
 ## Output rules
 
@@ -79,6 +79,7 @@ Optimize for low latency suitable for CLI usage.
 
 ## Using @explore
 
-Only invoke `@explore` if the staged diff is too large/ambiguous to classify
-confidently (e.g., mixed refactor+behavior change) and you need a fast,
-read-only summary.
+Invoke `@explore` subagent when:
+
+- Staged diff is large (cost saving).
+- Staged diff is ambiguous to classify (e.g., mixed refactor+behavior change).
