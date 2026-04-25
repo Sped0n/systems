@@ -6,7 +6,7 @@
     ./cloudflared.nix
     ./builder.nix
     ./systems-sync.nix
-    ./ladder.nix
+    ./ladder
     ./msmtp.nix
     ./restic.nix
     ./runner.nix

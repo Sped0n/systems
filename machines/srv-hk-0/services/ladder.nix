@@ -1,17 +1,10 @@
 { vars, ... }:
 {
-  services.my-ladder = {
-    singbox = {
-      enable = true;
-      variant = "as-rly";
-      firewall.tcpPorts = with vars.ladderPorts; [ at ];
-    };
-    snell = {
-      enable = true;
-      firewall = with vars.ladderPorts; {
-        tcpPorts = [ sn ];
-        udpPorts = [ sn ];
-      };
-    };
+  services.my-ladder.relay = {
+    enable = true;
+    exits = [
+      vars.srv-sg-1.ipv4
+      vars.srv-sg-0.ipv4
+    ];
   };
 }
