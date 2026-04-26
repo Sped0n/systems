@@ -14,6 +14,7 @@
     "shottr"
     "windows-app"
     "handbrake-app"
+    "ungoogled-chromium"
 
     # communication
     "telegram"
@@ -24,7 +25,7 @@
     "drawio"
     "typora"
     "onlyoffice"
-    "lobehub"
+    "chatgpt"
 
     # creativity
     "affinity"

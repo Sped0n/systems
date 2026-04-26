@@ -22,6 +22,5 @@
 
     # browsers
     "vivaldi"
-    "ungoogled-chromium"
   ];
 }
