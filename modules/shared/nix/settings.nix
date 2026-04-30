@@ -18,6 +18,7 @@
     fallback = true;
     builders-use-substitutes = true;
     substituters = [
+      "https://aseipp-nix-cache.freetls.fastly.net=9"
       "https://cache.nixos.org?priority=10"
       "https://nix-cache.sped0n.com/nix-cache?priority=30"
       "https://nix-community.cachix.org?priority=50"
