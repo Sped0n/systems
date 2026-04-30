@@ -40,7 +40,7 @@
     zsh.shellAliases = {
       "gis" = "git status";
       "glo" =
-        "git log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --branches";
+        "git log --color --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit";
       "grsh1" = ''
         git --no-pager log -1 --pretty=format:"%C(bold yellow)Commit message about to be reset:%n%C(reset)%B" &&
         git reset --soft HEAD~1
