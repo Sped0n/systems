@@ -26,6 +26,8 @@ return {
           "--pad-oper",
           "--unpad-paren",
           "--max-continuation-indent=120",
+          "--max-code-length=120",
+          "--break-after-logical",
           "--suffix=none",
           "$FILENAME",
         },
