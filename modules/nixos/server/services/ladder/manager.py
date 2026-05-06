@@ -31,7 +31,8 @@ SS2022_PORT = CFG["ports"]["ss2022"]
 SNELL_PORT = CFG["ports"]["snell"]
 BIND_INTERFACE = CFG.get("bindInterface", "eth0")
 
-procs = []
+singbox_proc = None
+snell_proc = None
 stopping = False
 
 
@@ -98,8 +99,9 @@ def ensure_cert():
 
 
 def can_ping(ip):
+    ping_args = [CFG["commands"]["ping"], "-i", "3", "-c", "5", "-W", "3", ip]
     result = subprocess.run(
-        [CFG["commands"]["ping"], "-I", BIND_INTERFACE, "-c", "3", "-W", "3", ip],
+        ping_args,
         check=False,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
@@ -191,7 +193,7 @@ def write_snell_config(password):
     write_text(CFG["snellConfigPath"], snell_config)
 
 
-def write_relay_configs(active_ip, password):
+def write_relay_singbox_config(active_ip, password):
     config = base_config()
     config.update(
         {
@@ -228,6 +230,10 @@ def write_relay_configs(active_ip, password):
     )
 
     write_json(CFG["singboxConfigPath"], config)
+
+
+def write_relay_configs(active_ip, password):
+    write_relay_singbox_config(active_ip, password)
     write_snell_config(password)
 
 
@@ -251,20 +257,20 @@ def write_text(path, value):
 
 
 def start_singbox():
+    global singbox_proc
     run(CFG["commands"]["singBox"], "check", "-c", CFG["singboxConfigPath"])
-    proc = subprocess.Popen(
+    singbox_proc = subprocess.Popen(
         [CFG["commands"]["singBox"], "run", "-c", CFG["singboxConfigPath"]]
     )
-    procs.append(proc)
-    return proc
+    return singbox_proc
 
 
 def start_snell():
-    proc = subprocess.Popen(
+    global snell_proc
+    snell_proc = subprocess.Popen(
         [CFG["commands"]["snellServer"], "-c", CFG["snellConfigPath"]]
     )
-    procs.append(proc)
-    return proc
+    return snell_proc
 
 
 def start_exit():
@@ -287,20 +293,35 @@ def start_relay(active_ip):
     )
 
 
-def stop_processes():
-    for proc in reversed(procs):
-        if proc.poll() is None:
-            proc.terminate()
-
+def stop_process(proc):
+    if proc is None:
+        return
+    if proc.poll() is None:
+        proc.terminate()
     deadline = time.monotonic() + 3
-    for proc in reversed(procs):
-        remaining = max(0.1, deadline - time.monotonic())
-        try:
-            proc.wait(timeout=remaining)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-            proc.wait()
-    procs.clear()
+    remaining = max(0.1, deadline - time.monotonic())
+    try:
+        proc.wait(timeout=remaining)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
+
+
+def stop_singbox():
+    global singbox_proc
+    stop_process(singbox_proc)
+    singbox_proc = None
+
+
+def stop_snell():
+    global snell_proc
+    stop_process(snell_proc)
+    snell_proc = None
+
+
+def stop_processes():
+    stop_singbox()
+    stop_snell()
 
 
 def handle_signal(signum, frame):
@@ -309,20 +330,23 @@ def handle_signal(signum, frame):
     stop_processes()
 
 
-def monitor_children():
-    for proc in procs:
-        if proc.poll() is not None:
-            stop_processes()
-            return proc.returncode or 1
-    return None
+def restart_exited_children():
+    restarted = False
+    if singbox_proc is not None and singbox_proc.poll() is not None:
+        log(f"sing-box exited with status {singbox_proc.returncode}; restarting")
+        start_singbox()
+        restarted = True
+    if snell_proc is not None and snell_proc.poll() is not None:
+        log(f"snell-server exited with status {snell_proc.returncode}; restarting")
+        start_snell()
+        restarted = True
+    return restarted
 
 
 def run_exit():
     start_exit()
     while not stopping:
-        exit_code = monitor_children()
-        if exit_code is not None:
-            return exit_code
+        restart_exited_children()
         time.sleep(1)
     return 0
 
@@ -332,16 +356,17 @@ def run_relay():
     start_relay(active)
 
     while not stopping:
-        exit_code = monitor_children()
-        if exit_code is not None:
-            return exit_code
+        restart_exited_children()
 
         next_active = active_exit_ip(active)
+
         if next_active != active:
             log(f"switching ss2022 outbound {active} -> {next_active}")
-            stop_processes()
+            stop_singbox()
             active = next_active
-            start_relay(active)
+            password = read_password()
+            write_relay_singbox_config(active, password)
+            start_singbox()
 
         time.sleep(FAILOVER_INTERVAL)
 

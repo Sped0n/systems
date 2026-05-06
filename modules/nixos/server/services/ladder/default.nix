@@ -55,12 +55,19 @@ in
 
         ProtectSystem = "strict";
         ProtectHome = true;
+        ProtectClock = true;
+        ProtectControlGroups = true;
+        ProtectHostname = true;
+        ProtectKernelLogs = true;
+        ProtectKernelModules = true;
+        ProtectKernelTunables = true;
         PrivateTmp = true;
-        NoNewPrivileges = false;
+        PrivateDevices = true;
+        NoNewPrivileges = true;
         LockPersonality = true;
         RestrictSUIDSGID = true;
         RestrictNamespaces = true;
-        PrivateDevices = false;
+        RestrictRealtime = true;
         MemoryDenyWriteExecute = true;
         SystemCallArchitectures = "native";
         RestrictAddressFamilies = [
@@ -70,16 +77,13 @@ in
           "AF_NETLINK"
         ];
         CapabilityBoundingSet = [
-          "CAP_NET_ADMIN"
           "CAP_NET_BIND_SERVICE"
           "CAP_NET_RAW"
         ];
         AmbientCapabilities = [
-          "CAP_NET_ADMIN"
           "CAP_NET_BIND_SERVICE"
           "CAP_NET_RAW"
         ];
-        DeviceAllow = [ "/dev/net/tun rw" ];
       };
     };
 
