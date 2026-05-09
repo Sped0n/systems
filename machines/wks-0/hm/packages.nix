@@ -2,5 +2,7 @@
 {
   home.packages = with pkgs-unstable; [
     nixos-anywhere
+
+    hunk
   ];
 }

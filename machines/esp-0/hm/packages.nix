@@ -5,6 +5,8 @@
       nixos-rebuild-ng
     ])
     ++ (with pkgs-unstable; [
+      hunk
+
       popsicle
     ]);
 }
