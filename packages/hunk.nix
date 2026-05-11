@@ -7,11 +7,11 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "hunk";
-  version = "0.10.0";
+  version = "0.11.1";
 
   src = fetchzip {
     url = "https://github.com/modem-dev/hunk/releases/download/v${finalAttrs.version}/staged-prebuilt-npm-release.tar.gz";
-    hash = "sha256-iPnffb0iZoZiK80fkzPVa2cQZZ6SdKJqE00zstJoihU=";
+    hash = "sha256-77ybEnz5ikYXZXXUmqGLIKDbm0mHxiyTxoVQsZJw2hs=";
   };
 
   strictDeps = true;
