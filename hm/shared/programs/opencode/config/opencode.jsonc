@@ -89,6 +89,12 @@
   "permission": {
     "websearch": "deny",
     "webfetch": "deny",
+    "external_directory": {
+      "/nix/store/**": "allow",
+    },
+    "edit": {
+      "/nix/store/**": "deny",
+    },
   },
   // agents
   "agent": {
