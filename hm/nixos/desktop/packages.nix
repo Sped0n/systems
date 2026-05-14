@@ -14,8 +14,6 @@
       peazip
     ])
     ++ (with pkgs-unstable; [
-      cachix
-
       repomix
       hyperfine
       ast-grep
