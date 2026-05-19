@@ -2,6 +2,7 @@
 {
   programs.ghostty = {
     enable = true;
+    systemd.enable = false;
     settings = {
       font-family = "Lilex Medium";
       keybind = [
