@@ -7,9 +7,15 @@ return {
       opts.formatters.astyle_idf = {
         command = "astyle",
         stdin = false,
-        condition = function()
+        condition = function(_, ctx)
           local idf_path = vim.env.IDF_PATH
           if not idf_path or idf_path == "" then return false end
+
+          local filename = ctx and ctx.filename or vim.api.nvim_buf_get_name(0)
+          local dirname = vim.fs.dirname(filename)
+          if dirname and vim.fs.find({ ".clang-format", "_clang-format" }, { path = dirname, upward = true })[1] then
+            return false
+          end
 
           local rules_path = vim.fs.joinpath(idf_path, "tools", "ci", "astyle-rules.yml")
           return vim.uv.fs_stat(rules_path) ~= nil
