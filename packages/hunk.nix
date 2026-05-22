@@ -9,13 +9,13 @@
 }:
 let
   pname = "hunk";
-  version = "0.13.0";
+  version = "0.13.2";
 
   src = fetchFromGitHub {
     owner = "modem-dev";
     repo = "hunk";
     tag = "v${version}";
-    hash = "sha256-eIYNhBAz73GR6yfjjP9nKnZP2MPTKedLQ7Yv7TgWUxs=";
+    hash = "sha256-CBD/hKCQ2eFuEcSpen8rhE2aBPGgVqf9xsdf7+hz0D4=";
   };
 
   node_modules = stdenv.mkDerivation {
