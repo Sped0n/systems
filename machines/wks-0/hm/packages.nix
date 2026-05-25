@@ -1,8 +1,8 @@
-{ pkgs-unstable, ... }:
+{ pkgs, pkgs-unstable, ... }:
 {
-  home.packages = with pkgs-unstable; [
-    nixos-anywhere
-
-    hunk
-  ];
+  home.packages =
+    (with pkgs; [ hunk ])
+    ++ (with pkgs-unstable; [
+      nixos-anywhere
+    ]);
 }
