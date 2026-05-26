@@ -2,24 +2,24 @@
   "$schema": "https://opencode.ai/config.json",
   // general
   "autoupdate": false,
-  "model": "newapi-responses/openai/gpt-5.5",
-  "small_model": "newapi-completions/x-ai/grok-build-0.1",
+  "model": "circe-responses/gpt-5.5",
+  "small_model": "circe-completions/grok-build-0.1",
   "default_agent": "ask",
   "lsp": false,
   "formatter": false,
   // providers
   "provider": {
-    "newapi-completions": {
+    "circe-completions": {
       "npm": "@ai-sdk/openai-compatible",
-      "name": "New API",
+      "name": "Circe",
       "options": {
-        "baseURL": "https://newapi.sped0n.com/v1",
-        "apiKey": "{env:NEWAPI_API_KEY}",
+        "baseURL": "https://circe.sped0n.com/v1",
+        "apiKey": "{env:CIRCE_API_KEY}",
         "setCacheKey": true,
         "timeout": 150000,
       },
       "models": {
-        "x-ai/grok-build-0.1": {
+        "grok-build-0.1": {
           "name": "Grok Build 0.1",
           "cost": {
             "input": 1.25,
@@ -38,17 +38,17 @@
         },
       },
     },
-    "newapi-responses": {
+    "circe-responses": {
       "npm": "@ai-sdk/openai",
-      "name": "New API",
+      "name": "Circe",
       "options": {
-        "baseURL": "https://newapi.sped0n.com/v1",
-        "apiKey": "{env:NEWAPI_API_KEY}",
+        "baseURL": "https://circe.sped0n.com/v1",
+        "apiKey": "{env:CIRCE_API_KEY}",
         "setCacheKey": true,
         "timeout": 150000,
       },
       "models": {
-        "openai/gpt-5.5": {
+        "gpt-5.5": {
           "name": "GPT-5.5",
           "cost": {
             "input": 5,
@@ -99,7 +99,7 @@
   // agents
   "agent": {
     "plan": {
-      "model": "newapi-responses/openai/gpt-5.5",
+      "model": "circe-responses/gpt-5.5",
       "variant": "medium",
       "temperature": 0.1,
       "permission": {
@@ -112,7 +112,7 @@
       },
     },
     "build": {
-      "model": "newapi-responses/openai/gpt-5.5",
+      "model": "circe-responses/gpt-5.5",
       "variant": "medium",
       "temperature": 0.3,
       "permission": {
@@ -124,7 +124,7 @@
       },
     },
     "general": {
-      "model": "newapi-responses/openai/gpt-5.5",
+      "model": "circe-responses/gpt-5.5",
       "variant": "low",
       "temperature": 0.25,
       "permission": {
@@ -136,7 +136,7 @@
       },
     },
     "explore": {
-      "model": "newapi-completions/x-ai/grok-build-0.1",
+      "model": "circe-completions/grok-build-0.1",
       "temperature": 0.0,
       "permission": {
         "skill": {
@@ -148,18 +148,18 @@
       },
     },
     "ask": {
-      "model": "newapi-responses/openai/gpt-5.5",
+      "model": "circe-responses/gpt-5.5",
       "variant": "medium",
     },
     "commit-message-writer": {
-      "model": "newapi-responses/openai/gpt-5.5",
+      "model": "circe-responses/gpt-5.5",
       "variant": "low",
     },
     "50": {
-      "model": "newapi-completions/x-ai/grok-build-0.1",
+      "model": "circe-completions/grok-build-0.1",
     },
     "99": {
-      "model": "newapi-responses/openai/gpt-5.5",
+      "model": "circe-responses/gpt-5.5",
       "variant": "low",
     },
   },

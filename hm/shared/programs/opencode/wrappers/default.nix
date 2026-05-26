@@ -10,8 +10,8 @@ let
 in
 {
   age.secrets = lib.mkIf opencode.enable {
-    "newapi-api-key" = {
-      file = "${secrets}/ages/newapi-api-key.age";
+    "circe-api-key" = {
+      file = "${secrets}/ages/circe-api-key.age";
       mode = "0400";
     };
   };
@@ -21,7 +21,7 @@ in
       set -euo pipefail
       export OPENCODE_EXPERIMENTAL_MARKDOWN=1
       export OPENCODE_EXPERIMENTAL_PLAN_MODE=1
-      export NEWAPI_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."newapi-api-key".path})"
+      export CIRCE_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."circe-api-key".path})"
       exec ${lib.getExe opencode.package} "$@"
     '')
 
