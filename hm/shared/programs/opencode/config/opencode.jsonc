@@ -16,19 +16,19 @@
         "baseURL": "https://circe.sped0n.com/v1",
         "apiKey": "{env:CIRCE_API_KEY}",
         "setCacheKey": true,
-        "timeout": 150000,
       },
       "models": {
         "grok-build-0.1": {
           "name": "Grok Build 0.1",
           "cost": {
-            "input": 1.25,
-            "output": 2.5,
+            "input": 1,
+            "output": 2,
             "cache_read": 0.2,
           },
           "limit": {
-            "context": 204800,
-            "output": 131072,
+            "context": 256000,
+            "input": 200000,
+            "output": 256000,
           },
           "options": {
             "reasoning": {
@@ -45,7 +45,6 @@
         "baseURL": "https://circe.sped0n.com/v1",
         "apiKey": "{env:CIRCE_API_KEY}",
         "setCacheKey": true,
-        "timeout": 150000,
       },
       "models": {
         "gpt-5.5": {
