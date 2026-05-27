@@ -24,6 +24,7 @@
       "https://nix-community.cachix.org?priority=50"
       "https://install.determinate.systems?priority=60"
       "https://cache.numtide.com?priority=70"
+      "https://mirror.sjtu.edu.cn/nix-channels/store?priority=80"
     ];
     trusted-public-keys = [
       "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY="
