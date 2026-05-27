@@ -65,10 +65,8 @@ in
           collection_jitter = "0s";
           flush_interval = "10s";
           flush_jitter = "0s";
-          precision = "";
-          debug = false;
-          quiet = true;
           omit_hostname = false;
+          logfile = "/dev/null";
         };
 
         inputs = {
