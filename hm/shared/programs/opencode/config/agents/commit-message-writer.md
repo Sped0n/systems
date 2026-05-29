@@ -16,6 +16,7 @@ permission:
     "*": deny
     "ast-grep *": allow
     "tee *": allow
+    "printf *": allow
     "git log*": allow
     "git show*": allow
     "git diff*": allow
