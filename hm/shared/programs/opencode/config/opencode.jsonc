@@ -16,6 +16,7 @@
         "baseURL": "https://circe.sped0n.com/v1",
         "apiKey": "{env:CIRCE_API_KEY}",
         "setCacheKey": true,
+        "headerTimeout": 300000,
       },
       "models": {
         "grok-build-0.1": {
@@ -45,6 +46,7 @@
         "baseURL": "https://circe.sped0n.com/v1",
         "apiKey": "{env:CIRCE_API_KEY}",
         "setCacheKey": true,
+        "headerTimeout": 300000,
       },
       "models": {
         "gpt-5.5": {
