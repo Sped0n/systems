@@ -1,106 +1,51 @@
 {
   lib,
   stdenv,
-  bun,
-  fetchFromGitHub,
-  nix-update-script,
+  autoPatchelfHook,
+  fetchzip,
+  nix,
   versionCheckHook,
+  writeShellApplication,
   writableTmpDirAsHomeHook,
 }:
-let
+stdenv.mkDerivation (finalAttrs: {
   pname = "hunk";
-  version = "0.13.2";
+  version = "0.14.1";
 
-  src = fetchFromGitHub {
-    owner = "modem-dev";
-    repo = "hunk";
-    tag = "v${version}";
-    hash = "sha256-CBD/hKCQ2eFuEcSpen8rhE2aBPGgVqf9xsdf7+hz0D4=";
-  };
+  src = fetchzip (
+    builtins.getAttr stdenv.hostPlatform.system {
+      aarch64-darwin = {
+        url = "https://github.com/modem-dev/hunk/releases/download/v${finalAttrs.version}/hunkdiff-darwin-arm64.tar.gz";
+        hash = "sha256-lUzIEFpSOlZUfqzdyAp4sIZYPmz7U1AoEAElRfGGgSQ=";
+      };
+      x86_64-darwin = {
+        url = "https://github.com/modem-dev/hunk/releases/download/v${finalAttrs.version}/hunkdiff-darwin-x64.tar.gz";
+        hash = "sha256-QqM0ov7un53I1F9TFz0WBfAurzkE7tVJgMTbm6J8UuY=";
+      };
+      aarch64-linux = {
+        url = "https://github.com/modem-dev/hunk/releases/download/v${finalAttrs.version}/hunkdiff-linux-arm64.tar.gz";
+        hash = "sha256-NALJwXcq4ru4triQpjBMVAKAYze7qXO9fFINHH1jSn0=";
+      };
+      x86_64-linux = {
+        url = "https://github.com/modem-dev/hunk/releases/download/v${finalAttrs.version}/hunkdiff-linux-x64.tar.gz";
+        hash = "sha256-UDfKclMaAlHIB0YYXXkwtJZdJuSupwXMBoQndYBtqio=";
+      };
+    }
+  );
 
-  node_modules = stdenv.mkDerivation {
-    pname = "${pname}-node_modules";
-    inherit version src;
-
-    nativeBuildInputs = [
-      bun
-      writableTmpDirAsHomeHook
-    ];
-
-    dontConfigure = true;
-
-    buildPhase = ''
-      runHook preBuild
-
-      export BUN_INSTALL_CACHE_DIR=$(mktemp -d)
-      bun install \
-        --cpu="*" \
-        --frozen-lockfile \
-        --ignore-scripts \
-        --no-progress \
-        --os="*"
-
-      runHook postBuild
-    '';
-
-    installPhase = ''
-      runHook preInstall
-
-      mkdir -p $out
-      cp -R node_modules $out
-      find packages -type d -name node_modules -exec cp -R --parents {} $out \;
-
-      runHook postInstall
-    '';
-
-    dontFixup = true;
-
-    outputHash = "sha256-GRmYLvKSBIJcA8O6drg55JeI5li76JCD3xibVFReDfM=";
-    outputHashAlgo = "sha256";
-    outputHashMode = "recursive";
-  };
-in
-stdenv.mkDerivation {
-  inherit pname version src;
-
-  strictDeps = true;
-  __structuredAttrs = true;
-
-  nativeBuildInputs = [
-    bun
-    writableTmpDirAsHomeHook
-  ];
-
-  configurePhase = ''
-    runHook preConfigure
-
-    cp -R ${node_modules}/. .
-    chmod -R u+w node_modules || true
-    find packages -type d -name node_modules -exec chmod -R u+w {} \; || true
-
-    runHook postConfigure
-  '';
-
-  buildPhase = ''
-    runHook preBuild
-
-    mkdir -p .bun-tmp .bun-install
-    BUN_TMPDIR=$PWD/.bun-tmp \
-    BUN_INSTALL=$PWD/.bun-install \
-      bun build --compile src/main.tsx --outfile hunk
-
-    runHook postBuild
-  '';
+  nativeBuildInputs = lib.optionals stdenv.hostPlatform.isLinux [ autoPatchelfHook ];
+  buildInputs = lib.optionals stdenv.hostPlatform.isLinux [ stdenv.cc.libc ];
 
   installPhase = ''
     runHook preInstall
 
-    install -Dm755 hunk $out/bin/hunk
-    cp -R skills $out/skills
+    install -Dm755 ${finalAttrs.src}/hunk $out/bin/hunk
+    cp -R ${finalAttrs.src}/skills $out/skills
 
     runHook postInstall
   '';
 
+  # Bun standalone executables keep application payload in ELF sections that strip breaks.
   dontStrip = true;
 
   doInstallCheck = true;
@@ -113,29 +58,38 @@ stdenv.mkDerivation {
   installCheckPhase = ''
     runHook preInstallCheck
 
-    $out/bin/hunk --version | grep -F ${version}
+    $out/bin/hunk --version | grep -F ${finalAttrs.version}
     test -f "$($out/bin/hunk skill path)"
 
     runHook postInstallCheck
   '';
 
-  passthru = {
-    inherit node_modules;
-    updateScript = nix-update-script {
-      extraArgs = [
-        "--subpackage"
-        "node_modules"
-      ];
-    };
-  };
+  passthru.updateScript = lib.getExe (writeShellApplication {
+    name = "update-hunk";
+    runtimeInputs = [ nix ];
+    text = ''
+      version="''${1:-${finalAttrs.version}}"
+
+      for archive in \
+        hunkdiff-darwin-arm64 \
+        hunkdiff-darwin-x64 \
+        hunkdiff-linux-arm64 \
+        hunkdiff-linux-x64
+      do
+        url="https://github.com/modem-dev/hunk/releases/download/v$version/$archive.tar.gz"
+        printf '%s\n' "$archive"
+        nix store prefetch-file --unpack "$url"
+      done
+    '';
+  });
 
   meta = {
     description = "Terminal diff viewer for agentic changesets";
     homepage = "https://github.com/modem-dev/hunk";
-    changelog = "https://github.com/modem-dev/hunk/releases/tag/v${version}";
+    changelog = "https://github.com/modem-dev/hunk/releases/tag/v${finalAttrs.version}";
     license = lib.licenses.mit;
     mainProgram = "hunk";
     platforms = lib.platforms.unix;
-    sourceProvenance = [ lib.sourceTypes.fromSource ];
+    sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
   };
-}
+})
