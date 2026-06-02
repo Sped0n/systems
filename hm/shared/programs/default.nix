@@ -16,6 +16,7 @@
     ./gh.nix
     ./ghostty.nix
     ./git.nix
+    ./hunk.nix
     ./jina.nix
     ./nix-cache-push.nix
     ./nixos-deploy.nix

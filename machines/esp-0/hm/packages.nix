@@ -5,7 +5,6 @@
       nixos-rebuild-ng
 
       llm-agents.cursor-agent
-      hunk
     ])
     ++ (with pkgs-unstable; [
       popsicle
