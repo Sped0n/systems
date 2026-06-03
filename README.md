@@ -111,7 +111,7 @@ swapon --discard --priority 100 /dev/zram0
    - Settings > SSH and GPG keys > New SSH key.
 5. Clone the repo with `git clone git@github.com:Sped0n/systems.git`.
    - Run the command under `/Users/spedon/.config`.
-6. Install Determinate Nix with the [installer](https://github.com/DeterminateSystems/nix-installer).
+6. Install Nix with the [NixOS installer](https://github.com/NixOS/nix-installer).
 7. Run `sudo nix run nix-darwin/nix-darwin-<XX.XX>#darwin-rebuild -- switch .#<configuration name>`.
    - Change (XX.XX) to the current stable version (e.g., 25.05, 25.11).
    - Change `<configuration name>` to the hostname of the machine you are deploying to.
@@ -168,7 +168,7 @@ swapon --discard --priority 100 /dev/zram0
     - `cp /etc/ssh/ssh_host_rsa_key /mnt/etc/ssh && cp /etc/ssh/ssh_host_rsa_key.pub /mnt/etc/ssh`.
 16. `mv /tmp/systems /mnt/etc/nixos && cd /mnt/etc/nixos/systems`.
 17. Update `machines/<configuration name>/system.nix` according to `/mnt/etc/nixos/hardware-configuration.nix`.
-18. Run `nixos-install --option extra-substituters https://install.determinate.systems?priority=100 --option extra-trusted-public-keys cache.flakehub.com-3:hJuILl5sVK4iKm86JzgdXW12Y2Hwd5G07qKtHTOcDCM= --flake .#<configuration name>`.
+18. Run `nixos-install --flake .#<configuration name>`.
     - Change `<configuration name>` to the hostname of the machine you are deploying to.
 19. Reboot (and unmount the ISO).
 20. Remove the temporary key from GitHub.

@@ -84,17 +84,6 @@ in
             not (program("dhcpcd") and level(debug..info));
           };
 
-          filter f_ignore_dnixd_noise {
-            not (
-              program("determinate-nixd") and (
-                message("logger") or
-                message("determinate_nixd::auth") or
-                message("determinate_nixd::command::start_nix_daemon") or
-                message("at src/")
-              )
-            ); 
-          };
-
           ${lib.concatStringsSep "\n\n" (
             map (name: renderFilter name my-telegraf.syslogExtraFilters.${name}) extraNames
           )}
@@ -105,7 +94,6 @@ in
             filter(f_ignore_kernel_veth);
             filter(f_ignore_dhcpcd_veth);
             filter(f_ignore_dhcpcd_noise);
-            filter(f_ignore_dnixd_noise);
             rewrite(r_telegraf_program);
           ${lib.concatMapStringsSep "\n" (name: "  filter(f_${name});") extraNames}
             destination(d_telegraf);

@@ -5,8 +5,8 @@
 
     ./brew
     ./hm
+    ./services
 
-    ./determinate.nix
     ./networking.nix
   ];
 }

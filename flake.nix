@@ -3,9 +3,8 @@
 
   inputs = {
     # core
-    nixpkgs.url = "https://flakehub.com/f/NixOS/nixpkgs/0.2511";
-    nixpkgs-unstable.url = "https://flakehub.com/f/NixOS/nixpkgs/0.1";
-    determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/*";
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-25.11";
+    nixpkgs-unstable.url = "github:nixos/nixpkgs?ref=nixos-unstable";
 
     # shared
     secrets = {
@@ -45,7 +44,6 @@
       self,
       nixpkgs,
       nixpkgs-unstable,
-      determinate,
       secrets,
       home-manager,
       agenix,
@@ -63,7 +61,8 @@
         rec {
           inherit
             agenix
-            determinate
+            nixpkgs
+            nixpkgs-unstable
             secrets
             ;
 
@@ -145,7 +144,6 @@
 
       commonNixosModules = [
         nixpkgsModule
-        determinate.nixosModules.default
         disko.nixosModules.disko
         agenix.nixosModules.default
         home-manager.nixosModules.home-manager
@@ -153,7 +151,6 @@
 
       commonDarwinModules = [
         nixpkgsModule
-        determinate.darwinModules.default
         agenix.darwinModules.default
         home-manager.darwinModules.home-manager
         nix-homebrew.darwinModules.nix-homebrew
@@ -178,7 +175,6 @@
           };
           modules = [
             nixpkgsModule
-            determinate.nixosModules.default
             ./machines/iso-0
           ];
         };
@@ -190,7 +186,6 @@
           };
           modules = [
             nixpkgsModule
-            determinate.nixosModules.default
             ./machines/iso-0
           ];
         };

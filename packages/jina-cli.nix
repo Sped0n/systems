@@ -6,7 +6,7 @@
   versionCheckHook,
 }:
 
-python3Packages.buildPythonApplication rec {
+python3Packages.buildPythonApplication (finalAttrs: {
   pname = "jina-cli";
   version = "0.4.0";
   pyproject = true;
@@ -14,7 +14,7 @@ python3Packages.buildPythonApplication rec {
   src = fetchFromGitHub {
     owner = "Sped0n";
     repo = "jina-cli";
-    tag = "v${version}";
+    tag = "v${finalAttrs.version}";
     hash = "sha256-D6g5Cu93GXJ9fbbvTHjju87xQWPCepjVmDZqTi1f7/Q=";
   };
 
@@ -48,4 +48,4 @@ python3Packages.buildPythonApplication rec {
     maintainers = with lib.maintainers; [ Sped0n ];
     platforms = lib.platforms.unix;
   };
-}
+})

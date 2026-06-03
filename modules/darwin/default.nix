@@ -4,10 +4,10 @@
     (functions.fromRoot "/modules/shared")
 
     ./brew
+    ./services
     ./system
 
     ./ccache.nix
-    ./determinate.nix
     ./diff.nix
     ./gc.nix
   ];
