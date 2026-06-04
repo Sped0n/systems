@@ -38,6 +38,7 @@
       ]);
     defaultEditor = true;
     vimAlias = false;
+    sideloadInitLua = true;
   };
 
   xdg.configFile."nvim".source =

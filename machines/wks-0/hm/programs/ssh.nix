@@ -32,7 +32,7 @@
     includes = [
       "~/.orbstack/ssh/config"
     ];
-    matchBlocks =
+    settings =
       let
         gitBlock = {
           user = "git";

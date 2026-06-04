@@ -1,6 +1,8 @@
 {
   config,
   functions,
+  nixpkgs,
+  nixpkgs-unstable,
   lib,
   vars,
   ...
@@ -10,6 +12,8 @@ let
 in
 {
   config = lib.mkIf standalone.enable (
-    import (functions.fromRoot "/modules/shared/nix/settings.nix") { inherit vars; }
+    import (functions.fromRoot "/modules/shared/nix/settings.nix") {
+      inherit vars nixpkgs nixpkgs-unstable;
+    }
   );
 }

@@ -112,7 +112,7 @@ swapon --discard --priority 100 /dev/zram0
 5. Clone the repo with `git clone git@github.com:Sped0n/systems.git`.
    - Run the command under `/Users/spedon/.config`.
 6. Install Nix with the [NixOS installer](https://github.com/NixOS/nix-installer).
-7. Run `sudo nix run nix-darwin/nix-darwin-<XX.XX>#darwin-rebuild -- switch .#<configuration name>`.
+7. Run `sudo nix run nix-darwin/nix-darwin-<XX.XX>#darwin-rebuild -- switch --flake .#<configuration name>`.
    - Change (XX.XX) to the current stable version (e.g., 25.05, 25.11).
    - Change `<configuration name>` to the hostname of the machine you are deploying to.
    - Run the command under `/Users/spedon/.config/systems`.

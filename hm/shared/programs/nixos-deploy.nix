@@ -15,7 +15,7 @@ in
       (pkgs.writeShellApplication {
         name = "nixos-deploy";
         runtimeInputs = with pkgs; [
-          nixos-rebuild-ng
+          nixos-rebuild
           python3
         ];
         text = ''
@@ -47,7 +47,7 @@ in
             target_host="$3"
           fi
 
-          cmd=(nixos-rebuild-ng switch --flake "$flake")
+          cmd=(nixos-rebuild switch --flake "$flake")
           if [ -n "$build_host" ]; then
             cmd+=(--build-host "$build_host")
           fi

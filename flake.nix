@@ -3,7 +3,7 @@
 
   inputs = {
     # core
-    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-25.11";
+    nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-26.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs?ref=nixos-unstable";
 
     # shared
@@ -12,7 +12,7 @@
       flake = false;
     };
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.11";
+      url = "github:nix-community/home-manager/release-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     agenix = {
@@ -33,7 +33,7 @@
 
     # macOS
     nix-darwin = {
-      url = "github:nix-darwin/nix-darwin/nix-darwin-25.11";
+      url = "github:nix-darwin/nix-darwin/nix-darwin-26.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";
@@ -98,11 +98,18 @@
             args = { inherit inputs; };
           };
 
+      nixpkgsConfig = {
+        allowUnfree = true;
+        permittedInsecurePackages = [
+          "electron-39.8.10"
+        ];
+      };
+
       nixpkgsModule =
         { ... }:
         {
           nixpkgs = {
-            config.allowUnfree = true;
+            config = nixpkgsConfig;
             overlays = overlaysList;
           };
         };
@@ -111,7 +118,7 @@
         system:
         import nixpkgs-unstable {
           inherit system;
-          config.allowUnfree = true;
+          config = nixpkgsConfig;
           overlays = overlaysList;
         };
 
@@ -126,7 +133,7 @@
         home-manager.lib.homeManagerConfiguration {
           pkgs = import nixpkgs {
             inherit system;
-            config.allowUnfree = true;
+            config = nixpkgsConfig;
             overlays = overlaysList;
           };
           extraSpecialArgs = (genSpecialArgs { inherit system; }) // {
@@ -252,7 +259,7 @@
           system = "x86_64-linux";
           username = "spedon";
           homeDirectory = "/home/spedon";
-          stateVersion = "25.11";
+          stateVersion = "26.05";
           modules = [ ./machines/esp-0/hm ];
         };
       };

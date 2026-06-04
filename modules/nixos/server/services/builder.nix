@@ -91,13 +91,11 @@ in
       programs.ssh = {
         enable = true;
         enableDefaultConfig = false;
-        matchBlocks = {
+        settings = {
           "*" = {
             addKeysToAgent = "yes";
             identitiesOnly = true;
-            extraOptions = {
-              "TCPKeepAlive" = "yes";
-            };
+            TCPKeepAlive = "yes";
           };
         }
         // builtins.listToAttrs (lib.concatMap mkMatchBlockAttrs my-builder.deployees);

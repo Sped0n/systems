@@ -22,6 +22,5 @@
   ++ lib.optionals (pkgs.stdenv.hostPlatform == pkgs.stdenv.buildPlatform) [
     pkgs.foot.terminfo
     pkgs.kitty.terminfo
-    pkgs.termite.terminfo
   ];
 }

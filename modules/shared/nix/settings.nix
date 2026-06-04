@@ -7,7 +7,7 @@
 {
   nix.registry = {
     nixpkgs.flake = nixpkgs;
-    unstable.flake = nixpkgs-unstable;
+    nixpkgs-unstable.flake = nixpkgs-unstable;
   };
 
   nix.settings = {

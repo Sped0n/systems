@@ -19,7 +19,7 @@
     builtins.listToAttrs (map mkSecretAttr vars.serverHostnames);
 
   programs.ssh = {
-    matchBlocks =
+    settings =
       let
         gitBlock = {
           user = "git";

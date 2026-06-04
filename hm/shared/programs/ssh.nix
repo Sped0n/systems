@@ -14,7 +14,7 @@
   programs.ssh = {
     enable = true;
     enableDefaultConfig = false;
-    matchBlocks = {
+    settings = {
       "*" = {
         addKeysToAgent = "yes";
         compression = false;
@@ -26,9 +26,7 @@
         controlPath = "~/.ssh/master-%r@%n:%p";
         controlPersist = "no";
         identitiesOnly = true;
-        extraOptions = {
-          "TCPKeepAlive" = "yes";
-        };
+        TCPKeepAlive = "yes";
       };
 
       "github.com" = {
