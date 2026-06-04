@@ -1,8 +1,8 @@
 { pkgs, ... }:
 {
   programs.zsh.shellAliases = {
-    pbcopy = "${pkgs.wl-clipboard}/bin/wl-copy";
-    pbpaste = "${pkgs.wl-clipboard}/bin/wl-paste";
+    pbcopy = "${pkgs.wl-clipboard}/bin/wl-copy --trim-newline";
+    pbpaste = "${pkgs.wl-clipboard}/bin/wl-paste --no-newline";
     open = "xdg-open";
   };
 
