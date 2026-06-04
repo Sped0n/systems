@@ -75,7 +75,7 @@ jobs:
         uses: nix-community/cache-nix-action/save@v7
         with:
           primary-key: ${{ steps.nix-cache-restore.outputs.primary-key }}
-          gc-max-store-size-linux: 2G
+          gc-max-store-size: 500M
 
       - name: Save ~/.cache/nix
         if: ${{ always() && steps.nix-dotcache-restore.outputs.cache-hit != 'true' }}
