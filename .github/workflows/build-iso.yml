@@ -13,8 +13,6 @@ on:
           - iso-0-aarch64
 
 permissions:
-  actions: write
-  id-token: write
   contents: read
 
 jobs:
@@ -56,13 +54,6 @@ jobs:
             max-substitution-jobs = 64
             extra-substituters = https://nix-community.cachix.org?priority=50 https://cache.numtide.com?priority=70
             extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
-
-      - name: Restore ~/.cache/nix
-        id: nix-dotcache-restore
-        uses: actions/cache/restore@v4
-        with:
-          path: ~/.cache/nix
-          key: nix-dotcache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock') }}
 
       - name: Restore Nix store
         id: nix-cache-restore
@@ -126,10 +117,3 @@ jobs:
         with:
           primary-key: ${{ steps.nix-cache-restore.outputs.primary-key }}
           gc-max-store-size: 5G
-
-      - name: Save ~/.cache/nix
-        if: ${{ always() && steps.nix-dotcache-restore.outputs.cache-hit != 'true' }}
-        uses: actions/cache/save@v4
-        with:
-          path: ~/.cache/nix
-          key: ${{ steps.nix-dotcache-restore.outputs.cache-primary-key }}
