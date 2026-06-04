@@ -13,7 +13,7 @@
       invert = false;
       enter_accept = false;
       history_filter = [
-        "^export\\s+.*[A-Z_]*(KEY|TOKEN|SECRET|PASSWORD|AUTH)[A-Z_]*="
+        "^export\\s+.*[A-Z_]*(KEY|TOKEN|SECRET|PASSWORD|AUTH|PASSWD)[A-Z_]*="
 
         "^ls(\\s|$)"
         "^exa(\\s|$)"
