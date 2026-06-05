@@ -8,26 +8,24 @@ in
     extraConfig = ''
       export CCACHE_COMPRESS=1
       export CCACHE_SLOPPINESS=random_seed
-      if [ -z "''${CCACHE_DIR:-}" ]; then
-        export CCACHE_DIR="${ccacheDir}"
-      fi
       export CCACHE_UMASK=007
       export CCACHE_COMPILERCHECK=content
       export CCACHE_NOHASHDIR=1
+      export CCACHE_DIR="${ccacheDir}"
 
-      if [ ! -d "$CCACHE_DIR" ]; then
+      if [ ! -d "${ccacheDir}" ]; then
         echo "====="
-        echo "Directory '$CCACHE_DIR' does not exist"
+        echo "Directory ${ccacheDir} does not exist"
         echo "Please create it with:"
-        echo "  sudo mkdir -m0770 '$CCACHE_DIR'"
-        echo "  sudo chown root:nixbld '$CCACHE_DIR'"
+        echo "  sudo install -d -m 0755 -o root -g nixbld ${dirOf ccacheDir}"
+        echo "  sudo install -d -m 0770 -o root -g nixbld ${ccacheDir}"
         echo "====="
         exit 1
       fi
 
-      if [ ! -w "$CCACHE_DIR" ]; then
+      if [ ! -w "${ccacheDir}" ]; then
         echo "====="
-        echo "Directory '$CCACHE_DIR' is not accessible for user $(whoami)"
+        echo "Directory ${ccacheDir} is not accessible for user $(whoami)"
         echo "Please verify its access permissions"
         echo "====="
         exit 1

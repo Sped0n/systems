@@ -24,8 +24,8 @@ in
         $DRY_RUN_CMD printf '%b\n' "''${red}===== ''${reset}"
         $DRY_RUN_CMD printf '%b\n' "''${yellow}Directory '${ccacheDir}' does not exist''${reset}"
         $DRY_RUN_CMD printf '%s\n' "Please create it with:"
-        $DRY_RUN_CMD printf '%s\n' "  sudo mkdir -m0770 '${ccacheDir}'"
-        $DRY_RUN_CMD printf '%s\n' "  sudo chown root:nixbld '${ccacheDir}'"
+        $DRY_RUN_CMD printf '%s\n' "  sudo install -d -m 0755 -o root -g nixbld '${dirOf ccacheDir}'"
+        $DRY_RUN_CMD printf '%s\n' "  sudo install -d -m 0770 -o root -g nixbld '${ccacheDir}'"
         $DRY_RUN_CMD printf '%b\n' "''${red}===== ''${reset}"
         exit 1
       fi
@@ -39,8 +39,7 @@ in
         $DRY_RUN_CMD printf '%s\n' "Current owner/group: $actual_owner_group"
         $DRY_RUN_CMD printf '%s\n' "Current mode: $actual_mode"
         $DRY_RUN_CMD printf '%s\n' "Please fix it with:"
-        $DRY_RUN_CMD printf '%s\n' "  sudo chown root:nixbld '${ccacheDir}'"
-        $DRY_RUN_CMD printf '%s\n' "  sudo chmod 0770 '${ccacheDir}'"
+        $DRY_RUN_CMD printf '%s\n' "  sudo install -d -m 0770 -o root -g nixbld '${ccacheDir}'"
         $DRY_RUN_CMD printf '%b\n' "''${red}===== ''${reset}"
         exit 1
       fi
