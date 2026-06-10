@@ -32,6 +32,7 @@ in
       "flake.lock"
       ".opencode"
       "opencode.json"
+      "**/out/131b_2/"
     ]
   );
 }
