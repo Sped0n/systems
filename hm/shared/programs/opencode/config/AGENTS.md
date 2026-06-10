@@ -87,14 +87,14 @@ Focus for moderate/complex: decomposition, abstraction boundaries, trade-offs, v
 
 ### 3.1 Simplicity and Scope
 
-- Avoid over-engineering. First priority while programming: maintain complexity.
+- Avoid over-engineering. Keep YAGNI and KISS explicit; first priority while programming is maintaining complexity.
 - Do not be too defensive. Add guards/fallbacks only for real boundaries or real failure modes.
 - Change only requested or clearly necessary.
 - No extra features/refactors/configurability around bug fixes or small features.
 - No docstrings/comments/types on unchanged code. Comments only when logic not self-evident.
 - No impossible-case handling. Validate only boundaries: user input, external APIs.
 - No feature flags/back-compat shims when code can just change.
-- No one-off helpers/abstractions. If function/helper is used once in codebase, keep logic inline unless it clarifies non-trivial flow. Three similar lines beat premature abstraction.
+- No one-off helpers, wrappers, or abstractions. If function/helper/wrapper is used once in codebase, keep logic inline unless it clarifies non-trivial flow. Three similar lines beat premature abstraction.
 - If certainly unused, delete fully. No `_vars`, re-exports, `// removed` tombstones.
 
 ### 3.2 Testing
