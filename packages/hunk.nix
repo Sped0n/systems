@@ -3,6 +3,7 @@
   stdenv,
   autoPatchelfHook,
   fetchzip,
+  gnused,
   nix,
   versionCheckHook,
   writeShellApplication,
@@ -10,25 +11,25 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "hunk";
-  version = "0.15.3";
+  version = "0.16.0";
 
   src = fetchzip (
     builtins.getAttr stdenv.hostPlatform.system {
       aarch64-darwin = {
         url = "https://github.com/modem-dev/hunk/releases/download/v${finalAttrs.version}/hunkdiff-darwin-arm64.tar.gz";
-        hash = "sha256-RlhDqefYcVoYyTWraJzcnLO6MIRuxMJe6usv7dK0MiQ=";
+        hash = "sha256-RUY9g9gFBHRm8UICwbeMir54otFZCMuwoR4EMuOQ/Bg=";
       };
       x86_64-darwin = {
         url = "https://github.com/modem-dev/hunk/releases/download/v${finalAttrs.version}/hunkdiff-darwin-x64.tar.gz";
-        hash = "sha256-xtEPzHODi2hlVe1tv0S3QZ7Xf6IxrRDx78fiIVTvRfY=";
+        hash = "sha256-791O59MaGDYIZ8Ih/woCCmUyJ3dBHGRkoBl/2K1r2C4=";
       };
       aarch64-linux = {
         url = "https://github.com/modem-dev/hunk/releases/download/v${finalAttrs.version}/hunkdiff-linux-arm64.tar.gz";
-        hash = "sha256-QwRXFNYGuDwZbM2zsReGCngIpcz52EqMzbzLYrTiO+k=";
+        hash = "sha256-Ra0VlUlnf7QThsLMe7hmKvmyVKgTOpEj7Jm8b0j/0GU=";
       };
       x86_64-linux = {
         url = "https://github.com/modem-dev/hunk/releases/download/v${finalAttrs.version}/hunkdiff-linux-x64.tar.gz";
-        hash = "sha256-exsPtSk7WWYty5TsNGSbBt9XrI/BDSCh1pYvXYto0Z4=";
+        hash = "sha256-E2BsfyyTWxo3C7n3dEzHWcKPWLajKQQwlG3n1DIisHs=";
       };
     }
   );
@@ -64,24 +65,40 @@ stdenv.mkDerivation (finalAttrs: {
     runHook postInstallCheck
   '';
 
-  passthru.updateScript = lib.getExe (writeShellApplication {
-    name = "update-hunk";
-    runtimeInputs = [ nix ];
-    text = ''
-      version="''${1:-${finalAttrs.version}}"
+  # nix run -f packages hunk.passthru.updateScriptPackage -- $VERSION
+  passthru = {
+    updateScript = [ (lib.getExe finalAttrs.passthru.updateScriptPackage) ];
+    updateScriptPackage = writeShellApplication {
+      name = "update-hunk";
+      runtimeInputs = [
+        gnused
+        nix
+      ];
+      text = ''
+        version="''${1:-${finalAttrs.version}}"
+        package_file="packages/hunk.nix"
 
-      for archive in \
-        hunkdiff-darwin-arm64 \
-        hunkdiff-darwin-x64 \
-        hunkdiff-linux-arm64 \
-        hunkdiff-linux-x64
-      do
-        url="https://github.com/modem-dev/hunk/releases/download/v$version/$archive.tar.gz"
-        printf '%s\n' "$archive"
-        nix store prefetch-file --unpack "$url"
-      done
-    '';
-  });
+        if [ ! -f "$package_file" ]; then
+          printf 'error: run from repository root so %s exists\n' "$package_file" >&2
+          exit 1
+        fi
+
+        for archive in \
+          hunkdiff-darwin-arm64 \
+          hunkdiff-darwin-x64 \
+          hunkdiff-linux-arm64 \
+          hunkdiff-linux-x64
+        do
+          url="https://github.com/modem-dev/hunk/releases/download/v$version/$archive.tar.gz"
+          printf '%s\n' "$archive"
+          hash="$(nix store prefetch-file --json --unpack "$url" | sed -n 's/.*"hash":"\([^"]*\)".*/\1/p')"
+          sed -i "/$archive.tar.gz/{n;s#hash = \".*\";#hash = \"$hash\";#}" "$package_file"
+        done
+
+        sed -i "0,/  version = \".*\";/s//  version = \"$version\";/" "$package_file"
+      '';
+    };
+  };
 
   meta = {
     description = "Terminal diff viewer for agentic changesets";
