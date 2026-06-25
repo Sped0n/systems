@@ -18,14 +18,14 @@ in
       theme = "custom";
       mode = "auto";
       line_numbers = true;
-      wrap_lines = false;
-      agent_notes = false;
+      wrap_lines = true;
+      agent_notes = true;
 
       custom_theme = {
         base = "graphite";
         label = "Kanagawa Dragon";
         background = "#181616";
-        panel = "#0d0c0c";
+        panel = "#181616";
         panelAlt = "#181616";
         border = "#2d4f67";
         accent = "#c8c093";
@@ -35,6 +35,8 @@ in
         addedBg = "#293829";
         removedBg = "#3f2525";
         contextBg = "#181616";
+        movedAddedBg = "#8ba4b0";
+        movedRemovedBg = "#8ba4b0";
         addedContentBg = "#385038";
         removedContentBg = "#6a3030";
         contextContentBg = "#181616";
