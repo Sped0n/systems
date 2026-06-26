@@ -17,10 +17,6 @@ return {
           local maps = assert(opts.mappings)
           local prefix = "<Leader>o"
 
-          maps.n[prefix .. "5"] = {
-            function() require("ocx").run "50" end,
-            desc = "Run agent 50",
-          }
           maps.n[prefix .. "9"] = {
             function() require("ocx").run "99" end,
             desc = "Run agent 99",
@@ -42,10 +38,6 @@ return {
             desc = "Terminate specific with force",
           }
 
-          maps.v[prefix .. "5"] = {
-            function() require("ocx").run "50" end,
-            desc = "Run agent 50 on selection",
-          }
           maps.v[prefix .. "9"] = {
             function() require("ocx").run "99" end,
             desc = "Run agent 99 on selection",
