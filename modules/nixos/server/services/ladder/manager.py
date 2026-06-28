@@ -7,7 +7,8 @@ import tempfile
 import time
 
 SS2022_METHOD = "2022-blake3-aes-128-gcm"
-FAILOVER_INTERVAL = 300
+URLTEST_TAG = "ss2022-auto"
+URLTEST_INTERVAL = "30s"
 
 PADDING_SCHEME = [
     "stop=8",
@@ -42,15 +43,6 @@ def log(message):
 
 def run(*args, check=True):
     return subprocess.run(args, check=check)
-
-
-def run_quiet(*args, check=True):
-    return subprocess.run(
-        args,
-        check=check,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
 
 
 def read_password():
@@ -98,24 +90,6 @@ def ensure_cert():
     os.chmod(CFG["certPath"], 0o444)
 
 
-def can_ping(ip):
-    ping_args = [CFG["commands"]["ping"], "-i", "3", "-c", "5", "-W", "3", ip]
-    result = subprocess.run(
-        ping_args,
-        check=False,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    return result.returncode == 0
-
-
-def active_exit_ip(current=None):
-    for exit_ip in CFG["exits"]:
-        if can_ping(exit_ip):
-            return exit_ip
-    return current or CFG["exits"][0]
-
-
 def base_config():
     return {
         "log": {"disabled": False, "level": "warn"},
@@ -139,6 +113,17 @@ def anytls_inbound(password):
     }
 
 
+def ss2022_inbound(password):
+    return {
+        "type": "shadowsocks",
+        "listen": "::",
+        "listen_port": SS2022_PORT,
+        "tcp_multi_path": True,
+        "method": SS2022_METHOD,
+        "password": password,
+    }
+
+
 def direct_outbound():
     return {
         "type": "direct",
@@ -148,19 +133,38 @@ def direct_outbound():
     }
 
 
+def ss2022_outbound(tag, server, password):
+    return {
+        "type": "shadowsocks",
+        "tag": tag,
+        "server": server,
+        "server_port": SS2022_PORT,
+        "method": SS2022_METHOD,
+        "password": password,
+        "tcp_multi_path": True,
+        "bind_interface": BIND_INTERFACE,
+        "domain_resolver": {"server": "local", "strategy": "prefer_ipv6"},
+    }
+
+
+def urltest_outbound(tags):
+    return {
+        "type": "urltest",
+        "tag": URLTEST_TAG,
+        "outbounds": tags,
+        "url": "https://www.gstatic.com/generate_204",
+        "interval": URLTEST_INTERVAL,
+        "tolerance": 50,
+        "interrupt_exist_connections": False,
+    }
+
+
 def write_exit_singbox_config(password):
     config = base_config()
     config.update(
         {
             "inbounds": [
-                {
-                    "type": "shadowsocks",
-                    "listen": "::",
-                    "listen_port": SS2022_PORT,
-                    "tcp_multi_path": True,
-                    "method": SS2022_METHOD,
-                    "password": password,
-                },
+                ss2022_inbound(password),
                 anytls_inbound(password),
             ],
             "outbounds": [direct_outbound()],
@@ -193,26 +197,22 @@ def write_snell_config(password):
     write_text(CFG["snellConfigPath"], snell_config)
 
 
-def write_relay_singbox_config(active_ip, password):
+def write_relay_singbox_config(password):
+    outbound_tags = [f"ss2022-out-{index}" for index, _ in enumerate(CFG["exits"])]
     config = base_config()
     config.update(
         {
             "inbounds": [
                 anytls_inbound(password),
+                ss2022_inbound(password),
             ],
             "outbounds": [
                 direct_outbound(),
-                {
-                    "type": "shadowsocks",
-                    "tag": "ss2022-out",
-                    "server": active_ip,
-                    "server_port": SS2022_PORT,
-                    "method": SS2022_METHOD,
-                    "password": password,
-                    "tcp_multi_path": True,
-                    "bind_interface": BIND_INTERFACE,
-                    "domain_resolver": {"server": "local", "strategy": "prefer_ipv6"},
-                },
+                *[
+                    ss2022_outbound(tag, exit_ip, password)
+                    for tag, exit_ip in zip(outbound_tags, CFG["exits"])
+                ],
+                urltest_outbound(outbound_tags),
             ],
             "route": {
                 "auto_detect_interface": True,
@@ -224,7 +224,7 @@ def write_relay_singbox_config(active_ip, password):
                         "method": "default",
                     },
                 ],
-                "final": "ss2022-out",
+                "final": URLTEST_TAG,
             },
         }
     )
@@ -232,8 +232,8 @@ def write_relay_singbox_config(active_ip, password):
     write_json(CFG["singboxConfigPath"], config)
 
 
-def write_relay_configs(active_ip, password):
-    write_relay_singbox_config(active_ip, password)
+def write_relay_configs(password):
+    write_relay_singbox_config(password)
     write_snell_config(password)
 
 
@@ -282,13 +282,13 @@ def start_exit():
     log("started exit node with direct Snell")
 
 
-def start_relay(active_ip):
+def start_relay():
     password = read_password()
-    write_relay_configs(active_ip, password)
+    write_relay_configs(password)
     start_singbox()
     start_snell()
     log(
-        f"started relay node with ss2022 outbound {active_ip}:{SS2022_PORT} "
+        f"started relay node with urltest over {len(CFG['exits'])} ss2022 outbounds "
         "and direct Snell"
     )
 
@@ -352,23 +352,11 @@ def run_exit():
 
 
 def run_relay():
-    active = active_exit_ip()
-    start_relay(active)
+    start_relay()
 
     while not stopping:
         restart_exited_children()
-
-        next_active = active_exit_ip(active)
-
-        if next_active != active:
-            log(f"switching ss2022 outbound {active} -> {next_active}")
-            stop_singbox()
-            active = next_active
-            password = read_password()
-            write_relay_singbox_config(active, password)
-            start_singbox()
-
-        time.sleep(FAILOVER_INTERVAL)
+        time.sleep(1)
 
     return 0
 

@@ -78,12 +78,8 @@ in
         ];
         CapabilityBoundingSet = [
           "CAP_NET_BIND_SERVICE"
-          "CAP_NET_RAW"
         ];
-        AmbientCapabilities = [
-          "CAP_NET_BIND_SERVICE"
-          "CAP_NET_RAW"
-        ];
+        AmbientCapabilities = [ "CAP_NET_BIND_SERVICE" ];
       };
     };
 

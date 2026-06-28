@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  pkgs-unstable,
   vars,
   ...
 }:
@@ -42,7 +41,7 @@ in
             name = "ladder-exit-manager";
             runtimeInputs = [ pkgs.python3 ];
             text = ''
-              export LADDER_MANAGER_CONFIG=${
+              export LADDER_MANAGER_CONFIG="${
                 pkgs.writeText "ladder-exit-manager-config.json" (
                   builtins.toJSON {
                     role = "exit";
@@ -55,15 +54,13 @@ in
                     exits = [ ];
                     ports = { inherit (vars.ladderPorts) anytls ss2022 snell; };
                     commands = {
-                      singBox = "${pkgs-unstable.sing-box}/bin/sing-box";
-                      snellServer = "${pkgs-unstable.snell}/bin/snell-server";
-                      ip = "${pkgs.iproute2}/bin/ip";
+                      singBox = "${pkgs.sing-box}/bin/sing-box";
+                      snellServer = "${pkgs.snell}/bin/snell-server";
                       openssl = "${pkgs.openssl}/bin/openssl";
-                      ping = "${pkgs.iputils}/bin/ping";
                     };
                   }
                 )
-              }
+              }"
               exec python3 ${./manager.py}
             '';
           }

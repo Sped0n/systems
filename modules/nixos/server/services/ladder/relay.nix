@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  pkgs-unstable,
   vars,
   ...
 }:
@@ -38,9 +37,13 @@ in
     networking.firewall = {
       allowedTCPPorts = [
         vars.ladderPorts.anytls
+        vars.ladderPorts.ss2022
         vars.ladderPorts.snell
       ];
-      allowedUDPPorts = [ vars.ladderPorts.snell ];
+      allowedUDPPorts = [
+        vars.ladderPorts.ss2022
+        vars.ladderPorts.snell
+      ];
     };
 
     systemd.services.ladder = {
@@ -51,7 +54,7 @@ in
             name = "ladder-relay-manager";
             runtimeInputs = [ pkgs.python3 ];
             text = ''
-              export LADDER_MANAGER_CONFIG=${
+              export LADDER_MANAGER_CONFIG="${
                 pkgs.writeText "ladder-relay-manager-config.json" (
                   builtins.toJSON {
                     role = "relay";
@@ -64,15 +67,13 @@ in
                     exits = relay.exits;
                     ports = { inherit (vars.ladderPorts) anytls ss2022 snell; };
                     commands = {
-                      singBox = "${pkgs-unstable.sing-box}/bin/sing-box";
-                      snellServer = "${pkgs-unstable.snell}/bin/snell-server";
-                      ip = "${pkgs.iproute2}/bin/ip";
+                      singBox = "${pkgs.sing-box}/bin/sing-box";
+                      snellServer = "${pkgs.snell}/bin/snell-server";
                       openssl = "${pkgs.openssl}/bin/openssl";
-                      ping = "${pkgs.iputils}/bin/ping";
                     };
                   }
                 )
-              }
+              }"
               exec python3 ${./manager.py}
             '';
           }
