@@ -3,6 +3,7 @@
   imports = [
     ./opencode
     ./neovim
+    ./nixos-deploy
     ./yazi
     ./zsh
 
@@ -19,7 +20,6 @@
     ./hunk.nix
     ./jina.nix
     ./nix-cache-push.nix
-    ./nixos-deploy.nix
     ./ssh.nix
     ./starship.nix
     ./tmux.nix
