@@ -22,8 +22,8 @@
     ];
     log-lines = 25;
     download-buffer-size = 524288000;
-    http-connections = 64;
-    max-substitution-jobs = 64;
+    http-connections = 32;
+    max-substitution-jobs = 32;
     connect-timeout = 5;
     fallback = true;
     builders-use-substitutes = true;
