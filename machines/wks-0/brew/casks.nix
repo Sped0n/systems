@@ -33,7 +33,6 @@
 
     # entertainment
     "moonlight"
-    "bluestacks"
     "pikpak"
     "lyric-fever"
   ];
