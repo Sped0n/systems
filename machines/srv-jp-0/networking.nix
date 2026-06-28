@@ -5,20 +5,20 @@
     interfaces.eth0 = {
       ipv4.addresses = [
         {
-          address = "10.1.227.26";
-          prefixLength = 16;
+          address = vars."${hostName}".ipv4;
+          prefixLength = 24;
         }
       ];
       ipv6.addresses = [
         {
           address = vars."${hostName}".ipv6;
-          prefixLength = 128;
+          prefixLength = 64;
         }
       ];
     };
 
     defaultGateway = {
-      address = "10.1.255.253";
+      address = vars."${hostName}".ipv4Gateway;
       interface = "eth0";
     };
     defaultGateway6 = {

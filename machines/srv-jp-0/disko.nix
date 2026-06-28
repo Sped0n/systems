@@ -4,7 +4,7 @@
     devices = {
       disk = {
         my-disk = {
-          device = "/dev/vda";
+          device = "/dev/sda";
           type = "disk";
           content = {
             type = "gpt";
