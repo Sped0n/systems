@@ -72,7 +72,6 @@
               if builtins.match ".*darwin$" system != null then "/Users/${username}" else "/home/${username}";
             serverHostnames = [
               "srv-de-0"
-              "srv-hk-0"
               "srv-jp-0"
               "srv-nl-0"
               "srv-sg-0"
@@ -203,14 +202,6 @@
             pkgs-unstable = pkgsUnstableFor system;
           };
           modules = commonNixosModules ++ [ ./machines/srv-de-0 ];
-        };
-
-        "srv-hk-0" = nixpkgs.lib.nixosSystem rec {
-          system = "x86_64-linux";
-          specialArgs = (genSpecialArgs { inherit system; }) // {
-            pkgs-unstable = pkgsUnstableFor system;
-          };
-          modules = commonNixosModules ++ [ ./machines/srv-hk-0 ];
         };
 
         "srv-jp-0" = nixpkgs.lib.nixosSystem rec {

@@ -21,7 +21,6 @@ machines
 ├── esp-0       # Ubuntu desktop (x86_64)
 ├── iso         # NixOS installer image
 ├── srv-de-0    # NixOS server (x86_64)
-├── srv-hk-0    # NixOS server (x86_64)
 ├── srv-jp-0    # NixOS server (x86_64)
 ├── srv-nl-0    # NixOS server (x86_64)
 ├── srv-sg-0    # NixOS server (x86_64)
