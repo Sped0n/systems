@@ -1,4 +1,5 @@
 {
+  config,
   functions,
   lib,
   pkgs,
@@ -33,6 +34,7 @@
     shellAliases = {
       ".." = "cd ..";
       "..." = "cd ../..";
+      zreload = "source ${config.xdg.configHome}/zsh/.zshrc";
     };
     plugins = [
       {
