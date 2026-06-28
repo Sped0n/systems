@@ -151,7 +151,7 @@ in
             middlewares = {
               cftunnel.plugin.traefik-real-ip.excludednets = [ ];
               authelia.forwardauth = {
-                address = "http://100.96.0.${vars."srv-de-0".meshId}:9091/api/authz/forward-auth";
+                address = "http://srv-de-0.${vars.tailnet}:9091/api/authz/forward-auth";
                 trustForwardHeader = true;
                 authResponseHeaders = [
                   "Remote-User"
@@ -234,7 +234,7 @@ in
         outputs = {
           influxdb = [
             {
-              urls = [ "http://100.96.0.${vars."srv-de-0".meshId}:8428" ];
+              urls = [ "http://srv-de-0.${vars.tailnet}:8428" ];
               database = "victoriametrics";
               skip_database_creation = true;
               exclude_retention_policy_tag = true;
@@ -245,7 +245,7 @@ in
           ];
           loki = [
             {
-              domain = "http://100.96.0.${vars."srv-de-0".meshId}:10428";
+              domain = "http://srv-de-0.${vars.tailnet}:10428";
               endpoint = "/insert/loki/api/v1/push";
               gzip_request = true;
               sanitize_label_names = true;

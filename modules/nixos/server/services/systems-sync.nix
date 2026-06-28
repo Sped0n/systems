@@ -7,17 +7,18 @@
 {
   systemd.tmpfiles.rules = with vars; [
     "d ${home}/.config 0755 ${username} users -"
-    "d ${home}/.local/state/systems-sync 0755 ${username} users -"
   ];
 
   system.activationScripts.systems-sync = {
     deps = [ "users" ];
     text = ''
+      ${pkgs.coreutils}/bin/install -d -m 0755 -o ${vars.username} -g users /var/lib/systems-sync
+
       if ! /run/wrappers/bin/su - ${vars.username} -s ${pkgs.bash}/bin/bash -c ${lib.escapeShellArg "${
         (pkgs.writeShellScript "systems-sync-activation" ''
           TARGET="${vars.home}/.config/systems"
           REPO="https://github.com/Sped0n/systems.git"
-          STATE_DIR="${vars.home}/.local/state/systems-sync"
+          STATE_DIR="/var/lib/systems-sync"
           LOCK_FILE="$STATE_DIR/sync.lock"
           TIMESTAMP_FILE="$STATE_DIR/last-update"
           NVIM_BIN="/etc/profiles/per-user/${vars.username}/bin/nvim"

@@ -44,4 +44,9 @@ in
   services.my-telegraf.extraConfig = lib.mkIf my-telegraf.enable {
     inputs.wireguard.devices = [ "torrent0" ];
   };
+
+  systemd.services.tailscaled = {
+    after = [ "wg-quick-torrent0.service" ];
+    wants = [ "wg-quick-torrent0.service" ];
+  };
 }

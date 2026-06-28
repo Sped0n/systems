@@ -6,6 +6,6 @@
     ./services
     ./system
 
-    ./mesh.nix
+    ./tailscale.nix
   ];
 }

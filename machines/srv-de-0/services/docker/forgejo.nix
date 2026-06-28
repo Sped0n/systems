@@ -55,6 +55,6 @@
   '';
 
   services.my-traefik.extraEntryPoints."forgejo-runner" = {
-    address = "100.96.0.${toString vars."srv-de-0".meshId}:4300";
+    address = ":4300";
   };
 }

@@ -74,7 +74,7 @@ in
         enable = true;
         name = "${hostname}";
         tokenFile = tokenFilePath;
-        url = "http://100.96.0.${toString vars."srv-de-0".meshId}:4300/";
+        url = "http://srv-de-0.${vars.tailnet}:4300/";
         labels = my-runner.labels;
         settings = {
           runner = {

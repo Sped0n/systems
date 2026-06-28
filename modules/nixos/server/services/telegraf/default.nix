@@ -96,7 +96,7 @@ in
 
         outputs.influxdb = [
           {
-            urls = [ "http://100.96.0.${vars."srv-de-0".meshId}:8428" ];
+            urls = [ "http://srv-de-0.${vars.tailnet}:8428" ];
             database = "victoriametrics";
             skip_database_creation = true;
             exclude_retention_policy_tag = true;
