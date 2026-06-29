@@ -20,7 +20,6 @@ in
     (pkgs.writeShellScriptBin "oc" ''
       set -euo pipefail
       export OPENCODE_EXPERIMENTAL_MARKDOWN=1
-      export OPENCODE_EXPERIMENTAL_PLAN_MODE=1
       export CIRCE_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."circe-api-key".path})"
       exec ${lib.getExe opencode.package} "$@"
     '')

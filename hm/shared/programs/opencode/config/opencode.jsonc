@@ -4,7 +4,7 @@
   "autoupdate": false,
   "model": "circe-responses/gpt-5.5",
   "small_model": "circe-completions/grok-build-0.1",
-  "default_agent": "ask",
+  "default_agent": "plan",
   "lsp": false,
   "formatter": false,
   // providers
@@ -65,7 +65,6 @@
             "textVerbosity": "low",
             "reasoningSummary": "auto",
             "include": ["reasoning.encrypted_content"],
-            "instructions": "{file:~/.config/opencode/instructions/gpt.txt}",
             "service_tier": "default",
           },
           "variants": {
@@ -103,14 +102,6 @@
       "model": "circe-responses/gpt-5.5",
       "variant": "medium",
       "temperature": 0.1,
-      "permission": {
-        "skill": {
-          "*": "deny",
-          "ast-grep": "allow",
-          "httpie-cli": "allow",
-          "jina-cli": "allow",
-        },
-      },
     },
     "build": {
       "model": "circe-responses/gpt-5.5",
@@ -147,10 +138,6 @@
           "jina-cli": "allow",
         },
       },
-    },
-    "ask": {
-      "model": "circe-responses/gpt-5.5",
-      "variant": "medium",
     },
     "commit-message-writer": {
       "model": "circe-responses/gpt-5.5",
