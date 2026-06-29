@@ -19,7 +19,6 @@
       ast-grep
 
       httpie-desktop
-      bitwarden-desktop
       obsidian
       gimp3-with-plugins
       onlyoffice-desktopeditors

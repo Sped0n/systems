@@ -99,9 +99,6 @@
 
       nixpkgsConfig = {
         allowUnfree = true;
-        permittedInsecurePackages = [
-          "electron-39.8.10"
-        ];
       };
 
       nixpkgsModule =
