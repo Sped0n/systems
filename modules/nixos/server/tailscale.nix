@@ -49,6 +49,20 @@ in
     ];
   };
 
+  services.my-telegraf.syslogExtraFilters.ignore_tailscaled_noise = lib.mkIf my-telegraf.enable ''
+    not (
+      program("tailscaled") and
+      level(info) and
+      (
+        message("(derphttp\\.Client\\.(Recv|Send): connecting to derp-|magicsock:|netcheck:|wgengine:|dns:|router:|LinkChange:|Rebind;|DetectCaptivePortal\\(|netmap: suggested exit node:|post-rebind ping of DERP region|writing netmap to disk cache)") or
+        message("control: (controlclient direct:|NetInfo:|netmap:|sleeping for server-requested)") or
+        message("health\\(warnable=.*\\): ok") or
+        message("logtail: (bootstrap dial succeeded|upload succeeded after)") or
+        message("\\[RATELIMIT\\] format\\(\"(%s: connecting to derp-%d|health\\(warnable=%s\\): ok|magicsock: derp-%d|post-rebind ping of DERP region %d okay)")
+      )
+    );
+  '';
+
   boot.kernel.sysctl = {
     "net.ipv4.ip_forward" = 1;
     "net.ipv6.conf.all.forwarding" = 1;
