@@ -1,5 +1,5 @@
 {
   imports = [
-    ./builder.nix
+    ./builder
   ];
 }

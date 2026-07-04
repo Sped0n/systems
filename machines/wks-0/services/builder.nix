@@ -2,15 +2,8 @@
 {
   services.my-linux-builder = {
     enable = true;
-    customizeVm = {
-      enable = true;
-      cores = 6;
-      memorySize = 8 * 1024;
-      diskSize = 40 * 1024;
-      systems = [
-        "aarch64-linux"
-        "x86_64-linux"
-      ];
-    };
+    cores = 6;
+    memory = "8192M";
+    image = "ghcr.io/sped0n/darwin-builder:latest";
   };
 }
