@@ -38,5 +38,11 @@
       default = 60 * 60;
       description = "Stop a builder container after this many seconds without an established SSH connection. Set to null to disable.";
     };
+
+    pruneOldImages = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Remove old local tags for the configured builder image repository during activation.";
+    };
   };
 }

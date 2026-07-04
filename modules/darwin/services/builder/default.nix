@@ -96,6 +96,19 @@ in
       fi
 
       ${runAsUser} ${containerBin} prune >/dev/null 2>&1 || true
+      ${lib.optionalString cfg.pruneOldImages ''
+        image_ref=${lib.escapeShellArg cfg.image}
+        image_name="''${image_ref%:*}"
+        image_tag="''${image_ref##*:}"
+        if [ "$image_name" != "$image_ref" ]; then
+          ${runAsUser} ${containerBin} image ls \
+            | /usr/bin/awk -v name="$image_name" -v keep="$image_tag" 'NR > 1 && $1 == name && $2 != keep { print $1 ":" $2 }' \
+            | while IFS= read -r stale_image; do
+                [ -n "$stale_image" ] || continue
+                ${runAsUser} ${containerBin} image rm "$stale_image" >/dev/null 2>&1 || true
+              done
+        fi
+      ''}
     '';
 
     system.activationScripts.postActivation.text = lib.mkAfter ''
