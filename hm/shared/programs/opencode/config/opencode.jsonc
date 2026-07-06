@@ -91,9 +91,11 @@
     "webfetch": "deny",
     "external_directory": {
       "/nix/store/**": "allow",
+      "~/.cache/checkouts/**": "allow",
     },
     "edit": {
       "/nix/store/**": "deny",
+      "~/.cache/checkouts/**": "deny",
     },
   },
   // agents
