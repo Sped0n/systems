@@ -96,6 +96,7 @@ in
 
       # --- Modifier Keys ----------------------------------------------------
       set -s extended-keys on
+      set -g extended-keys-format csi-u
       set -as terminal-features 'xterm*:extkeys'
 
       # --- VI ---------------------------------------------------------------
