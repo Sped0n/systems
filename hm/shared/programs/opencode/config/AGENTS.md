@@ -36,7 +36,9 @@
 
 ## Papercuts
 
-- When a loaded skill causes or reveals small friction, a contradiction, undocumented setup, stale advice, a misleading error, or a useful non-obvious gotcha, create `<project-root>/.opencode/papercut-<skill-name>/<short-desc>-<timestamp>.md` before finishing the task.
+- Record a papercut only when applying a skill within its declared scope reveals reusable feedback about that skill: contradictory or stale guidance, missing setup, a misleading error, or a non-obvious gotcha likely to recur across projects.
+- Do not record task-specific problems, normal project bugs, environmental accidents, or friction caused by invoking the wrong skill.
+- Write valid feedback to `<project-root>/.opencode/papercut-<skill-name>/<short-desc>-<timestamp>.md` before finishing the task.
 - In read-only modes or when the user forbids edits, report the papercut instead of writing it.
-- Use a filesystem-safe lowercase hyphenated `<short-desc>` and a UTC `<timestamp>` formatted `YYYYMMDDTHHMMSSZ`. Attribute the entry to the most relevant loaded skill; use `papercut-general` only when none applies.
-- Write one or two sentences: task -> friction, plus likely cause or fix when known. Do not log normal project bugs or accomplishments, and avoid duplicate entries.
+- Use a filesystem-safe lowercase hyphenated `<short-desc>` and a UTC `<timestamp>` formatted `YYYYMMDDTHHMMSSZ`.
+- Write one or two sentences: in-scope skill use -> reusable friction, plus likely cause or fix when known. Avoid duplicate entries.
