@@ -1,1 +1,3 @@
-{ inputs, ... }: final: prev: inputs.llm-agents.overlays.default final prev
+{ inputs, ... }: final: prev: {
+  llm-agents = inputs.llm-agents.packages.${final.stdenv.hostPlatform.system};
+}
