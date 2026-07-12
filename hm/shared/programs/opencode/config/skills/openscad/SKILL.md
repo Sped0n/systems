@@ -9,10 +9,9 @@ Create, validate, and export OpenSCAD 3D models. Supports parameter customizatio
 
 ## Prerequisites
 
-OpenSCAD must be installed. Install via Homebrew:
-```bash
-brew install openscad
-```
+OpenSCAD must be available on `PATH`. If it is missing, stop and ask the user to
+add it through the system's package configuration; do not install packages
+imperatively.
 
 ## Tools
 

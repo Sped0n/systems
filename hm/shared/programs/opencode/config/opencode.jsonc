@@ -163,7 +163,8 @@
       },
     },
     "explore": {
-      "model": "circe-completions/grok-build-0.1",
+      "model": "circe-responses/gpt-5.6-terra",
+      "variant": "medium",
       "temperature": 0.0,
       "permission": {
         "skill": {
@@ -174,12 +175,17 @@
         },
       },
     },
+    "btw": {
+      "description": "Answer one side question without tools or follow-up actions",
+      "mode": "subagent",
+      "hidden": true,
+      "model": "circe-responses/gpt-5.6-sol",
+      "variant": "medium",
+      "permission": "deny",
+    },
     "commit-message-writer": {
       "model": "circe-responses/gpt-5.6-terra",
       "variant": "medium",
-    },
-    "50": {
-      "model": "circe-completions/grok-build-0.1",
     },
     "99": {
       "model": "circe-responses/gpt-5.6-terra",

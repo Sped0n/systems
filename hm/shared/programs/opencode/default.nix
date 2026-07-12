@@ -33,8 +33,8 @@ in
         (mkOpencodeSymlink "tui.jsonc")
         (mkOpencodeSymlink "AGENTS.md")
         (mkOpencodeSymlink "agents")
+        (mkOpencodeSymlink "commands")
         (mkOpencodeSymlink "skills")
-        (mkOpencodeSymlink "instructions")
         (mkOpencodeSymlink "plugins")
       ]
     );
