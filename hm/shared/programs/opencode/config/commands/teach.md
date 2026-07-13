@@ -1,8 +1,8 @@
 ---
 description: Teach the user a new skill or concept within this workspace.
 agent: build
+source: mattpocock/skills@391a2701dd948f94f56a39f7533f8eea9a859c87 skills/productivity/teach/SKILL.md
 ---
-<!-- Source: mattpocock/skills@391a2701dd948f94f56a39f7533f8eea9a859c87 skills/productivity/teach/SKILL.md -->
 
 The user has asked you to teach them something. This is a stateful request - they intend to learn the topic over multiple sessions.
 

@@ -10,9 +10,11 @@ Current upstream commit:
 391a2701dd948f94f56a39f7533f8eea9a859c87
 ```
 
-Every imported command and `SKILL.md` entrypoint has a `Source:` comment
-containing its upstream commit and path. Auxiliary files retain their upstream
-layout and are reviewed through the directory comparison in the update procedure.
+Every imported command has a `source` frontmatter field, and every imported
+`SKILL.md` entrypoint has a `Source:` comment, containing its upstream commit and
+path. OpenCode ignores the command field while keeping it out of the prompt.
+Auxiliary files retain their upstream layout and are reviewed through the
+directory comparison in the update procedure.
 
 ## Mapping
 
@@ -103,7 +105,8 @@ model-invoked skill that owns them. Non-Markdown auxiliary files are safe.
    renamed, deleted, or newly required skills before copying files.
 4. Compare each mapped upstream directory with its local destination. Copy the
    complete new upstream content, then reapply only the porting rules above.
-5. Update every `Source:` comment and the current commit in this document.
+5. Update every command `source` field, every skill `Source:` comment, and the
+   current commit in this document.
 6. Search active projects for relevant
    `.opencode/papercut-<skill-name>/` directories. Apply a papercut only when it
    remains valid against the new upstream version; do not fold project-specific

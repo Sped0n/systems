@@ -1,8 +1,8 @@
 ---
 description: Break a plan, spec, or the current conversation into tracer-bullet tickets, each declaring its blocking edges.
 agent: build
+source: mattpocock/skills@391a2701dd948f94f56a39f7533f8eea9a859c87 skills/engineering/to-tickets/SKILL.md
 ---
-<!-- Source: mattpocock/skills@391a2701dd948f94f56a39f7533f8eea9a859c87 skills/engineering/to-tickets/SKILL.md -->
 
 # To Tickets
 

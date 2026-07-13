@@ -1,8 +1,8 @@
 ---
 description: Create or refine predictable OpenCode skills and commands.
 agent: build
+source: mattpocock/skills@391a2701dd948f94f56a39f7533f8eea9a859c87 skills/productivity/writing-great-skills/SKILL.md
 ---
-<!-- Source: mattpocock/skills@391a2701dd948f94f56a39f7533f8eea9a859c87 skills/productivity/writing-great-skills/SKILL.md -->
 
 Create or refine the capability requested by the user. Read
 `~/.config/opencode/skills/writing-great-skills/GLOSSARY.md` for the relevant

@@ -1,8 +1,8 @@
 ---
 description: Turn the current conversation into a spec in the local .opencode/scratch tracker — no interview, just synthesis of what you've already discussed.
 agent: build
+source: mattpocock/skills@391a2701dd948f94f56a39f7533f8eea9a859c87 skills/engineering/to-spec/SKILL.md
 ---
-<!-- Source: mattpocock/skills@391a2701dd948f94f56a39f7533f8eea9a859c87 skills/engineering/to-spec/SKILL.md -->
 
 This skill takes the current conversation context and codebase understanding and produces a spec (you may know this document as a PRD). Do NOT interview the user — just synthesize what you already know.
 

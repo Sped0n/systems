@@ -1,8 +1,8 @@
 ---
 description: Plan a huge chunk of work as a shared map of investigation tickets, resolving them one at a time until the way to the destination is clear.
 agent: build
+source: mattpocock/skills@391a2701dd948f94f56a39f7533f8eea9a859c87 skills/engineering/wayfinder/SKILL.md
 ---
-<!-- Source: mattpocock/skills@391a2701dd948f94f56a39f7533f8eea9a859c87 skills/engineering/wayfinder/SKILL.md -->
 
 A loose idea has arrived — too big for one agent session, and wrapped in fog: the way from here to the **destination** isn't visible yet. Wayfinding is about finding that way, not charging at the destination. This skill charts the way as a **shared map** on the repo's issue tracker, then works its tickets one at a time until the route is clear.
 

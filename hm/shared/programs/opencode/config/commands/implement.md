@@ -1,8 +1,8 @@
 ---
 description: Implement a piece of work based on a spec or set of tickets.
 agent: build
+source: mattpocock/skills@391a2701dd948f94f56a39f7533f8eea9a859c87 skills/engineering/implement/SKILL.md
 ---
-<!-- Source: mattpocock/skills@391a2701dd948f94f56a39f7533f8eea9a859c87 skills/engineering/implement/SKILL.md -->
 
 Record the current `HEAD` commit before editing. If the input is a local ticket, ensure its effort `.claims/` directory exists, atomically claim it with a non-recursive `mkdir .claims/<NN>`, and set its status to `claimed` before editing. If the claim already exists, stop because another session owns it.
 
