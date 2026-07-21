@@ -22,7 +22,7 @@ let
     user
     userHome
     ;
-  inherit (myLinuxBuilderLaunchd) builderPlist runtimePlist;
+  inherit (myLinuxBuilderLaunchd) builderPlist runtimePlist runtimeScript;
 in
 {
   imports = [
@@ -122,10 +122,11 @@ in
         ${runAsUser} ${containerBin} stop "$old_builder" >/dev/null 2>&1 || true
         ${runAsUser} ${containerBin} rm "$old_builder" >/dev/null 2>&1 || true
       done
-      launchctl bootout "$domain/${runtimeLabel}" 2>/dev/null || true
-      launchctl bootstrap "$domain" ${launchAgentsDir}/${runtimeLabel}.plist 2>/dev/null || true
-      launchctl enable "$domain/${runtimeLabel}" >/dev/null 2>&1 || true
       launchctl bootout "$domain/${builderPlist.label}" 2>/dev/null || true
+      launchctl bootout "$domain/${runtimeLabel}" 2>/dev/null || true
+      ${runAsUser} ${runtimeScript}
+      launchctl bootstrap "$domain" ${launchAgentsDir}/${runtimeLabel}.plist
+      launchctl enable "$domain/${runtimeLabel}" >/dev/null 2>&1 || true
       launchctl bootstrap "$domain" ${builderPlist.path} 2>/dev/null || true
       launchctl enable "$domain/${builderPlist.label}" >/dev/null 2>&1 || true
     '';

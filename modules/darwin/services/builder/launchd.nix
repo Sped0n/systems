@@ -12,8 +12,19 @@ let
 
   runtimeScript = pkgs.writeShellScript "my-linux-builder-runtime" ''
     set -euo pipefail
+
+    expected_install_root=${lib.escapeShellArg "${pkgs.apple-container}/"}
+    if system_status="$(${containerBin} system status --format json 2>/dev/null)"; then
+      install_root="$(printf '%s' "$system_status" | ${lib.getExe pkgs.jq} -er '.installRoot')"
+      if [ "$install_root" != "$expected_install_root" ]; then
+        ${containerBin} system stop
+      fi
+    fi
+
     if ! ${containerBin} system status >/dev/null 2>&1; then
-      ${containerBin} system start --disable-kernel-install
+      ${containerBin} system start \
+        --install-root ${lib.escapeShellArg pkgs.apple-container} \
+        --disable-kernel-install
     fi
   '';
 
@@ -114,6 +125,6 @@ let
 in
 {
   config._module.args.myLinuxBuilderLaunchd = {
-    inherit builderPlist runtimePlist;
+    inherit builderPlist runtimePlist runtimeScript;
   };
 }
