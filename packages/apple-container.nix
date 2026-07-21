@@ -4,17 +4,15 @@
   fetchurl,
   xar,
   cpio,
-  version ? "1.0.0",
-  hash ? "sha256-E/RfJtqUw1Sty+/h6PdjHn8SbpPF1N1qWlOKpmtPR50=",
 }:
 
-stdenv.mkDerivation {
+stdenv.mkDerivation (finalAttrs: {
   pname = "apple-container";
-  inherit version;
+  version = "1.1.0";
 
   src = fetchurl {
-    url = "https://github.com/apple/container/releases/download/${version}/container-${version}-installer-signed.pkg";
-    inherit hash;
+    url = "https://github.com/apple/container/releases/download/${finalAttrs.version}/container-${finalAttrs.version}-installer-signed.pkg";
+    hash = "sha256-DKHEKiJpwlV++x2CsbOKxVPmo6PaGxF5xDm87h59ZxQ=";
   };
 
   nativeBuildInputs = [
@@ -47,4 +45,4 @@ stdenv.mkDerivation {
     sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
     mainProgram = "container";
   };
-}
+})
