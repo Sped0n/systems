@@ -3,12 +3,11 @@ let
   cfg = config.services.my-linux-builder;
   common = import ./lib.nix { inherit config lib pkgs; };
   inherit (common)
+    builder
     containerBin
-    enabledArches
     launchAgentsDir
     mkPlist
     runtimeLabel
-    userHome
     ;
 
   runtimeScript = pkgs.writeShellScript "my-linux-builder-runtime" ''
@@ -24,16 +23,13 @@ let
     LimitLoadToSessionType = [ "Background" ];
     RunAtLoad = true;
     KeepAlive.SuccessfulExit = false;
-    StandardOutPath = "${userHome}/Library/Logs/${runtimeLabel}.log";
-    StandardErrorPath = "${userHome}/Library/Logs/${runtimeLabel}.err";
   };
 
-  mkBuilderScript = arch:
-    pkgs.writeShellScript "run-${arch.name}" ''
+  builderScript = pkgs.writeShellScript "run-${builder.name}" ''
       set -euo pipefail
 
-      name=${lib.escapeShellArg arch.name}
-      port=${toString arch.port}
+      name=${lib.escapeShellArg builder.name}
+      port=${toString builder.port}
 
       for attempt in $(seq 1 30); do
         if ${containerBin} system status >/dev/null 2>&1; then
@@ -57,10 +53,10 @@ let
           containerBin
           "run"
           "--name"
-          arch.name
-        ] ++ arch.platformArgs ++ [
+          builder.name
+        ] ++ builder.runArgs ++ [
           "--publish"
-          "${toString arch.port}:22"
+          "${toString builder.port}:22"
           "--cpus"
           (toString cfg.cores)
           "--memory"
@@ -98,29 +94,26 @@ let
         exit 0
       fi
       exit "$status"
-    '';
+  '';
 
-  mkBuilderPlist = arch:
+  builderPlist =
     let
-      label = "dev.apple.container.${arch.name}";
+      label = "dev.apple.container.${builder.name}";
     in
     {
       inherit label;
       path = "${launchAgentsDir}/${label}.plist";
       plist = mkPlist label {
         Label = label;
-        ProgramArguments = [ (toString (mkBuilderScript arch)) ];
+        ProgramArguments = [ (toString builderScript) ];
         LimitLoadToSessionType = [ "Background" ];
         RunAtLoad = false;
         KeepAlive.OtherJobEnabled."com.apple.container.apiserver" = true;
-        StandardOutPath = "${userHome}/Library/Logs/${label}.log";
-        StandardErrorPath = "${userHome}/Library/Logs/${label}.err";
       };
     };
 in
 {
   config._module.args.myLinuxBuilderLaunchd = {
-    inherit runtimePlist;
-    builderPlists = lib.mapAttrs (_: mkBuilderPlist) enabledArches;
+    inherit builderPlist runtimePlist;
   };
 }

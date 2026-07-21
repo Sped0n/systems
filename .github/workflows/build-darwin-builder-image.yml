@@ -2,7 +2,7 @@ name: Build Darwin Builder Image
 
 on:
   push:
-    branches: [master]
+    branches: [main]
     paths:
       - "modules/darwin/services/builder/image/**"
       - ".github/workflows/build-darwin-builder-image.yml"
@@ -22,17 +22,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Read Nix version
-        id: version
+      - name: Read image metadata
+        id: image
         run: |
           set -euo pipefail
-          version="$(tr -d '\n' < modules/darwin/services/builder/image/IMAGE_VERSION)"
-          dockerfile_version="$(sed -n 's/^FROM nixos\/nix:\(.*\)/\1/p' modules/darwin/services/builder/image/Dockerfile)"
-          if [ "$version" != "$dockerfile_version" ]; then
-            echo "builder image version ($version) does not match Dockerfile ($dockerfile_version)" >&2
+          version="$(sed -nE 's/^FROM nixos\/nix:([0-9]+\.[0-9]+\.[0-9]+)$/\1/p' modules/darwin/services/builder/image/Dockerfile)"
+          if [ -z "$version" ]; then
+            echo "Dockerfile must use FROM nixos/nix:<x.xx.x>" >&2
             exit 1
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=$version-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Read nixpkgs revision
+        id: nixpkgs
+        run: |
+          set -euo pipefail
+          revision="$(jq -er '.nodes.nixpkgs.locked.rev' flake.lock)"
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -51,10 +58,12 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: modules/darwin/services/builder/image
-          platforms: linux/amd64,linux/arm64
+          build-args: |
+            NIXPKGS_REV=${{ steps.nixpkgs.outputs.revision }}
+          platforms: linux/arm64
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: |
             ghcr.io/sped0n/${{ env.IMAGE_NAME }}:latest
-            ghcr.io/sped0n/${{ env.IMAGE_NAME }}:${{ steps.version.outputs.version }}
+            ghcr.io/sped0n/${{ env.IMAGE_NAME }}:${{ steps.image.outputs.tag }}

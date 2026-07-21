@@ -5,24 +5,18 @@ let
   userHome = config.users.users.${user}.home or "/Users/${user}";
   containerBin = lib.getExe pkgs.apple-container;
 
-  arches = {
-    aarch64-linux = {
-      name = "darwin-builder-aarch64";
-      port = 31022;
-      systems = [ "aarch64-linux" ];
-      platformArgs = [ ];
-      maxJobs = cfg.maxJobs;
-    };
-    x86_64-linux = {
-      name = "darwin-builder-x86_64";
-      port = 31023;
-      systems = [ "x86_64-linux" ];
-      platformArgs = [
-        "--platform"
-        "linux/amd64"
-      ];
-      maxJobs = cfg.maxJobs;
-    };
+  builder = {
+    name = "darwin-builder";
+    port = 31022;
+    systems = [
+      "aarch64-linux"
+      "x86_64-linux"
+    ];
+    runArgs = [
+      "--cap-add"
+      "SYS_ADMIN"
+    ];
+    maxJobs = cfg.maxJobs;
   };
 
   mkPlist = label: serviceConfig:
@@ -31,12 +25,11 @@ in
 rec {
   inherit
     containerBin
+    builder
     mkPlist
     user
     userHome
     ;
-
-  enabledArches = arches;
 
   appSupport = "${userHome}/Library/Application Support/com.apple.container";
   launchAgentsDir = "/Library/LaunchAgents";

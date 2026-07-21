@@ -5,7 +5,7 @@
 
     image = lib.mkOption {
       type = lib.types.str;
-      default = "ghcr.io/sped0n/darwin-builder:2.34.7";
+      default = "ghcr.io/sped0n/darwin-builder:latest";
       description = "Builder OCI image.";
     };
 

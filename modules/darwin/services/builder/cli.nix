@@ -3,24 +3,15 @@ let
   cfg = config.services.my-linux-builder;
   common = import ./lib.nix { inherit config lib pkgs; };
   inherit (common)
+    builder
     containerBin
-    enabledArches
     launchAgentsDir
     runtimeLabel
     user
     ;
 
-  builderNames = lib.mapAttrsToList (_: arch: arch.name) enabledArches;
-  builderLabels = lib.mapAttrsToList (_: arch: "dev.apple.container.${arch.name}") enabledArches;
-  builderPlists = lib.mapAttrsToList (_: arch: "${launchAgentsDir}/dev.apple.container.${arch.name}.plist") enabledArches;
-  sshTests = lib.concatMapStringsSep "\n" (name: ''
-    printf '%s: ' ${lib.escapeShellArg name}
-    if ssh -o BatchMode=yes -o ConnectTimeout=5 ${lib.escapeShellArg name} uname -m; then
-      :
-    else
-      failed=1
-    fi
-  '') builderNames;
+  builderLabel = "dev.apple.container.${builder.name}";
+  builderPlist = "${launchAgentsDir}/${builderLabel}.plist";
 in
 {
   config = lib.mkIf cfg.enable {
@@ -35,12 +26,13 @@ in
           domain="user/$uid"
           runtime_label=${lib.escapeShellArg runtimeLabel}
           runtime_plist=${lib.escapeShellArg "${launchAgentsDir}/${runtimeLabel}.plist"}
-          builder_labels=(${lib.concatMapStringsSep " " lib.escapeShellArg builderLabels})
-          builder_plists=(${lib.concatMapStringsSep " " lib.escapeShellArg builderPlists})
-          builder_names=(${lib.concatMapStringsSep " " lib.escapeShellArg builderNames})
+          builder_label=${lib.escapeShellArg builderLabel}
+          builder_plist=${lib.escapeShellArg builderPlist}
+          builder_name=${lib.escapeShellArg builder.name}
+          builder_image=${lib.escapeShellArg cfg.image}
 
           usage() {
-            printf 'usage: my-linux-builder {start|stop|restart|status|logs|test-ssh}\n' >&2
+            printf 'usage: my-linux-builder {start|stop|restart|update|status|test-ssh}\n' >&2
           }
 
           require_domain() {
@@ -73,23 +65,15 @@ in
               ${containerBin} system start --disable-kernel-install
             fi
             bootstrap_or_kickstart "$runtime_label" "$runtime_plist"
-            local i
-            for i in "''${!builder_labels[@]}"; do
-              bootstrap_or_kickstart "''${builder_labels[$i]}" "''${builder_plists[$i]}"
-            done
+            bootstrap_or_kickstart "$builder_label" "$builder_plist"
           }
 
           stop_builders() {
             require_domain
-            local label name
-            for label in "''${builder_labels[@]}"; do
-              stop_label "$label"
-            done
+            stop_label "$builder_label"
             stop_label "$runtime_label"
-            for name in "''${builder_names[@]}"; do
-              ${containerBin} stop "$name" >/dev/null 2>&1 || true
-              ${containerBin} rm "$name" >/dev/null 2>&1 || true
-            done
+            ${containerBin} stop "$builder_name" >/dev/null 2>&1 || true
+            ${containerBin} rm "$builder_name" >/dev/null 2>&1 || true
           }
 
           show_status() {
@@ -99,7 +83,7 @@ in
             ${containerBin} ls --all || true
             printf '\nlaunchd:\n'
             local label
-            for label in "$runtime_label" "''${builder_labels[@]}"; do
+            for label in "$runtime_label" "$builder_label"; do
               if /bin/launchctl print "$domain/$label" >/dev/null 2>&1; then
                 printf '%s: loaded\n' "$label"
               else
@@ -108,17 +92,21 @@ in
             done
           }
 
-          show_logs() {
-            /usr/bin/tail -n 80 \
-              "$HOME/Library/Logs/$runtime_label.err" \
-              "$HOME/Library/Logs/''${builder_labels[0]}.err" \
-              "$HOME/Library/Logs/''${builder_labels[1]}.err" 2>/dev/null || true
-          }
-
           test_ssh() {
             failed=0
-            ${sshTests}
+            printf '%s: ' "$builder_name"
+            ssh -o BatchMode=yes -o ConnectTimeout=5 "$builder_name" uname -m || failed=1
             exit "$failed"
+          }
+
+          update_image() {
+            require_domain
+            if ! ${containerBin} system status >/dev/null 2>&1; then
+              ${containerBin} system start --disable-kernel-install
+            fi
+            ${containerBin} image pull "$builder_image"
+            stop_builders
+            start_builders
           }
 
           case "''${1:-}" in
@@ -132,11 +120,11 @@ in
               stop_builders
               start_builders
               ;;
+            update)
+              update_image
+              ;;
             status)
               show_status
-              ;;
-            logs)
-              show_logs
               ;;
             test-ssh)
               test_ssh

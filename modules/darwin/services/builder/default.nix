@@ -11,8 +11,8 @@ let
   keys = import ./keys.nix { inherit pkgs; };
   inherit (common)
     appSupport
+    builder
     containerBin
-    enabledArches
     keyPath
     launchAgentsDir
     pubKeyPath
@@ -22,7 +22,7 @@ let
     user
     userHome
     ;
-  inherit (myLinuxBuilderLaunchd) builderPlists runtimePlist;
+  inherit (myLinuxBuilderLaunchd) builderPlist runtimePlist;
 in
 {
   imports = [
@@ -49,17 +49,16 @@ in
         nameserver 127.0.0.1
         port 2053
       '';
-    } // lib.mapAttrs' (_: arch: lib.nameValuePair "ssh/ssh_config.d/100-${arch.name}.conf" {
-      text = ''
-        Host ${arch.name}
+      "ssh/ssh_config.d/100-${builder.name}.conf".text = ''
+        Host ${builder.name}
           HostName localhost
-          Port ${toString arch.port}
+          Port ${toString builder.port}
           User root
           IdentityFile ${keyPath}
           StrictHostKeyChecking no
           UserKnownHostsFile /dev/null
       '';
-    }) enabledArches;
+    };
 
     system.defaults.CustomUserPreferences."com.apple.container.defaults"."dns.domain" = "test";
 
@@ -68,7 +67,7 @@ in
 
       macos_major=$(/usr/bin/sw_vers -productVersion | /usr/bin/awk -F. '{print $1}')
       if [ "$macos_major" -lt 26 ]; then
-        echo "services.my-linux-builder requires macOS 26+ when x86_64-linux uses Apple container's default Rosetta kernel" >&2
+        echo "services.my-linux-builder requires macOS 26+" >&2
         exit 1
       fi
 
@@ -82,9 +81,10 @@ in
       install -d -m 755 -o root -g wheel ${launchAgentsDir}
       install -d -m 1777 ${stateDir}
       install -o root -g wheel -m 644 ${runtimePlist} ${launchAgentsDir}/${runtimeLabel}.plist
-      ${lib.concatStrings (lib.mapAttrsToList (_: spec: ''
-        install -o root -g wheel -m 644 ${spec.plist} ${spec.path}
-      '') builderPlists)}
+      install -o root -g wheel -m 644 ${builderPlist.plist} ${builderPlist.path}
+      rm -f \
+        ${launchAgentsDir}/dev.apple.container.darwin-builder-aarch64.plist \
+        ${launchAgentsDir}/dev.apple.container.darwin-builder-x86_64.plist
 
       if ! ${runAsUser} ${containerBin} system status >/dev/null 2>&1; then
         ${runAsUser} ${containerBin} system start --disable-kernel-install
@@ -117,14 +117,17 @@ in
       CONTAINER_UID=$(id -u ${lib.escapeShellArg user})
       domain="user/$CONTAINER_UID"
       launchctl print "$domain" >/dev/null 2>&1 || exit 0
+      for old_builder in darwin-builder-aarch64 darwin-builder-x86_64; do
+        launchctl bootout "$domain/dev.apple.container.$old_builder" 2>/dev/null || true
+        ${runAsUser} ${containerBin} stop "$old_builder" >/dev/null 2>&1 || true
+        ${runAsUser} ${containerBin} rm "$old_builder" >/dev/null 2>&1 || true
+      done
       launchctl bootout "$domain/${runtimeLabel}" 2>/dev/null || true
       launchctl bootstrap "$domain" ${launchAgentsDir}/${runtimeLabel}.plist 2>/dev/null || true
       launchctl enable "$domain/${runtimeLabel}" >/dev/null 2>&1 || true
-      ${lib.concatStrings (lib.mapAttrsToList (_: spec: ''
-        launchctl bootout "$domain/${spec.label}" 2>/dev/null || true
-        launchctl bootstrap "$domain" ${spec.path} 2>/dev/null || true
-        launchctl enable "$domain/${spec.label}" >/dev/null 2>&1 || true
-      '') builderPlists)}
+      launchctl bootout "$domain/${builderPlist.label}" 2>/dev/null || true
+      launchctl bootstrap "$domain" ${builderPlist.path} 2>/dev/null || true
+      launchctl enable "$domain/${builderPlist.label}" >/dev/null 2>&1 || true
     '';
   };
 }
