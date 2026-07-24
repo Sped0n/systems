@@ -126,11 +126,13 @@
       "/nix/store/**": "allow",
       "~/.cache/checkouts/**": "allow",
       "~/.config/opencode/skills/**": "allow",
+      "~/.config/opencode/AGENTS.md": "allow",
     },
     "edit": {
       "/nix/store/**": "deny",
       "~/.cache/checkouts/**": "deny",
       "~/.config/opencode/skills/**": "deny",
+      "~/.config/opencode/AGENTS.md": "deny",
     },
   },
   // agents
