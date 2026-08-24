@@ -12,7 +12,7 @@ in
   options.programs.hunk.enable = lib.mkEnableOption "Hunk diff viewer";
 
   config = lib.mkIf cfg.enable {
-    home.packages = [ pkgs.hunk ];
+    home.packages = [ pkgs.llm-agents.hunk ];
 
     xdg.configFile."hunk/config.toml".source = toml.generate "hunk-config.toml" {
       theme = "custom";
@@ -58,7 +58,7 @@ in
         noteTitleBackground = "#322832";
         noteTitleText = "#c5c9c5";
 
-        syntax = {
+        syntax_scopes = {
           default = "#c5c9c5";
           keyword = "#938aa9";
           string = "#87a987";
