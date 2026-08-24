@@ -5,6 +5,7 @@ import {
   boundDelegateText,
   buildDelegateArguments,
   DelegateJsonLineParser,
+  formatDelegateToolCall,
   runDelegateChild,
 } from "./index.ts";
 import type { ModelTier } from "../tier/model-tiers.ts";
@@ -34,7 +35,10 @@ test("delegate arguments isolate explore with interceptor and web resources", ()
   assert.ok(args.includes("--no-skills"));
   assert.ok(args.includes("--no-prompt-templates"));
   assert.ok(!args.includes("--no-context-files"));
-  assert.match(argumentValue(args, "--append-system-prompt") ?? "", /task-appropriate Markdown/);
+  const delegatePrompt = argumentValue(args, "--append-system-prompt") ?? "";
+  assert.match(delegatePrompt, /task-appropriate Markdown/);
+  assert.match(delegatePrompt, /Gather observable facts and report the supporting evidence/);
+  assert.match(delegatePrompt, /descriptive and directly supported by cited evidence/);
   assert.equal(args.at(-1), "Task: find the parser");
 });
 
@@ -72,6 +76,35 @@ test("delegate JSONL parser reports malformed records", () => {
   const parser = new DelegateJsonLineParser();
   parser.push("not-json\n");
   assert.equal(parser.protocolError, "Delegate emitted malformed JSONL output");
+});
+
+test("delegate JSONL parser emits tool execution starts from fragmented records", () => {
+  const toolCalls: string[] = [];
+  const parser = new DelegateJsonLineParser((toolName, args) => {
+    toolCalls.push(formatDelegateToolCall(toolName, args));
+  });
+  const readEvent = JSON.stringify({
+    type: "tool_execution_start",
+    toolName: "read",
+    args: { path: "src/parser.ts" },
+  });
+  const bashEvent = JSON.stringify({
+    type: "tool_execution_start",
+    toolName: "bash",
+    args: { command: "rg parser\nsrc" },
+  });
+
+  parser.push(readEvent.slice(0, 23));
+  parser.push(`${readEvent.slice(23)}\n${bashEvent}\n`);
+
+  assert.deepEqual(toolCalls, ["→ read src/parser.ts", "→ bash $ rg parser src"]);
+});
+
+test("delegate tool activity is a bounded single line", () => {
+  const activity = formatDelegateToolCall("bash", { command: `printf foo\n${"x".repeat(200)}` });
+  assert.equal(activity.includes("\n"), false);
+  assert.ok(activity.length <= 129);
+  assert.ok(activity.endsWith("..."));
 });
 
 test("delegate report bounding preserves UTF-8 and marks truncation", () => {

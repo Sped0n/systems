@@ -15,6 +15,7 @@ const DELEGATE_ERROR_BYTES_MAX = 32 * 1024;
 const DELEGATE_JSON_LINE_BYTES_MAX = 1024 * 1024;
 const DELEGATE_TASK_CHARACTERS_MAX = 32 * 1024;
 const DELEGATE_KILL_GRACE_MS = 2_000;
+const DELEGATE_ACTIVITY_CHARACTERS_MAX = 120;
 const TRUNCATION_MARKER = "\n\n[delegate output truncated]";
 
 export type DelegateKind = "explore" | "bash";
@@ -34,6 +35,8 @@ interface DelegateAssistantMessage {
   errorMessage?: string;
 }
 
+type DelegateToolCallCallback = (toolName: string, args: Record<string, unknown>) => void;
+
 export interface DelegateChildResult {
   exitCode: number;
   stderr: string;
@@ -47,7 +50,7 @@ const DelegateParameters = Type.Object(
       description: "Focused delegate role",
     }),
     task: Type.String({
-      description: "Self-contained task with the context needed by the delegate",
+      description: "Self-contained factual question or investigation scope with the needed context",
       minLength: 1,
       maxLength: DELEGATE_TASK_CHARACTERS_MAX,
     }),
@@ -58,6 +61,8 @@ const DelegateParameters = Type.Object(
 const COMMON_DELEGATE_PROMPT = [
   "You are a one-shot delegated investigator with a clean context window.",
   "Complete only the supplied task using only the available tools.",
+  "Gather observable facts and report the supporting evidence.",
+  "Keep every conclusion descriptive and directly supported by cited evidence.",
   "Return a direct, concise report in task-appropriate Markdown.",
   "Compress noisy tool output into material findings rather than reproducing logs.",
   "Support repository claims with path:line evidence when available.",
@@ -129,13 +134,31 @@ function appendBoundedText(current: string, addition: string, bytesMax: number):
   return boundDelegateText(`${current}${addition}`, bytesMax, "").text;
 }
 
+function formatDelegateActivityValue(value: unknown): string {
+  const singleLine = typeof value === "string" ? value.replace(/\s+/gu, " ").trim() : "";
+  if (!singleLine) return "...";
+  if (singleLine.length <= DELEGATE_ACTIVITY_CHARACTERS_MAX) return singleLine;
+  return `${singleLine.slice(0, DELEGATE_ACTIVITY_CHARACTERS_MAX - 3)}...`;
+}
+
+export function formatDelegateToolCall(toolName: string, args: Record<string, unknown>): string {
+  if (toolName === "read") return `→ read ${formatDelegateActivityValue(args.path)}`;
+  if (toolName === "bash") return `→ bash $ ${formatDelegateActivityValue(args.command)}`;
+  return `→ ${formatDelegateActivityValue(toolName)}`;
+}
+
 export class DelegateJsonLineParser {
   private line = "";
   private lineBytes = 0;
   private skippingOversizedLine = false;
+  private readonly onToolCall?: DelegateToolCallCallback;
 
   message?: DelegateAssistantMessage;
   protocolError?: string;
+
+  constructor(onToolCall?: DelegateToolCallCallback) {
+    this.onToolCall = onToolCall;
+  }
 
   push(chunk: string): void {
     const parts = chunk.split("\n");
@@ -180,7 +203,12 @@ export class DelegateJsonLineParser {
       this.protocolError ??= "Delegate emitted malformed JSONL output";
       return;
     }
-    if (!isRecord(event) || event.type !== "message_end") return;
+    if (!isRecord(event)) return;
+    if (event.type === "tool_execution_start" && typeof event.toolName === "string") {
+      this.onToolCall?.(event.toolName, isRecord(event.args) ? event.args : {});
+      return;
+    }
+    if (event.type !== "message_end") return;
     const message = extractAssistantMessage(event.message);
     if (message) this.message = message;
   }
@@ -240,10 +268,11 @@ export async function runDelegateChild(
   args: readonly string[],
   cwd: string,
   signal?: AbortSignal,
+  onToolCall?: DelegateToolCallCallback,
 ): Promise<DelegateChildResult> {
   return await new Promise((resolve, reject) => {
     const child = spawn(command, [...args], { cwd, shell: false, stdio: ["ignore", "pipe", "pipe"] });
-    const parser = new DelegateJsonLineParser();
+    const parser = new DelegateJsonLineParser(onToolCall);
     let stderr = "";
     let aborted = false;
     let killTimer: NodeJS.Timeout | undefined;
@@ -301,16 +330,17 @@ export default function delegateExtension(pi: ExtensionAPI): void {
     name: "delegate",
     label: "Delegate",
     description: [
-      "Delegate noisy multi-step exploration or shell investigation to a fresh economy-model context.",
+      "Delegate context-heavy factual exploration or multi-command shell investigation to a fresh economy-model context.",
+      "Produce a descriptive evidence report supported by repository locations, command results, or source URLs.",
       "Use explore for code, documentation, or web research; use bash for a sequence of shell commands.",
       "The delegate returns one compressed report and has no edit, write, or nested delegation tools.",
       "Prefer direct tools for simple one-step work.",
     ].join(" "),
-    promptSnippet: "Delegate context-heavy explore or bash investigation to an isolated economy-model run",
+    promptSnippet: "Delegate context-heavy factual evidence collection through explore or bash",
     parameters: DelegateParameters,
     executionMode: "sequential",
 
-    async execute(_toolCallId, params, signal, _onUpdate, ctx) {
+    async execute(_toolCallId, params, signal, onUpdate, ctx) {
       const task = params.task.trim();
       if (!task) {
         return {
@@ -329,7 +359,18 @@ export default function delegateExtension(pi: ExtensionAPI): void {
           ctx.isProjectTrusted(),
         );
         const invocation = getPiInvocation(childArgs);
-        const result = await runDelegateChild(invocation.command, invocation.args, ctx.cwd, signal);
+        const result = await runDelegateChild(
+          invocation.command,
+          invocation.args,
+          ctx.cwd,
+          signal,
+          (toolName, args) => {
+            onUpdate?.({
+              content: [{ type: "text", text: formatDelegateToolCall(toolName, args) }],
+              details: { kind: params.kind, exitCode: -1, truncated: false } satisfies DelegateDetails,
+            });
+          },
+        );
         const message = result.message;
         const failure = result.protocolError
           ?? (result.exitCode !== 0 ? result.stderr || `Delegate exited with status ${result.exitCode}` : undefined)

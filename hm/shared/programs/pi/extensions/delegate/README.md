@@ -1,7 +1,8 @@
 # Delegate
 
-`delegate` is a narrow model tool for moving noisy investigation into a fresh
-context window. It is not a configurable subagent framework.
+`delegate` is a narrow model tool for moving noisy factual investigation into a
+fresh context window. It produces descriptive evidence reports rather than
+open-ended agent work.
 
 ```ts
 { kind: "explore" | "bash", task: "self-contained task" }
@@ -22,6 +23,6 @@ The child inherits the parent's project-trust decision, so the interceptor appli
 the same global and trusted-project ordered rules in print mode. It is a tool-call
 guard, not an OS sandbox: an allowed Bash command can still modify files or invoke other programs.
 
-Delegate reports have no mandatory headings. They must answer directly,
+Delegate reports have no mandatory headings. They report factual evidence,
 compress noisy output, cite repository evidence as `path:line`, cite external
 sources by URL, and state material failures or uncertainty.
