@@ -25,6 +25,8 @@ pcommit
 pcommit "focus on permission changes"
 ```
 
-Pcommit requires staged changes, never stages files, and never pushes. Model,
-policy, or editor failures exit without committing. Runtime interceptor rules
-are removed when the headless Pi session ends.
+Pcommit requires staged changes, never stages files, and never pushes. While Pi
+works, pcommit streams the current `read` or `bash` activity and the transition
+to commit-message writing on stderr; stdout remains only the generated message.
+Model, policy, or editor failures exit without committing. Runtime interceptor
+rules are removed when the headless Pi session ends.

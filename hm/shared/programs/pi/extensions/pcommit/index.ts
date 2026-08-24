@@ -7,6 +7,21 @@ import {
 import { applyModelTier } from "../tier/index.ts";
 import { getModelTier, readModelTiers } from "../tier/model-tiers.ts";
 
+const PCOMMIT_ACTIVITY_CHARACTERS_MAX = 120;
+
+function formatPcommitActivityValue(value: unknown): string {
+	const singleLine = typeof value === "string" ? value.replace(/\s+/gu, " ").trim() : "";
+	if (!singleLine) return "...";
+	if (singleLine.length <= PCOMMIT_ACTIVITY_CHARACTERS_MAX) return singleLine;
+	return `${singleLine.slice(0, PCOMMIT_ACTIVITY_CHARACTERS_MAX - 3)}...`;
+}
+
+export function formatPcommitToolActivity(toolName: string, args: Record<string, unknown>): string {
+	if (toolName === "read") return `→ read ${formatPcommitActivityValue(args.path)}`;
+	if (toolName === "bash") return `→ bash $ ${formatPcommitActivityValue(args.command)}`;
+	return `→ ${formatPcommitActivityValue(toolName)}`;
+}
+
 export function buildPcommitSystemPrompt(hint: string): string {
 	return [
 		"You write accurate Git commit messages for staged changes.",
@@ -50,6 +65,7 @@ export default function pcommit(pi: ExtensionAPI): void {
 	});
 
 	let active = false;
+	let writingMessageAnnounced = false;
 	let releaseInspectionRules: (() => void) | undefined;
 
 	const releaseRuntimeRules = () => {
@@ -69,6 +85,19 @@ export default function pcommit(pi: ExtensionAPI): void {
 		return { systemPrompt: `${event.systemPrompt}\n\n${buildPcommitSystemPrompt(hint)}` };
 	});
 
+	pi.on("tool_execution_start", async (event) => {
+		if (!active) return;
+		process.stderr.write(`pcommit: ${formatPcommitToolActivity(event.toolName, event.args)}\n`);
+	});
+
+	pi.on("message_update", async (event) => {
+		if (!active || writingMessageAnnounced) return;
+		const updateType = event.assistantMessageEvent.type;
+		if (updateType !== "text_start" && updateType !== "text_delta") return;
+		writingMessageAnnounced = true;
+		process.stderr.write("pcommit: writing commit message…\n");
+	});
+
 	pi.on("session_start", async (_event, ctx) => {
 		if (pi.getFlag("pcommit") !== true) return;
 		try {
@@ -85,6 +114,7 @@ export default function pcommit(pi: ExtensionAPI): void {
 			await applyModelTier(pi, ctx, "economy", getModelTier(tiers, "economy"));
 			releaseInspectionRules = appendInterceptorRules(GIT_INSPECTION_BASH_POLICY, ctx.cwd);
 			pi.setActiveTools(["read", "bash"]);
+			writingMessageAnnounced = false;
 			active = true;
 		} catch (error) {
 			fail(ctx, error);
