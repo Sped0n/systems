@@ -7,7 +7,7 @@
     ./hunk.nix
     ./neovim.nix
     ./nix-cache-push.nix
-    ./opencode.nix
+    ./pi.nix
     ./solaar.nix
     ./ssh.nix
     ./uv.nix

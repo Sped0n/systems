@@ -1,0 +1,12 @@
+{
+  "performance": {
+    "provider": "circe-responses",
+    "model": "gpt-5.6-sol",
+    "thinkingLevel": "medium"
+  },
+  "economy": {
+    "provider": "circe-responses",
+    "model": "gpt-5.6-sol",
+    "thinkingLevel": "low"
+  }
+}

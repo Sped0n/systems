@@ -5,7 +5,7 @@
     ./hunk.nix
     ./neovim.nix
     ./nix-cache-push.nix
-    ./opencode.nix
+    ./pi.nix
     ./ssh.nix
     ./uv.nix
   ];

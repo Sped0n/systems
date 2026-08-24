@@ -22,7 +22,7 @@
         "^(sudo\s+)?bat(\\s|$)"
         "(?i)^clear(\\s|$)"
         "^open(\\s|$)"
-        "^ocommit(\\s|$)"
+        "^pcommit(\\s|$)"
         "^nvim\\s*$"
         "^tldr\\s+"
         "^atuin\\s+key\\s*$"

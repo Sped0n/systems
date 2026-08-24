@@ -30,8 +30,7 @@ in
       ".clangd"
       "flake.nix"
       "flake.lock"
-      ".opencode"
-      "opencode.json"
+      ".pi"
       "**/out/131b_2/"
     ]
   );

@@ -1,0 +1,10 @@
+{
+  "tuiMode": "fullscreen",
+  "editorPaddingX": 1.5,
+  "outputPad": 1,
+  "defaultProjectTrust": "ask",
+  "fullscreenExitOutput": "resume-hint",
+  "treeFilterMode": "user-only",
+  "lastChangelogVersion": "0.84.2",
+  "theme": "kanagawa-dragon"
+}

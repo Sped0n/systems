@@ -1,0 +1,16 @@
+{
+  "rules": [
+    { "path": "/**", "operations": ["read"], "action": "allow" },
+    { "path": "~/.ssh/**", "operations": ["read"], "action": "deny" },
+    { "path": "~/.gnupg/**", "operations": ["read"], "action": "deny" },
+    { "path": "~/.config/age/**", "operations": ["read"], "action": "deny" },
+    { "path": "/**", "operations": ["write"], "action": "deny" },
+    { "path": "$CWD/**", "operations": ["write"], "action": "allow" },
+    { "path": "/tmp/**", "operations": ["write"], "action": "allow" },
+    { "bash": "*", "action": "allow" },
+    { "bash": "pip", "action": "deny", "reason": "Use `uv pip` instead." },
+    { "bash": "pip *", "action": "deny", "reason": "Use `uv pip` instead." },
+    { "bash": "pip3", "action": "deny", "reason": "Use `uv pip` instead." },
+    { "bash": "pip3 *", "action": "deny", "reason": "Use `uv pip` instead." }
+  ]
+}

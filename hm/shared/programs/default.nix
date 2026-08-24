@@ -1,7 +1,7 @@
 { ... }:
 {
   imports = [
-    ./opencode
+    ./pi
     ./neovim
     ./nixos-deploy
     ./yazi
