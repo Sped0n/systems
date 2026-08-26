@@ -74,7 +74,10 @@ test("buildReviewPrompt defaults to uncommitted changes", () => {
 	assert.match(prompt, /Review all staged, unstaged, and untracked changes\./u);
 	assert.match(prompt, /<current_session_context>\nUser: keep behavior stable/u);
 	assert.match(prompt, /No actionable findings\./u);
+	assert.match(prompt, /canonical owner/u);
+	assert.match(prompt, /caller's perspective/u);
 	assert.match(prompt, /rg --no-config/u);
+	assert.doesNotMatch(prompt, /\{\{(?:CURRENT_SESSION_CONTEXT|REVIEW_INSTRUCTIONS)\}\}/u);
 	assert.doesNotMatch(prompt, /git-read/u);
 });
 

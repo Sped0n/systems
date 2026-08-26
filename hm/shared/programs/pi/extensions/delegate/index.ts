@@ -338,7 +338,7 @@ export default function delegateExtension(pi: ExtensionAPI): void {
     ].join(" "),
     promptSnippet: "Delegate context-heavy factual evidence collection through explore or bash",
     parameters: DelegateParameters,
-    executionMode: "sequential",
+    executionMode: "parallel",
 
     async execute(_toolCallId, params, signal, onUpdate, ctx) {
       const task = params.task.trim();

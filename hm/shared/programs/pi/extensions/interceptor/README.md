@@ -52,17 +52,18 @@ ordinary pip installs but do not match `uv pip install ...`. Bare commands need
 separate `pip` rules. Alternative forms such as `python -m pip` also
 need their own explicit rules.
 
-Append one strict policy after global and trusted-project rules for the lifetime
-of a Pi process with an inline JSON CLI argument:
-
-```bash
-pi --interceptor-append-rules '{"rules":[{"bash":"git status*","action":"allow"}]}'
-```
+Policy files are loaded when a session starts, including after `/reload`; they
+are not read for each tool call. A successful load becomes the process-local,
+last-valid policy for that working directory and trust state. If a later load
+fails, the interceptor warns and keeps the matching last-valid policy. Without
+a matching policy, it warns and uses an empty policy. Restarting Pi clears this
+fallback cache.
 
 Extensions can append a scoped ordered rule group with
 `appendInterceptorRules(policy, cwd)`. It returns an idempotent disposer that
-removes only that group. Later runtime groups win over CLI rules, which win over
-project and global rules. Reusable runtime policies live in `policies.ts`;
-review and pcommit share its Git/rg inspection policy.
+removes only that group. Runtime groups are evaluated after the loaded file
+policy and remain dynamic between reloads. Later runtime groups win over earlier
+ones. Reusable runtime policies live in `policies.ts`; review and pcommit share
+its Git/rg inspection policy.
 
 This is a tool-call interceptor, not an OS sandbox.

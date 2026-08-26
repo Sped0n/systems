@@ -11,7 +11,6 @@ import interceptorExtension, {
   commandDecision,
   GIT_INSPECTION_BASH_POLICY,
   loadPolicies,
-  parseAppendedPolicyJson,
   parseBashCommands,
   parsePolicy,
   pathDecision,
@@ -62,26 +61,25 @@ test("schema rejects legacy fields, unknown keys, duplicate operations, and unsu
   }
 });
 
-test("appended policy JSON reuses the strict policy schema", () => {
-  assert.deepEqual(
-    parseAppendedPolicyJson('{"rules":[{"bash":"git status*","action":"allow"}]}'),
-    { rules: [{ bash: "git status*", action: "allow" }] },
-  );
-  assert.throws(
-    () => parseAppendedPolicyJson('[{"bash":"git status*","action":"allow"}]'),
-    /--interceptor-append-rules is invalid/u,
-  );
-});
+function interceptorLifecycleHarness() {
+  const handlers = new Map<string, (...args: any[]) => any>();
+  const notifications: string[] = [];
+  const pi = {
+    on(name: string, handler: (...args: any[]) => any) { handlers.set(name, handler); },
+  } as unknown as ExtensionAPI;
+  interceptorExtension(pi);
+  return { handlers, notifications };
+}
 
 test("runtime rules append after file policy and dispose independently", async () => {
   const handlers = new Map<string, (...args: unknown[]) => unknown>();
   const pi = {
-    registerFlag() {},
-    getFlag() { return undefined; },
     on(name: string, handler: (...args: unknown[]) => unknown) { handlers.set(name, handler); },
   } as unknown as ExtensionAPI;
   interceptorExtension(pi);
+  const sessionStart = handlers.get("session_start");
   const toolCall = handlers.get("tool_call");
+  assert.ok(sessionStart);
   assert.ok(toolCall);
 
   const root = await tempRoot();
@@ -97,8 +95,15 @@ test("runtime rules append after file policy and dispose independently", async (
     { rules: [{ bash: "*", action: "deny" }, { bash: "git status*", action: "allow" }] },
     root,
   );
-  const ctx = { cwd: root, isProjectTrusted: () => false };
+  const notifications: string[] = [];
+  const ctx = {
+    cwd: root,
+    hasUI: true,
+    ui: { notify: (message: string) => notifications.push(message) },
+    isProjectTrusted: () => false,
+  };
   try {
+    await sessionStart({}, ctx);
     assert.equal(await toolCall({ toolName: "bash", input: { command: "git status" } }, ctx), undefined);
     assert.equal(
       (await toolCall({ toolName: "bash", input: { command: "npm test" } }, ctx) as { block: boolean }).block,
@@ -113,6 +118,110 @@ test("runtime rules append after file policy and dispose independently", async (
     else process.env.PI_CODING_AGENT_DIR = previousConfig;
   }
 });
+
+test("file policy changes take effect only after session start or reload", async () => {
+  const root = await tempRoot();
+  const config = path.join(root, "config");
+  await mkdir(config);
+  const policyFile = path.join(config, "interceptor.json");
+  await writeFile(policyFile, JSON.stringify({ rules: [{ bash: "*", action: "allow" }] }));
+  const previousConfig = process.env.PI_CODING_AGENT_DIR;
+  process.env.PI_CODING_AGENT_DIR = config;
+  const harness = interceptorLifecycleHarness();
+  const ctx = {
+    cwd: root,
+    hasUI: true,
+    ui: { notify: (message: string) => harness.notifications.push(message) },
+    isProjectTrusted: () => false,
+  };
+  try {
+    await harness.handlers.get("session_start")!({}, ctx);
+    await writeFile(policyFile, JSON.stringify({ rules: [{ bash: "*", action: "deny" }] }));
+    assert.equal(
+      await harness.handlers.get("tool_call")!({ toolName: "bash", input: { command: "npm test" } }, ctx),
+      undefined,
+    );
+
+    await harness.handlers.get("session_start")!({}, ctx);
+    const result = await harness.handlers.get("tool_call")!(
+      { toolName: "bash", input: { command: "npm test" } },
+      ctx,
+    ) as { block: boolean };
+    assert.equal(result.block, true);
+  } finally {
+    if (previousConfig === undefined) delete process.env.PI_CODING_AGENT_DIR;
+    else process.env.PI_CODING_AGENT_DIR = previousConfig;
+  }
+});
+
+test("invalid reload warns and retains the matching last valid policy", async () => {
+  const root = await tempRoot();
+  const config = path.join(root, "config");
+  await mkdir(config);
+  const policyFile = path.join(config, "interceptor.json");
+  await writeFile(policyFile, JSON.stringify({ rules: [{ bash: "*", action: "allow" }] }));
+  const previousConfig = process.env.PI_CODING_AGENT_DIR;
+  process.env.PI_CODING_AGENT_DIR = config;
+  try {
+    const initial = interceptorLifecycleHarness();
+    const initialContext = {
+      cwd: root,
+      hasUI: true,
+      ui: { notify: (message: string) => initial.notifications.push(message) },
+      isProjectTrusted: () => false,
+    };
+    await initial.handlers.get("session_start")!({}, initialContext);
+    await writeFile(policyFile, "not JSON");
+
+    const reloaded = interceptorLifecycleHarness();
+    const reloadedContext = {
+      ...initialContext,
+      ui: { notify: (message: string) => reloaded.notifications.push(message) },
+    };
+    await reloaded.handlers.get("session_start")!({ reason: "reload" }, reloadedContext);
+
+    assert.match(reloaded.notifications[0] ?? "", /using last valid policy\.$/u);
+    assert.equal(
+      await reloaded.handlers.get("tool_call")!(
+        { toolName: "bash", input: { command: "npm test" } },
+        reloadedContext,
+      ),
+      undefined,
+    );
+  } finally {
+    if (previousConfig === undefined) delete process.env.PI_CODING_AGENT_DIR;
+    else process.env.PI_CODING_AGENT_DIR = previousConfig;
+  }
+});
+
+test("invalid initial policy warns and falls back to an empty policy", async () => {
+  const root = await tempRoot();
+  const config = path.join(root, "config");
+  await mkdir(config);
+  await writeFile(path.join(config, "interceptor.json"), "not JSON");
+  const previousConfig = process.env.PI_CODING_AGENT_DIR;
+  process.env.PI_CODING_AGENT_DIR = config;
+  const harness = interceptorLifecycleHarness();
+  const ctx = {
+    cwd: root,
+    hasUI: true,
+    ui: { notify: (message: string) => harness.notifications.push(message) },
+    isProjectTrusted: () => false,
+  };
+  try {
+    await harness.handlers.get("session_start")!({}, ctx);
+    assert.match(harness.notifications[0] ?? "", /using empty policy\.$/u);
+    const result = await harness.handlers.get("tool_call")!(
+      { toolName: "bash", input: { command: "npm test" } },
+      ctx,
+    ) as { block: boolean };
+    assert.equal(result.block, true);
+  } finally {
+    if (previousConfig === undefined) delete process.env.PI_CODING_AGENT_DIR;
+    else process.env.PI_CODING_AGENT_DIR = previousConfig;
+  }
+});
+
 test("Git inspection policy allows Git and rg reads but denies hazardous forms", async () => {
   for (const bash of [
     "git status --short",

@@ -17,6 +17,8 @@ complete report there.
 /end-review
 ```
 
+The review policy is maintained separately in `review-prompt.txt`; the extension
+renders its session context and free-form review instructions into that template.
 Everything after `/review` is passed verbatim as review instructions. It may
 specify a Git scope, a review focus, or both. When no scope is given, the
 reviewer examines staged, unstaged, and untracked changes. A bare `/review`

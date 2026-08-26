@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { type Message } from "@earendil-works/pi-ai";
 import {
 	buildSessionContext,
@@ -22,28 +24,20 @@ const REVIEW_TOOLS = ["read", "bash"];
 const REVIEW_BRIEF_CHARACTERS_MAX = 30_000;
 const REVIEW_BRIEF_HEAD_CHARACTERS = 10_000;
 const REVIEW_BRIEF_OMISSION = "\n\n[Earlier conversation omitted from the review brief.]\n\n";
+const REVIEW_CONTEXT_PLACEHOLDER = "{{CURRENT_SESSION_CONTEXT}}";
+const REVIEW_INSTRUCTIONS_PLACEHOLDER = "{{REVIEW_INSTRUCTIONS}}";
+const REVIEW_PROMPT_TEMPLATE = readFileSync(
+	new URL("./review-prompt.txt", import.meta.url),
+	"utf8",
+).trim();
+const REVIEW_PROMPT_PLACEHOLDER_PATTERN =
+	/\{\{(?:CURRENT_SESSION_CONTEXT|REVIEW_INSTRUCTIONS)\}\}/gu;
 
-const REVIEW_RUBRIC = [
-	"Review only defects introduced or exposed by the requested changes.",
-	"",
-	"Investigate correctness, lifecycle, concurrency, performance, security, and material maintainability problems.",
-	"For each candidate finding, establish a concrete failing scenario and inspect surrounding code to verify",
-	"that existing behavior does not already prevent it.",
-	"",
-	"For security candidates, trace attacker-controlled input to a consequential sink and check authorization,",
-	"validation, escaping, parameterization, allowlists, and bounded constants. Report only plausible",
-	"medium-or-higher vulnerabilities with a concrete attack path.",
-	"",
-	"Report only actionable issues the author would likely fix. Omit style preferences, speculative risks,",
-	"generic requests for more tests, compiler or linter diagnostics, documentation-only concerns, and",
-	"unrelated pre-existing problems. Cite the narrowest useful changed-file line range.",
-	"",
-	"Order findings by severity using P0 (critical), P1 (high), P2 (medium), or P3 (low). Each finding must",
-	"have a short imperative title, a file and line reference, the concrete impact, and the evidence that",
-	"makes it actionable. End with a concise verdict. If no issue qualifies, return exactly",
-	'"No actionable findings."',
-].join("\n");
-
+for (const placeholder of [REVIEW_CONTEXT_PLACEHOLDER, REVIEW_INSTRUCTIONS_PLACEHOLDER]) {
+	if (REVIEW_PROMPT_TEMPLATE.split(placeholder).length !== 2) {
+		throw new Error(`Review prompt must contain exactly one ${placeholder} placeholder.`);
+	}
+}
 
 type ReviewSessionState = {
 	active: boolean;
@@ -125,21 +119,14 @@ export function buildReviewPrompt(instructions: string, conversationBrief: strin
 	const contextSection = conversationBrief
 		? `<current_session_context>\n${conversationBrief}\n</current_session_context>\n\n`
 		: "";
-	return [
-		REVIEW_RUBRIC,
-		"",
-		contextSection,
-		"<review_instructions>",
-		requestedInstructions,
-		"</review_instructions>",
-		"",
-		"The review instructions may override the default scope. If they give only a focus and no scope,",
-		"review all staged, unstaged, and untracked changes. Use Bash with git status, git diff, git log,",
-		"and git show to inspect changes. Use rg --no-config for working-tree search and read for files.",
-		"When reviewing a commit or branch that is not checked out, use git show and pipe its output to",
-		"rg --no-config when searching because working-tree reads show only the checked-out tree.",
-		"Do not modify the working tree. Finish with one complete review report for /end-review to return.",
-	].join("\n");
+	const replacements: Record<string, string> = {
+		[REVIEW_CONTEXT_PLACEHOLDER]: contextSection,
+		[REVIEW_INSTRUCTIONS_PLACEHOLDER]: requestedInstructions,
+	};
+	return REVIEW_PROMPT_TEMPLATE.replace(
+		REVIEW_PROMPT_PLACEHOLDER_PATTERN,
+		(placeholder) => replacements[placeholder] ?? placeholder,
+	);
 }
 
 function getReviewState(ctx: ExtensionContext): ReviewSessionState | undefined {

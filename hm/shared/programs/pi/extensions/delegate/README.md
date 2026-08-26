@@ -12,7 +12,8 @@ open-ended agent work.
   context files, and only the explicit `web` skill.
 - `bash` receives interceptor-controlled `bash` and context files.
 - Both use the `economy` entry from `tiers.json` in a foreground,
-  non-persistent child Pi process.
+  non-persistent child Pi process. Sibling delegate calls from one assistant
+  response execute concurrently, each in its own child process.
 - Normal extension, skill, and prompt-template discovery is disabled. The child
   explicitly loads only the interceptor extension, so it cannot delegate again.
 - Cancellation terminates the child process.

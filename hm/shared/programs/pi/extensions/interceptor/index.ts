@@ -34,6 +34,8 @@ const DIRECT_FILE_TOOLS: Record<string, ToolName> = {
 const OPERATIONS: Operation[] = ["read", "write"];
 const ACTIONS: PermissionAction[] = ["allow", "deny"];
 const REASON_CHARACTERS_MAX = 500;
+const FILE_POLICY_CACHE_ENTRIES_MAX = 32;
+const FILE_POLICY_CACHE_SYMBOL = Symbol.for("pi.interceptor.last-valid-file-policies");
 
 const runtimeRuleGroups = new Map<symbol, ScopedPermissionRule[]>();
 
@@ -165,16 +167,6 @@ function appendedRuntimeRules(): ScopedPermissionRule[] {
   return [...runtimeRuleGroups.values()].flat();
 }
 
-export function parseAppendedPolicyJson(value: string): PermissionPolicy {
-  try {
-    return parsePolicy(JSON.parse(value));
-  } catch (error) {
-    throw new Error(
-      `--interceptor-append-rules is invalid (${error instanceof Error ? error.message : "invalid JSON"})`,
-    );
-  }
-}
-
 async function loadPolicyFile(
   file: string,
   scope: string,
@@ -235,6 +227,62 @@ export async function loadPolicies(options: {
           : "Unable to read interceptor policy",
     };
   }
+}
+
+type SessionPolicyLoad = {
+  rules: ScopedPermissionRule[];
+  warning?: string;
+};
+
+// /reload creates a fresh extension instance, so last-valid policies live in a
+// bounded process-global cache rather than the instance being replaced.
+function filePolicyCache(): Map<string, ScopedPermissionRule[]> {
+  const processState = globalThis as unknown as Record<PropertyKey, unknown>;
+  const existing = processState[FILE_POLICY_CACHE_SYMBOL];
+  if (existing instanceof Map) {
+    return existing as Map<string, ScopedPermissionRule[]>;
+  }
+  const cache = new Map<string, ScopedPermissionRule[]>();
+  processState[FILE_POLICY_CACHE_SYMBOL] = cache;
+  return cache;
+}
+
+function filePolicyCacheKey(cwd: string, projectTrusted: boolean): string {
+  return JSON.stringify([
+    process.env.PI_CODING_AGENT_DIR ?? "",
+    path.resolve(cwd),
+    projectTrusted,
+  ]);
+}
+
+function rememberFilePolicy(key: string, rules: ScopedPermissionRule[]): void {
+  const cache = filePolicyCache();
+  cache.delete(key);
+  cache.set(key, rules);
+  while (cache.size > FILE_POLICY_CACHE_ENTRIES_MAX) {
+    const oldestKey = cache.keys().next().value as string | undefined;
+    if (oldestKey === undefined) break;
+    cache.delete(oldestKey);
+  }
+}
+
+async function loadSessionPolicy(
+  cwd: string,
+  projectTrusted: boolean,
+): Promise<SessionPolicyLoad> {
+  const key = filePolicyCacheKey(cwd, projectTrusted);
+  const loaded = await loadPolicies({ cwd, projectTrusted });
+  if ("rules" in loaded) {
+    rememberFilePolicy(key, loaded.rules);
+    return loaded;
+  }
+
+  const lastValidRules = filePolicyCache().get(key);
+  const fallback = lastValidRules ? "last valid policy" : "empty policy";
+  return {
+    rules: lastValidRules ?? [],
+    warning: `Interceptor policy load failed (${loaded.error}); using ${fallback}.`,
+  };
 }
 
 /** Resolves a path through its existing target or nearest existing parent. */
@@ -489,22 +537,15 @@ function block(reason: string) {
 }
 
 export default function interceptor(pi: ExtensionAPI): void {
-  let releaseCliRules: (() => void) | undefined;
+  let fileRules: ScopedPermissionRule[] = [];
 
-  pi.registerFlag("interceptor-append-rules", {
-    description: "Append ordered interceptor rules from an inline JSON policy",
-    type: "string",
-  });
+  pi.on("session_start", async (_event, ctx) => {
+    const loaded = await loadSessionPolicy(ctx.cwd, ctx.isProjectTrusted());
+    fileRules = loaded.rules;
+    if (!loaded.warning) return;
 
-  pi.on("session_start", (_event, ctx) => {
-    const value = pi.getFlag("interceptor-append-rules");
-    if (typeof value !== "string" || !value.trim()) return;
-    try {
-      releaseCliRules = appendInterceptorRules(parseAppendedPolicyJson(value), ctx.cwd);
-    } catch (error) {
-      ctx.ui.notify(error instanceof Error ? error.message : "Invalid appended interceptor rules", "error");
-      ctx.shutdown();
-    }
+    if (ctx.hasUI) ctx.ui.notify(loaded.warning, "warning");
+    else process.stderr.write(`${loaded.warning}\n`);
   });
 
   pi.on("before_agent_start", async (event) => ({
@@ -515,14 +556,7 @@ export default function interceptor(pi: ExtensionAPI): void {
     const tool = DIRECT_FILE_TOOLS[event.toolName];
     if (!tool && event.toolName !== "bash") return;
 
-    const projectTrusted = ctx.isProjectTrusted();
-    const loaded = await loadPolicies({
-      cwd: ctx.cwd,
-      projectTrusted,
-    });
-    if ("error" in loaded)
-      return block(`interceptor.json is invalid (${loaded.error})`);
-    const rules = [...loaded.rules, ...appendedRuntimeRules()];
+    const rules = [...fileRules, ...appendedRuntimeRules()];
 
     if (event.toolName === "bash") {
       const input = isObject(event.input) ? event.input : undefined;
@@ -556,10 +590,5 @@ export default function interceptor(pi: ExtensionAPI): void {
       if (decision.action === "allow") continue;
       return block(decision.reason ?? target);
     }
-  });
-
-  pi.on("session_shutdown", async () => {
-    releaseCliRules?.();
-    releaseCliRules = undefined;
   });
 }
