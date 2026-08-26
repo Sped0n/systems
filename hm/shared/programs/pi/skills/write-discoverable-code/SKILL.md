@@ -24,7 +24,7 @@ Tiger Style orders its goals as **safety, performance, and developer experience*
 
 ## Safety
 
-- Use simple, explicit, bounded control flow. Avoid recursion unless a hard bound and the project's domain justify it. Add abstractions only when they make the domain clearer and reduce total complexity.
+- Use simple, explicit, bounded control flow. Avoid recursion unless a hard bound and the project's domain justify it. Add abstractions only when they make the domain clearer and reduce total complexity. If removing, inlining, renaming, or moving a helper or layer causes no concrete loss of clarity, ownership, reuse, or invariant enforcement, simplify it.
 - Put an explicit limit on every loop, queue, batch, retry, input, and resource use. State the unit and ownership at the definition or boundary that enforces the limit.
 - Assert programmer-error conditions at function boundaries: argument validity, return-value validity, preconditions, postconditions, and invariants. Use the language's appropriate assertion facility, not assertions to handle expected operating errors.
 - Pair important assertions at independent boundaries, especially before writing data and after reading it. Assert both the valid space you expect and invalid space you reject. Split compound assertions so failures identify the violated condition.
@@ -43,19 +43,21 @@ Tiger Style orders its goals as **safety, performance, and developer experience*
 ## Developer Experience and Discovery
 
 - Get nouns and verbs right. Use the repository's established naming convention, avoid abbreviations, and give names enough domain context to search uniquely. Add units and qualifiers to numeric names, with the significant concept first and the unit last, such as `latency_ms_max`.
-- Use one canonical spelling for each domain concept. Reuse the codebase vocabulary rather than creating synonyms. Rename behavior when its behavior or audience changes.
+- Use one canonical spelling for each domain concept. Reuse the codebase vocabulary rather than creating synonyms. Rename behavior when its behavior or audience changes. When changing a concept, search for its old names, synonyms, literals, configuration keys, tests, and documentation; account for every live occurrence rather than updating only the initiating example.
 - Give each searchable concept one named home and one definition site. Move shared code rather than copying it. Name files after the question they answer, not generic roles such as `utils`, `helpers`, or `types`.
 - Put a concise comment at each exported or externally meaningful definition when the type and code cannot express a crucial constraint: unit, ordering, time basis, ownership, bound, or rationale. Write the natural-language phrase a reader will search for.
 - Keep event names, flags, error codes, and error-message prefixes as complete literals. A log message must search directly to its throw or emission site.
 - Put the important path first: main entry points, central types, and the functions a reader needs to follow. Keep orchestration thin so searches land one hop from the implementation.
+- Design public APIs from the caller's search path. Names should reveal the capability, configuration should expose meaningful choices, errors should guide recovery, and invalid usage should be difficult to express.
 - Explain why and how where a future reviewer cannot infer it. Comments are precise prose, not a substitute for code or assertions.
 - Use the repository formatter. Unless the repository specifies otherwise, keep lines at or below 100 columns and use braces consistently for conditionals.
 
-## Before Committing
+## Completion Check
 
 1. Can one search find each new public or externally meaningful behavior and its definition?
-2. Are bounds, units, invariants, error paths, and ownership explicit at the relevant boundary?
-3. Are names descriptive, canonical, unambiguous, and consistent with the repository's language convention?
-4. Do comments explain the non-obvious why, and do literal logs and errors search to their source?
-5. Did the design consider its network, disk, memory, and CPU costs?
-6. Did moved code disappear from its old home and did changed behavior receive an accurate name?
+2. Can a caller find each capability without knowing its implementation terminology?
+3. Are bounds, units, invariants, error paths, and ownership explicit at the relevant boundary?
+4. Are names descriptive, canonical, unambiguous, and consistent with the repository's language convention?
+5. Do comments explain the non-obvious why, and do literal logs and errors search to their source?
+6. Did the design consider its network, disk, memory, and CPU costs?
+7. Did moved code disappear from its old home and did changed behavior receive an accurate name?

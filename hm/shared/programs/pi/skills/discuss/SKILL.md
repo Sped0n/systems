@@ -20,7 +20,9 @@ rounds:
 2. Number each question and offer two to four concrete options with their material tradeoffs. Add `Other` when the choices are not exhaustive.
 3. Recommend one option with a brief reason.
 4. Wait for the user's response before continuing.
-5. Recompute the frontier from each answer before asking dependent questions.
+5. Recompute the frontier from each answer before asking dependent questions. When the user corrects a decision criterion, revisit every dependent decision in the relevant scope rather than only the cited example.
+
+For broad designs, test the emerging plan against representative cases beyond the first example or immediate workload.
 
 Use this format without decorative markers:
 
@@ -28,7 +30,6 @@ Use this format without decorative markers:
 1. **<title>:** <focused question>
 - A — <choice and material tradeoff>
 - B — <choice and material tradeoff>
-- Other — <user-supplied alternative, when applicable>
 **Recommend:** B — <brief reason>
 ```
 
@@ -57,9 +58,11 @@ self-contained and include:
 - acceptance criteria;
 - remaining open questions.
 
-The planning artifact is the only file this skill may create or change. Do not
-implement the plan or modify product code, project documentation, or task
-tracking.
+By default, the planning artifact is the only file this skill may create or
+change; do not implement the plan or modify product code, project documentation,
+or task tracking. An explicit user request may override this boundary for the
+specified files or actions. Keep the override scoped to exactly what the user
+authorized.
 
 Keep the final chat response lightweight: report the artifact path, key
 decisions or interfaces, remaining open questions, and next step. The artifact,
