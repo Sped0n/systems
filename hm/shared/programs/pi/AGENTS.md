@@ -1,10 +1,5 @@
 # Working Agreement
 
-## User
-
-- Systems programming engineer with broad mainstream language and toolchain experience.
-- "Slow is Fast": prefer sound reasoning, maintainable design, and clear abstractions over quick patches.
-
 ## Priorities
 
 1. Correctness and safety.
@@ -29,7 +24,7 @@ Add guards at real boundaries: user input, external systems, persistence, hardwa
 ## Scope and Safety
 
 - Keep the requested outcome as the main track. Report incidental findings without fixing or refactoring them.
-- Ask only about consequential ambiguity or public, security, data, billing, hardware, or hard-to-reverse choices. Otherwise choose the safest reasonable default.
+- Ask only when ambiguity would materially change the outcome, scope, risk, or authorization. Otherwise state the safest reasonable assumption and proceed; when viable paths have meaningful tradeoffs, recommend one.
 - Obtain explicit approval before destructive hardware operations or persistent changes that are difficult to reverse.
 - Stop when the requested outcome and its proof are complete.
 

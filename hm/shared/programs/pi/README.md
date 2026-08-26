@@ -1,18 +1,19 @@
 # Pi Configuration
 
 Home Manager configuration for Pi Coding Agent. Enable it with
-`programs.my-pi.enable`. `default.nix` installs a thin
-wrapper around `pkgs.llm-agents.pi`, supplies age-managed API keys, and maps the
-configuration into `~/.config/pi`.
+`programs.my-pi.enable`. `default.nix` owns the module, age-managed secrets, and
+mapped configuration; `wrapper.nix` builds the `pi`, `pi-control`, and `pcommit`
+executables.
 
-Node.js, UV, and OpenSCAD are added only to the Pi wrappers' `PATH`; this module
+Node.js, UV, and Python are added only to the Pi wrappers' `PATH`; this module
 does not install them into the user's global package environment.
 
 ## Structure
 
 ```text
 pi/
-├── default.nix         # Home Manager module, wrappers, and secret wiring
+├── default.nix         # Home Manager module, secret wiring, and mapped configuration
+├── wrapper.nix         # Pi executable wrappers and isolated runtime dependencies
 ├── AGENTS.md           # Minimal coding and papercut guidance
 ├── settings.json       # Non-model Pi global settings
 ├── keybindings.json    # TUI keybindings
