@@ -19,7 +19,7 @@ let
         derivationArgs.dontNpmRebuild = true;
       }
     }/node_modules"
-    export PATH="${
+    export PATH="$PATH:${
       lib.makeBinPath (
         with pkgs;
         [
@@ -28,7 +28,7 @@ let
           python3
         ]
       )
-    }:$PATH"
+    }"
   '';
 in
 [
