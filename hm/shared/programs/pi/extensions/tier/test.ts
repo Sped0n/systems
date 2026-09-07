@@ -13,7 +13,7 @@ import {
 } from "./model-tiers.ts";
 
 const model = { provider: "example", id: "small" } as Model<Api>;
-const economy: ModelTier = {
+const baseline: ModelTier = {
   provider: "example",
   model: "small",
   thinkingLevel: "low",
@@ -35,33 +35,33 @@ test("model tiers parse dynamic strict entries", () => {
       model: "large",
       thinkingLevel: "high",
     },
-    economy,
+    baseline,
   });
 
-  assert.deepEqual(Object.keys(tiers), ["performance", "economy"]);
-  assert.deepEqual(getModelTier(tiers, "economy"), economy);
-  assert.throws(() => getModelTier(tiers, "missing"), /Available tiers: economy, performance/);
+  assert.deepEqual(Object.keys(tiers), ["performance", "baseline"]);
+  assert.deepEqual(getModelTier(tiers, "baseline"), baseline);
+  assert.throws(() => getModelTier(tiers, "missing"), /Available tiers: baseline, performance/);
 });
 
 test("model tiers reject malformed configuration", () => {
   assert.throws(() => parseModelTiers({}), /at least one model tier/);
   assert.throws(
-    () => parseModelTiers({ economy: { ...economy, extra: true } }),
+    () => parseModelTiers({ baseline: { ...baseline, extra: true } }),
     /unknown field extra/,
   );
   assert.throws(
-    () => parseModelTiers({ economy: { ...economy, thinkingLevel: "extreme" } }),
+    () => parseModelTiers({ baseline: { ...baseline, thinkingLevel: "extreme" } }),
     /valid thinkingLevel/,
   );
 });
 
 test("model tier resolution reports model and authentication failures", async () => {
   await assert.rejects(
-    resolveModelTier(modelRegistry({ found: false }) as never, "economy", economy),
+    resolveModelTier(modelRegistry({ found: false }) as never, "baseline", baseline),
     /model not found/,
   );
   await assert.rejects(
-    resolveModelTier(modelRegistry({ authenticated: false }) as never, "economy", economy),
+    resolveModelTier(modelRegistry({ authenticated: false }) as never, "baseline", baseline),
     /authentication failed: missing key/,
   );
 });
@@ -79,8 +79,8 @@ test("applyModelTier changes thinking only after model authentication succeeds",
       },
     },
     { modelRegistry: modelRegistry() as never },
-    "economy",
-    economy,
+    "baseline",
+    baseline,
   );
   assert.deepEqual(calls, ["model:example/small", "thinking:low"]);
 
@@ -96,8 +96,8 @@ test("applyModelTier changes thinking only after model authentication succeeds",
         },
       },
       { modelRegistry: modelRegistry({ authenticated: false }) as never },
-      "economy",
-      economy,
+      "baseline",
+      baseline,
     ),
     /authentication failed/,
   );
@@ -105,17 +105,17 @@ test("applyModelTier changes thinking only after model authentication succeeds",
 });
 
 test("tier status matches provider, model, and thinking level exactly", () => {
-  const tiers = parseModelTiers({ economy });
-  assert.deepEqual(findMatchingModelTiers(tiers, model, "low"), ["economy"]);
+  const tiers = parseModelTiers({ baseline });
+  assert.deepEqual(findMatchingModelTiers(tiers, model, "low"), ["baseline"]);
   assert.deepEqual(findMatchingModelTiers(tiers, model, "high"), []);
-  assert.equal(formatTierStatus(tiers, model, "low"), "Active tier: economy. Available tiers: economy");
-  assert.equal(formatTierStatus(tiers, model, "high"), "Active tier: custom. Available tiers: economy");
+  assert.equal(formatTierStatus(tiers, model, "low"), "Active tier: baseline. Available tiers: baseline");
+  assert.equal(formatTierStatus(tiers, model, "high"), "Active tier: custom. Available tiers: baseline");
 });
 
 test("tier startup rejects explicit model configuration", () => {
   assert.deepEqual(
-    findTierFlagConflicts(["--tier", "economy", "--model", "large", "--thinking", "high"]),
+    findTierFlagConflicts(["--tier", "baseline", "--model", "large", "--thinking", "high"]),
     ["--model", "--thinking"],
   );
-  assert.deepEqual(findTierFlagConflicts(["--tier", "economy", "prompt"]), []);
+  assert.deepEqual(findTierFlagConflicts(["--tier", "baseline", "prompt"]), []);
 });

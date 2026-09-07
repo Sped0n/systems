@@ -4,9 +4,19 @@ Named model configurations live in `$PI_CODING_AGENT_DIR/tiers.json`:
 
 ```json
 {
+  "default": {
+    "provider": "circe-responses",
+    "model": "gpt-6-astra",
+    "thinkingLevel": "low"
+  },
+  "performance": {
+    "provider": "circe-responses",
+    "model": "gpt-6-astra",
+    "thinkingLevel": "low"
+  },
   "economy": {
-    "provider": "provider-name",
-    "model": "model-id",
+    "provider": "circe-responses",
+    "model": "gpt-5.6-sol",
     "thinkingLevel": "low"
   }
 }
@@ -15,7 +25,7 @@ Named model configurations live in `$PI_CODING_AGENT_DIR/tiers.json`:
 Select a tier when starting Pi:
 
 ```text
-pi --tier economy
+pi --tier performance
 ```
 
 `--tier` cannot be combined with `--provider`, `--model`, or `--thinking`.

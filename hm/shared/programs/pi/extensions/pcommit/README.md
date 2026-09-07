@@ -15,8 +15,9 @@ that message in an owner-only temporary file and runs:
 git commit --signoff --edit --file <message-file>
 ```
 
-Git therefore opens the user's normal editor before creating the commit. The
-wrapper removes the temporary file on every exit.
+The wrapper prints the generated message to stdout before invoking Git, so it
+remains visible even if a commit hook fails. Git opens the user's normal editor
+before creating the commit. The wrapper removes the temporary file on every exit.
 
 Usage:
 
@@ -27,6 +28,7 @@ pcommit "focus on permission changes"
 
 Pcommit requires staged changes, never stages files, and never pushes. While Pi
 works, pcommit streams the current `read` or `bash` activity and the transition
-to commit-message writing on stderr; stdout remains only the generated message.
+to commit-message writing on stderr. The headless agent's stdout contains only
+the generated message; the wrapper also allows Git's normal console output.
 Model, policy, or editor failures exit without committing. Runtime interceptor
 rules are removed when the headless Pi session ends.

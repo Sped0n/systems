@@ -46,9 +46,9 @@ in
         "${configDir}/settings.json".text = builtins.toJSON (
           (builtins.fromJSON (builtins.readFile ./settings.json))
           // {
-            defaultProvider = tiers.performance.provider;
-            defaultModel = tiers.performance.model;
-            defaultThinkingLevel = tiers.performance.thinkingLevel;
+            defaultProvider = tiers.default.provider;
+            defaultModel = tiers.default.model;
+            defaultThinkingLevel = tiers.default.thinkingLevel;
             # Pi treats this as the last viewed release, suppressing the startup changelog.
             lastChangelogVersion = pkgs.llm-agents.pi.version;
           }

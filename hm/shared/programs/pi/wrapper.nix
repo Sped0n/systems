@@ -75,7 +75,7 @@ in
         "Inspect the staged changes and generate their Git commit message." --pcommit)"
     fi
     if [ -z "$message" ]; then
-      echo "pcommit: the economy agent returned an empty commit message" >&2
+      echo "pcommit: the agent returned an empty commit message" >&2
       exit 1
     fi
     printf '%s\n' "$message" > "$message_file"

@@ -77,7 +77,7 @@ async function generateSessionTitle(ctx: ExtensionContext): Promise<string> {
 
 	const tier = getModelTier(await readModelTiers(), "economy");
 	const model = ctx.modelRegistry.find(tier.provider, tier.model);
-	if (!model) throw new Error(`Economy model not found: ${tier.provider}/${tier.model}`);
+	if (!model) throw new Error(`Session naming model not found: ${tier.provider}/${tier.model}`);
 	const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
 	if (auth.ok === false) throw new Error(auth.error);
 
@@ -108,7 +108,7 @@ async function generateSessionTitle(ctx: ExtensionContext): Promise<string> {
 			.map((part) => part.text)
 			.join(""),
 	);
-	if (!title) throw new Error("The economy model returned an empty session title");
+	if (!title) throw new Error("The model returned an empty session title");
 	return title;
 }
 

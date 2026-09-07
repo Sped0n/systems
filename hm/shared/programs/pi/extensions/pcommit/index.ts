@@ -55,7 +55,7 @@ function printAfterShutdown(message: string): void {
 
 export default function pcommit(pi: ExtensionAPI): void {
 	pi.registerFlag("pcommit", {
-		description: "Generate a staged commit message in a headless economy session",
+		description: "Generate a staged commit message in a headless session",
 		type: "boolean",
 		default: false,
 	});
