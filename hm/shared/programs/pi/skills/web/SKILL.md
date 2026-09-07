@@ -24,6 +24,5 @@ results. Use `--json` for structured output.
 
 Use `--out <file>` to save the normal text or JSON result instead of writing it
 to stdout. The parent directory must already exist. The skill never invokes a
-model; synthesize results in the calling Pi session when needed. When the user
-wants a summary of long Reader output, save it with `--out` and apply the
-`summarize` skill rather than loading and compressing it in the current session.
+model; synthesize results in the current session. For long pages, save with
+`--out` and read the resulting file in focused portions.

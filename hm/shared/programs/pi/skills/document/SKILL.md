@@ -15,6 +15,6 @@ node to-markdown.mjs <url-or-path> [--out <file>|--tmp]
 
 Conversion uses `uvx --from 'markitdown[pdf]' markitdown`. Without an output
 option, Markdown is written to stdout. `--out` writes a named file; `--tmp`
-writes a temporary file and prints its path. When the user wants a summary of a
-long document, convert it with `--tmp` or `--out`, then apply the `summarize`
-skill to the resulting Markdown path.
+writes a temporary file and prints its path. For a long document, convert with
+`--tmp` or `--out`, then read the resulting Markdown in focused portions and
+summarize it in the current session.

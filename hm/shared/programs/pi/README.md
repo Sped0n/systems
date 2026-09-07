@@ -46,15 +46,13 @@ content when refreshing; provenance metadata should normally be the only diff.
 upstream revisions.
 
 `tiers.json` is the single model-selection source. The performance tier supplies
-Pi's primary defaults; `pcommit`, generated session names, isolated
-summarization, and `delegate` use the economy tier. Select any configured tier
-at startup with `pi --tier NAME`, or inspect and switch the current idle session
-with `/tier [NAME]`.
+Pi's primary defaults; `pcommit` and generated session names use the economy
+tier. Select any configured tier at startup with `pi --tier NAME`, or inspect
+and switch the current idle session with `/tier [NAME]`.
 
-The `delegate` tool provides narrow foreground context isolation for `explore`
-and `bash` investigations. Its child Pi process loads project context, the
-economy tier, and the interceptor, then returns only a bounded final report; see
-`extensions/delegate/README.md` for its exact capability boundaries.
+AAC manages long sessions with agent-authored checkpoints and local history
+recall, without a separate summarizer call. Its state lives in existing Pi
+session files, not project-local storage; see `extensions/aac/README.md`.
 
 ## Testing
 

@@ -31,6 +31,29 @@
             "cacheRead": 0.5,
             "cacheWrite": 6.25
           }
+        },
+        {
+          "id": "gpt-6-astra",
+          "name": "GPT-6 Astra",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": "low",
+            "medium": "medium",
+            "high": "high",
+            "xhigh": "xhigh",
+            "max": null
+          },
+          "input": ["text", "image"],
+          "contextWindow": 272000,
+          "maxTokens": 128000,
+          "cost": {
+            "input": 10,
+            "output": 50,
+            "cacheRead": 0.5,
+            "cacheWrite": 12.5
+          }
         }
       ]
     }

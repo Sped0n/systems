@@ -2,8 +2,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { Message } from "@earendil-works/pi-ai";
+import { SessionManager, type ExtensionAPI, type ExtensionCommandContext } from "@earendil-works/pi-coding-agent";
 
-import {
+import reviewExtension, {
 	boundReviewBrief,
 	buildReviewConversationBrief,
 	buildReviewPrompt,
@@ -90,6 +91,47 @@ test("filterReviewAutocompleteItems exposes end-review only during review", () =
 	const items = [{ value: "review" }, { value: "end-review" }];
 	assert.deepEqual(filterReviewAutocompleteItems(items, false), [{ value: "review" }]);
 	assert.deepEqual(filterReviewAutocompleteItems(items, true), items);
+});
+
+test("review preserves the selected model and AAC tools across entry, restoration, and return", async () => {
+	const manager = SessionManager.inMemory();
+	manager.appendMessage(textMessage("user", "Review context"));
+	manager.appendMessage(textMessage("assistant", "Implementation finished"));
+	type Command = Parameters<ExtensionAPI["registerCommand"]>[1];
+	const commands = new Map<string, Command>();
+	const hooks = new Map<string, (_event: unknown, ctx: ExtensionCommandContext) => void>();
+	const previousTools = ["read", "bash", "edit", "aac_checkpoint", "aac_recall"];
+	let activeTools = previousTools;
+	const pi = {
+		registerCommand: (name: string, command: Command) => commands.set(name, command),
+		registerMessageRenderer() {},
+		on: (name: string, handler: (_event: unknown, ctx: ExtensionCommandContext) => void) => hooks.set(name, handler),
+		getActiveTools: () => activeTools,
+		setActiveTools: (tools: string[]) => { activeTools = tools; },
+		setModel: () => { throw new Error("Review must retain the selected model"); },
+		exec: async () => ({ code: 0, stdout: "true", stderr: "" }),
+		appendEntry: (type: string, data: unknown) => manager.appendCustomEntry(type, data),
+		sendUserMessage() {},
+		sendMessage() {},
+	} as unknown as ExtensionAPI;
+	const ctx = {
+		cwd: process.cwd(), sessionManager: manager, model: { id: "chosen-model" },
+		isIdle: () => true,
+		navigateTree: async (id: string) => { manager.branch(id); return { cancelled: false }; },
+		ui: { setWidget() {}, setEditorText() {}, addAutocompleteProvider() {}, notify() {} },
+	} as unknown as ExtensionCommandContext;
+	reviewExtension(pi);
+	try {
+		await commands.get("review")!.handler("Review main...HEAD", ctx);
+		assert.ok(activeTools.includes("aac_checkpoint") && activeTools.includes("aac_recall"));
+		assert.ok(!activeTools.includes("edit"));
+		hooks.get("session_start")!({}, ctx);
+		assert.ok(activeTools.includes("aac_checkpoint") && activeTools.includes("aac_recall"));
+		assert.equal(ctx.model!.id, "chosen-model");
+		manager.appendMessage(textMessage("assistant", "No actionable findings."));
+		await commands.get("end-review")!.handler("", ctx);
+		assert.deepEqual(activeTools, previousTools);
+	} finally { hooks.get("session_shutdown")!({}, ctx); }
 });
 
 test("findLatestReviewReport returns the latest assistant text", () => {

@@ -1,7 +1,8 @@
 # Review Extension
 
 `/review [instructions]` starts a code review on a separate branch of the
-current Pi conversation. The review uses normal Pi streaming and tool UI. Use
+current Pi conversation, using the currently selected model and thinking level.
+The review uses normal Pi streaming and tool UI. Use
 `/end-review` to return to the original conversation position and insert the
 complete report there.
 
@@ -51,7 +52,8 @@ available. Pi does not support unregistering commands, so manually typing
 
 ## Tools and Git Scope
 
-Only `read` and `bash` are active on the review branch. A scoped interceptor
+`read` and `bash` are active on the review branch, together with AAC's
+checkpoint and recall tools when they were enabled before review. A scoped interceptor
 rule group denies Bash by default and permits only `git status`, `git diff`,
 `git log`, `git show`, and `rg --no-config`; later rules reject output
 redirection and execution-capable flags. The previous tool set is restored and
