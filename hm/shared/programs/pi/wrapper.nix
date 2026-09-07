@@ -79,6 +79,7 @@ in
       exit 1
     fi
     printf '%s\n' "$message" > "$message_file"
+    printf '%s\n' "$message"
     ${lib.getExe pkgs.git} commit --signoff --edit --file "$message_file"
   '')
 ]
