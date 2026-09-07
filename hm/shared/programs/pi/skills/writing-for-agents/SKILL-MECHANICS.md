@@ -1,22 +1,27 @@
 # Skill mechanics
 
-The skill-specific branch of [`writing-for-agents`](SKILL.md): what changes when the document is a skill — frontmatter, the invocation choice, and router skills. Everything else about writing it is the universal reference in `SKILL.md`.
+Use this reference when creating or changing a Pi skill. For general instruction writing, see [Writing for agents](SKILL.md).
 
-## Invocation
+## Frontmatter and discovery
 
-Two choices, trading the two loads:
+- A skill's `SKILL.md` requires `name` and a non-empty `description`. Use a name of 1–64 lowercase letters, digits, or hyphens, with no leading, trailing, or consecutive hyphens. Keep the description within 1024 characters.
+- Describe the capability and concrete tasks that should trigger it. Pi normally includes discovered skill names and descriptions in the system prompt; the body loads on demand.
+- Set `disable-model-invocation: true` when the skill should be omitted from that automatic discovery context. Keep its required description as a useful human-facing summary.
+- Users can explicitly load a discovered skill with `/skill:name` when `enableSkillCommands` is enabled. Arguments after the command accompany the loaded content.
 
-- A **model-invoked** skill keeps a `description`, so the agent can fire it autonomously — and other skills can reach it. You can still type its name: model-invocation always _includes_ user reach; a description only ever adds agent discovery, never removes the human's. The description is the skill's top-level context pointer, forced to stay loaded at all times — permanent context load in exchange for discoverability. A model-invoked skill whose content is all reference is also one home for shared reference: another skill can invoke it, so reference needed by several skills lives in one place. Mechanics: omit `disable-model-invocation`, and write a model-facing description carrying the trigger branches (the pointer-writing rules in `SKILL.md` apply in full).
-- A **user-invoked** skill strips the description from the agent's reach: only the human typing its name can invoke it, and no other skill can. Zero context load, but it spends cognitive load — you are the index that must remember it exists. Mechanics: set `disable-model-invocation: true`; the `description` becomes human-facing — a one-line summary, trigger lists stripped.
+## Loading is not access control
 
-Pick model-invocation only when the agent must reach the skill on its own, or another skill must. If it only ever fires by hand, make it user-invoked and pay no context load.
+Pi agents normally load skill bodies with `read`; there is no dedicated Skill tool required. `disable-model-invocation` hides the skill from the system prompt, not from filesystem access.
 
-Shared reference that two user-invoked skills both need can live in neither — with no descriptions, neither can fire the other. Push it to a plain file outside the skill system: external reference any skill can point at.
+A document can point to any accessible reference, including a file inside a skill with model invocation disabled. Such a link does not automatically invoke the skill or grant permission to execute its instructions. Tool permissions, user authorization, and read-only task boundaries still apply.
 
-## Splitting by invocation
+Resolve relative reference, script, and asset paths against the directory containing `SKILL.md`, not the current working directory.
 
-The invocation cut of splitting (the sequence cut lives in `SKILL.md`): split off a model-invoked skill when you have a distinct leading word that should trigger it on its own — a trigger word you actually use in your prompts — or another skill must reach it. You pay context load for the new always-loaded description, so that independent reach has to be worth it.
+## References and routers
 
-## Router skills
+- Keep shared reference in one authoritative file. It can live inside a skill directory or elsewhere accessible; sharing alone does not require a new skill.
+- Give each reference an explicit reading condition, such as “When diagnosing subscriptions, read …”. Keep common prerequisites and safety constraints in the entry document.
+- A router skill names the relevant branches and their files. It can direct the agent to read another skill's instructions even when that skill is hidden from automatic discovery.
+- Create a separate discoverable skill only when its independent task trigger justifies another always-loaded description.
 
-When user-invoked skills multiply past what you can remember, that piled-up cognitive load is cured by a **router skill**: one user-invoked skill that names the others and when to reach for each, so the human has one skill to remember instead of many. It can only hint, never fire them: user-invoked skills have no description, so nothing but the human can reach them.
+Verify harness-specific behavior against the installed Pi skill documentation when changing these mechanics; discovery settings are not security boundaries.

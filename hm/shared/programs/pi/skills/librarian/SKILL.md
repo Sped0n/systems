@@ -1,12 +1,12 @@
 ---
 name: librarian
-description: Cache and inspect remote Git repositories locally. Use first for GitHub, GitLab, or other repository URLs, owner/repo references, source trees, branches, and history.
+description: Cache remote Git repositories for local source-tree, branch, or history inspection.
 metadata:
   source: "https://github.com/mitsuhiko/agent-stuff"
   commit: "13bc8f87970bec8830aab0f1c0487d35aa7c0917"
 ---
 
-Use this skill when a user provides a remote Git repository or it is discovered while researching.
+Use when answering the task requires local inspection of a remote repository's source tree, branches, or history. A repository URL or `owner/repo` mention alone does not require a checkout. For issue, pull-request, or documentation pages, use the page-reading workflow unless source or history inspection is also needed.
 
 Run:
 

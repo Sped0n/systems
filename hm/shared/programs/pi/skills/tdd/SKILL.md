@@ -1,6 +1,6 @@
 ---
 name: tdd
-description: Test-driven development. Use when the user wants to build features or fix bugs test-first, mentions "red-green-refactor", or wants integration tests.
+description: Build features or fix bugs test-first when the user requests TDD or red-green-refactor.
 metadata:
   source: "https://github.com/mattpocock/skills"
   commit: "9c9f36ccd3995266cd675468af71639c8dde1ec5"
@@ -8,13 +8,13 @@ metadata:
 
 # Test-Driven Development
 
-TDD is the red → green loop. This skill is the reference that makes that loop produce tests worth keeping: what a good test is, where tests go, the anti-patterns, and the rules of the loop. Every section applies on every cycle — consult them before and during the loop, not after.
+Use a red → green → refactor cycle for requested test-first work. A request for integration tests alone does not imply TDD.
 
 ## What a good test is
 
 Tests verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't. A good test reads like a specification — "user can checkout with valid cart" tells you exactly what capability exists — and survives refactors because it doesn't care about internal structure.
 
-See [tests.md](tests.md) for examples and [mocking.md](mocking.md) for mocking guidelines.
+Read [tests.md](tests.md) when choosing a test shape or diagnosing implementation coupling. Read [mocking.md](mocking.md) when deciding how to isolate external dependencies or control nondeterminism.
 
 ## Observable behavior boundaries
 
@@ -36,6 +36,6 @@ coverage obligations, or another hard-to-reverse contract.
 
 ## Rules of the loop
 
-- **Red before green.** Write the failing test first, then only enough code to pass it. Don't anticipate future tests or add speculative features.
+- **Red before green.** Write the failing test first and run it to confirm it fails for the intended missing behavior, not a setup error. Then write only enough code to pass it and rerun the affected test.
 - **One slice at a time.** One behavior boundary, one test, one minimal implementation per cycle.
-- **Refactoring is not part of the red → green loop.** Review the green change first, then refactor while keeping the suite green.
+- **Refactor after green.** Improve the design only as needed, keeping affected tests green. Finish with the narrowest relevant regression checks.

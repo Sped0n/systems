@@ -45,4 +45,4 @@ Add guards at real boundaries: user input, external systems, persistence, hardwa
 
 ## Papercuts
 
-Record reusable friction discovered while applying a skill through the `papercut` skill. Do not record task-specific bugs or ordinary environment failures.
+Record reusable friction discovered while applying a skill through the `papercut` skill. For audit-only or read-only tasks, defer recording until writes are authorized. Do not record task-specific bugs or ordinary environment failures.

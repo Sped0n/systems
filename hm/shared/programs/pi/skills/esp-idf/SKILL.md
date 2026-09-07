@@ -1,6 +1,6 @@
 ---
 name: esp-idf
-description: Practical ESP-IDF, FreeRTOS, ESP RainMaker, LVGL, board, and hardware guidance. Use when writing, reviewing, debugging, building, reconfiguring, flashing, or monitoring ESP-IDF applications and components, especially CMake component requirements, generated files, ESP_* error macros, platform state, and device drivers.
+description: Build, debug, configure, or operate ESP-IDF applications and hardware, including FreeRTOS, RainMaker, LVGL, and component dependencies.
 ---
 
 # ESP-IDF
@@ -29,7 +29,7 @@ Use for ESP-IDF platform and application work. For Matter/CHIP protocol behavior
 
 ## Code Style
 
-- No C/C++ atomics and compiler atomic builtins.
+- Prefer task ownership, queues, or FreeRTOS synchronization for shared state. Use ISR-safe APIs in interrupt context and keep critical sections short and non-blocking. Use C/C++ atomics or compiler atomic builtins only when target support, memory ordering, and execution-context safety are established; `volatile` is not synchronization.
 - In mixed ESP-IDF C/C++ codebases, preserve the project's C-style conventions in C++ files, including `typedef enum` declarations, unless the existing local style clearly requires otherwise.
 
 ## Build and Device Workflow
@@ -37,11 +37,11 @@ Use for ESP-IDF platform and application work. For Matter/CHIP protocol behavior
 - Run `idf.py build` from the project or app root that owns `CMakeLists.txt`; run the smallest relevant check first.
 - Run `idf.py reconfigure` after source moves or CMake source-discovery changes. Do not repair generated Ninja or CMake state manually.
 - Prefer `SRC_DIRS` when every source in a co-located module directory belongs to the component; use explicit `SRCS` when the component intentionally includes only a subset or needs auditable source selection.
-- Run `rm -f sdkconfig` if need to regenerate `sdkconfig` based on `sdkconfig.defaults`.
+- When defaults need to be reapplied, remove the generated intermediate `sdkconfig` with `rm -f sdkconfig` and regenerate through ESP-IDF tooling; no separate approval is needed. Keep durable configuration in project defaults, include the active target's defaults, and verify the regenerated configuration.
 - Board-manager callbacks that set `SDKCONFIG_DEFAULTS` replace ESP-IDF's automatic defaults discovery. Verify that generated defaults include the active target's `sdkconfig.defaults.<target>` values; fix the board-manager input or callback rather than generated output.
 - `REQUIRES` and `PRIV_REQUIRES` must not depend on `CONFIG_xxx`; the component graph is expanded before configuration is loaded.
 - Declare each managed dependency once in `idf_component.yml`; Component Manager normally supplies its build requirement, so `REQUIRES` and `PRIV_REQUIRES` list only additional component dependencies. Exception: a config-only wrapper around `add_prebuilt_library` may need the managed component in `REQUIRES` as an explicit target/link-order edge when the imported archive must precede that dependency; verify with the failing link and link map rather than duplicating it speculatively.
-- Do not manually modify `sdkconfig`, `dependencies.lock`, generated board-manager output, `managed_components/`, or build output unless explicitly requested. Report unexpected lockfile changes.
+- Do not hand-edit `sdkconfig`, `dependencies.lock`, generated board-manager output, `managed_components/`, or build output unless explicitly requested; regenerating `sdkconfig` as described above is allowed. Report unexpected lockfile changes.
 - For large ordinary task-context buffers, use `heap_caps_malloc()` or `heap_caps_calloc()` with `MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT` only after confirming PSRAM is configured, and handle allocation failure. Keep DMA buffers (unless the target explicitly supports external-memory DMA), ISR/cache-disabled data, stacks, and latency-sensitive control state in internal memory; external RAM is unavailable while flash cache is disabled.
 - Flashing changes hardware state; do it only when requested or clearly required. Use the `tmux` skill for `idf.py monitor`, serial logs, and other long-running sessions.
 - For device failures, capture recent logs and inspect reset reason, panic, heap, task watchdog, startup placement, and app state transitions.

@@ -1,63 +1,52 @@
 ---
 name: write-discoverable-code
-description: |
-  Rules for writing code that coding agents (and humans) can find and understand through
-  plain-text search. Apply whenever writing or renaming code: functions, types, constants,
-  files, error messages, doc comments.
-
-  Grounded in measurement: agents navigate by plain-text search, not by AST or
-  language server, so every identifier is a search query and every search miss
-  costs wasted reads.
+description: Write and review searchable code with Tiger Style naming, explicit contracts, and locally understandable control flow.
 license: MIT
 metadata:
   source: "https://github.com/modem-dev/skills"
   commit: "edcdedb38a545f67c065f4084b3627517f0d79cf"
-  style-source: "https://github.com/tigerbeetle/tigerbeetle"
-  style-commit: "97c7a8ef385270ebe0e1b75959d3d21d134629df"
+  style_reference: "https://github.com/tigerbeetle/tigerbeetle/blob/main/docs/TIGER_STYLE.md"
 ---
 
-# Write Discoverable Code with Tiger Style
+# Write Discoverable Code
 
-Coding agents navigate through text search and local reads. A definition, its invariants, its rationale, and the terms used to find it must therefore meet at one searchable location. Apply the following coding rules, adapted from [Tiger Style](https://github.com/tigerbeetle/tigerbeetle/blob/main/docs/TIGER_STYLE.md), whenever writing or renaming functions, types, constants, files, errors, and comments.
+Make domain concepts, their implementations, and their contracts easy to find through plain-text search and verify by reading nearby code. Apply Tiger Style's precise naming, explicit invariants, and emphasis on local reasoning. Follow the repository's language conventions and safety policy; do not impose Zig syntax or TigerBeetle-specific allocation, assertion-count, or line-count rules on unrelated projects.
 
-Tiger Style orders its goals as **safety, performance, and developer experience**. Discoverability serves all three: a reader who can find code, its bounds, and its reasoning can verify it before it fails in production.
+## Get the nouns and verbs right
 
-## Safety
+- Search existing vocabulary before introducing a name. Use one canonical spelling per concept across code, configuration, tests, and documentation. Do not overload a domain term with a second, context-dependent meaning.
+- Name entities with precise nouns and operations with precise verbs. Choose vocabulary that works unchanged in documentation and conversation: `replica.pipeline` describes a concept more clearly than `replica.preparing`.
+- Prefer full words over abbreviations. Use established domain acronyms with the repository's capitalization convention. Prefer supported long-form flags in scripts; short flags are for interactive convenience.
+- Put the concept first and units or qualifiers last, from most to least significant: `latency_ms_min` and `latency_ms_max`, not `min_latency_ms` and `max_latency_ms`. Adapt casing to the language, and preserve established public names.
+- Use parallel names for parallel roles: `source_offset` and `target_offset`, not `src_offset` and `destination_pos`. Prefer symmetry when equally precise; do not distort meaning just to match character counts.
+- Distinguish `index`, `count`, and byte `size`. Make units, rounding, inclusive or exclusive bounds, and ownership visible in names or types when they affect correctness.
+- Design public names from the caller's vocabulary, not hidden implementation terminology. Use named arguments or an options value when same-typed positional arguments are easy to swap; do not introduce a builder solely for naming.
 
-- Use simple, explicit, bounded control flow. Avoid recursion unless a hard bound and the project's domain justify it. Add abstractions only when they make the domain clearer and reduce total complexity. If removing, inlining, renaming, or moving a helper or layer causes no concrete loss of clarity, ownership, reuse, or invariant enforcement, simplify it.
-- Put an explicit limit on every loop, queue, batch, retry, input, and resource use. State the unit and ownership at the definition or boundary that enforces the limit.
-- Assert programmer-error conditions at function boundaries: argument validity, return-value validity, preconditions, postconditions, and invariants. Use the language's appropriate assertion facility, not assertions to handle expected operating errors.
-- Pair important assertions at independent boundaries, especially before writing data and after reading it. Assert both the valid space you expect and invalid space you reject. Split compound assertions so failures identify the violated condition.
-- Handle operating errors explicitly. Never hide or discard an error path. Use positive conditions and complete branches where they make valid and invalid cases clear.
-- Keep variable scope small. Compute and validate a value close to where it is used; do not create aliases or duplicate state without a clear reason.
-- Keep functions small enough to inspect as one unit. Tiger Style's hard limit is 70 lines; where a repository has a different documented limit, follow it. Split by moving non-branching, preferably pure computation into helpers while keeping related control flow and state transitions visible together.
-- Make external interaction occur at the program's controlled pace where possible. Batch work and bound per-period effort rather than reacting unboundedly to every incoming event.
+## Give concepts clear homes
 
-## Performance
+- Name files after the capability or responsibility they own rather than generic labels such as `utils` or `helpers`.
+- Keep each concept's authoritative definition near the code that owns its invariant. Reuse or move shared behavior instead of copying it; do not add wrappers solely to create search hits.
+- Order code for a top-down first read where language and repository conventions allow: entry points before their subordinate helpers, related operations together.
+- For a helper or callback dedicated to one operation, retain that operation's name when the relationship would otherwise be hidden: `read_sector` and `read_sector_callback`. Do not give shared helpers a misleading single-caller name.
+- Keep functions small enough to understand as a whole. Let orchestration own branching and state transitions while helpers own cohesive calculations or operations; avoid fragmenting a clear function into trivial indirections.
 
-- Sketch the design's network, disk, memory, and CPU costs before implementation. Consider both bandwidth and latency, then optimize the slowest material resource first after accounting for frequency.
-- Batch accesses to amortize network, disk, memory, and CPU costs. Separate control-plane coordination from data-plane work when that makes batching and bounds clearer.
-- Be explicit in hot paths. Extract a hot loop when that makes its primitive inputs, bounds, and redundant work easy for the compiler and reviewer to see.
-- Prefer the project's existing toolchain and dependencies. Add a dependency only when its safety, performance, and maintenance cost is justified by a concrete need.
+## Make contracts locally checkable
 
-## Developer Experience and Discovery
+- Keep variable scope small. Compute values and check preconditions close to their use; avoid redundant state and aliases that can drift out of sync.
+- Express programmer invariants in types or assertions where practical. Handle invalid external input and expected operating failures through normal error paths, not assertions. Do not add assertions merely to meet a quota.
+- Make limits on input-driven work, queues, retries, and buffers explicit at the owning boundary. Distinguish intentional long-lived loops from accidentally unbounded work; use limits justified by the real contract rather than arbitrary caps.
+- Keep ownership, cleanup, and state transitions visible together. Do not rely on a precondition surviving a suspension or concurrent mutation without revalidation or synchronization.
+- Prefer control flow whose valid, invalid, and boundary cases can be checked independently. Split compound conditions when that makes the cases clearer, not as a mechanical rewrite of every boolean expression.
 
-- Get nouns and verbs right. Use the repository's established naming convention, avoid abbreviations, and give names enough domain context to search uniquely. Add units and qualifiers to numeric names, with the significant concept first and the unit last, such as `latency_ms_max`.
-- Use one canonical spelling for each domain concept. Reuse the codebase vocabulary rather than creating synonyms. Rename behavior when its behavior or audience changes. When changing a concept, search for its old names, synonyms, literals, configuration keys, tests, and documentation; account for every live occurrence rather than updating only the initiating example.
-- Give each searchable concept one named home and one definition site. Move shared code rather than copying it. Name files after the question they answer, not generic roles such as `utils`, `helpers`, or `types`.
-- Put a concise comment at each exported or externally meaningful definition when the type and code cannot express a crucial constraint: unit, ordering, time basis, ownership, bound, or rationale. Write the natural-language phrase a reader will search for.
-- Keep event names, flags, error codes, and error-message prefixes as complete literals. A log message must search directly to its throw or emission site.
-- Put the important path first: main entry points, central types, and the functions a reader needs to follow. Keep orchestration thin so searches land one hop from the implementation.
-- Design public APIs from the caller's search path. Names should reveal the capability, configuration should expose meaningful choices, errors should guide recovery, and invalid usage should be difficult to express.
-- Explain why and how where a future reviewer cannot infer it. Comments are precise prose, not a substitute for code or assertions.
-- Use the repository formatter. Unless the repository specifies otherwise, keep lines at or below 100 columns and use braces consistently for conditionals.
+## Leave searchable evidence
 
-## Completion Check
+- Document constraints that names and types cannot express: ownership, ordering, time basis, bounds, and non-obvious rationale. Put that context at the relevant definition or boundary.
+- Explain why a design is correct, not just what it does. For a non-obvious test, describe the behavior being proved and how the setup exposes a failure. Use clear prose and the domain phrase a reader is likely to search for.
+- Keep stable event names, flags, error codes, and diagnostic prefixes as complete literals where practical so a search leads to their definition or emission site. Keep runtime values separate and preserve localization conventions.
 
-1. Can one search find each new public or externally meaningful behavior and its definition?
-2. Can a caller find each capability without knowing its implementation terminology?
-3. Are bounds, units, invariants, error paths, and ownership explicit at the relevant boundary?
-4. Are names descriptive, canonical, unambiguous, and consistent with the repository's language convention?
-5. Do comments explain the non-obvious why, and do literal logs and errors search to their source?
-6. Did the design consider its network, disk, memory, and CPU costs?
-7. Did moved code disappear from its old home and did changed behavior receive an accurate name?
+## Changes and verification
+
+- For a rename or move, search old names, likely synonyms, configuration keys, diagnostics, tests, and documentation within the affected scope.
+- Preserve compatibility for externally consumed names, persisted keys, or public APIs unless a breaking change is authorized. Account for intentional aliases rather than blindly replacing every match.
+- Check that old implementation copies are gone and that retained references are intentional.
+- Verify that a search using the domain term finds the public behavior and its authoritative implementation, with crucial ownership and constraints nearby.
