@@ -48,18 +48,14 @@ upstream revisions.
 `tiers.json` is the single model-selection source. All three tiers use the same
 provider, model, and thinking-level fields:
 
-| Tier | Provider | Model | Thinking | Use |
-| --- | --- | --- | --- | --- |
-| `default` | `circe-responses` | `gpt-6-astra` | `low` | Pi's primary defaults |
-| `performance` | `circe-responses` | `gpt-6-astra` | `low` | Explicit selection |
-| `economy` | `circe-responses` | `gpt-5.6-sol` | `low` | `pcommit` and generated session names |
+| Tier          | Provider          | Model         | Thinking | Use                                   |
+| ------------- | ----------------- | ------------- | -------- | ------------------------------------- |
+| `default`     | `circe-responses` | `gpt-6-astra` | `low`    | Pi's primary defaults                 |
+| `performance` | `circe-responses` | `gpt-6-astra` | `low`    | Explicit selection                    |
+| `economy`     | `circe-responses` | `gpt-5.6-sol` | `low`    | `pcommit` and generated session names |
 
 Select any configured tier at startup with `pi --tier NAME`, or inspect
 and switch the current idle session with `/tier [NAME]`.
-
-AAC manages long sessions with agent-authored checkpoints and local history
-recall, without a separate summarizer call. Its state lives in existing Pi
-session files, not project-local storage; see `extensions/aac/README.md`.
 
 ## Testing
 
