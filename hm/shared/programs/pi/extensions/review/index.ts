@@ -11,7 +11,6 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { Box, Markdown, Text } from "@earendil-works/pi-tui";
 
-import { AAC_TOOL_NAMES } from "../aac/index.ts";
 import {
 	appendInterceptorRules,
 	GIT_INSPECTION_BASH_POLICY,
@@ -236,7 +235,7 @@ export default function reviewExtension(pi: ExtensionAPI): void {
 			reviewOriginId = state.originId;
 			previousTools = state.previousTools;
 			enableInspectionRules(ctx);
-			pi.setActiveTools([...REVIEW_TOOLS, ...AAC_TOOL_NAMES.filter((name) => previousTools?.includes(name))]);
+			pi.setActiveTools(REVIEW_TOOLS);
 			setReviewWidget(ctx, true);
 			return;
 		}
@@ -327,7 +326,7 @@ export default function reviewExtension(pi: ExtensionAPI): void {
 			reviewOriginId = originId;
 			previousTools = savedTools;
 			enableInspectionRules(ctx);
-			pi.setActiveTools([...REVIEW_TOOLS, ...AAC_TOOL_NAMES.filter((name) => savedTools.includes(name))]);
+			pi.setActiveTools(REVIEW_TOOLS);
 			setReviewWidget(ctx, true);
 			pi.appendEntry(REVIEW_STATE_TYPE, {
 				active: true,

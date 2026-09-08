@@ -93,14 +93,14 @@ test("filterReviewAutocompleteItems exposes end-review only during review", () =
 	assert.deepEqual(filterReviewAutocompleteItems(items, true), items);
 });
 
-test("review preserves the selected model and AAC tools across entry, restoration, and return", async () => {
+test("review preserves the selected model, restricts tools, and restores the previous tool set", async () => {
 	const manager = SessionManager.inMemory();
 	manager.appendMessage(textMessage("user", "Review context"));
 	manager.appendMessage(textMessage("assistant", "Implementation finished"));
 	type Command = Parameters<ExtensionAPI["registerCommand"]>[1];
 	const commands = new Map<string, Command>();
 	const hooks = new Map<string, (_event: unknown, ctx: ExtensionCommandContext) => void>();
-	const previousTools = ["read", "bash", "edit", "aac_checkpoint", "aac_recall"];
+	const previousTools = ["read", "bash", "edit", "custom_tool"];
 	let activeTools = previousTools;
 	const pi = {
 		registerCommand: (name: string, command: Command) => commands.set(name, command),
@@ -123,10 +123,9 @@ test("review preserves the selected model and AAC tools across entry, restoratio
 	reviewExtension(pi);
 	try {
 		await commands.get("review")!.handler("Review main...HEAD", ctx);
-		assert.ok(activeTools.includes("aac_checkpoint") && activeTools.includes("aac_recall"));
-		assert.ok(!activeTools.includes("edit"));
+		assert.deepEqual(activeTools, ["read", "bash"]);
 		hooks.get("session_start")!({}, ctx);
-		assert.ok(activeTools.includes("aac_checkpoint") && activeTools.includes("aac_recall"));
+		assert.deepEqual(activeTools, ["read", "bash"]);
 		assert.equal(ctx.model!.id, "chosen-model");
 		manager.appendMessage(textMessage("assistant", "No actionable findings."));
 		await commands.get("end-review")!.handler("", ctx);

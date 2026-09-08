@@ -52,8 +52,7 @@ available. Pi does not support unregistering commands, so manually typing
 
 ## Tools and Git Scope
 
-`read` and `bash` are active on the review branch, together with AAC's
-checkpoint and recall tools when they were enabled before review. A scoped interceptor
+Only `read` and `bash` are active on the review branch. A scoped interceptor
 rule group denies Bash by default and permits only `git status`, `git diff`,
 `git log`, `git show`, and `rg --no-config`; later rules reject output
 redirection and execution-capable flags. The previous tool set is restored and
