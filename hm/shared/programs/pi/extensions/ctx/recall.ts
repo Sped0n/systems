@@ -66,21 +66,18 @@ export function registerRecall(pi: ExtensionAPI) {
   pi.registerTool({
     name: "recall",
     label: "Recall",
-    description: "Search or read text in the current Pi session, including history hidden by compaction. "
-      + "Set action:'search' and target to literal keywords (empty lists recent entries), or action:'read' and target to an entry ID. "
-      + "offset is zero-based: matching entries to skip for search, UTF-16 characters to skip for read. Start at 0. "
-      + "scope:'lineage' stays on the active branch; scope:'all' includes other branches of this session only. "
-      + "Search OR-matches keywords, ranks by matched-term count then recency, and returns five 600-character snippets. "
-      + "Read returns up to 12000 characters. Results include complete read/continuation arguments. "
-      + "Images are metadata only. No regex, filesystem search, or cross-session access.",
-    promptSnippet: "Recall earlier work, decisions, commands, and tool output from this session.",
-    promptGuidelines: ["Use recall before repeating earlier work or claiming context is unavailable after compaction."],
+    description: "Search or read this session's history, including compacted messages. "
+      + "Search OR-matches literal keywords, case-insensitively, and returns up to five 600-character snippets ranked by term rarity then recency. "
+      + "Read returns up to 12000 characters. Use the returned read/continuation arguments. "
+      + "Images are metadata only. No filesystem or cross-session search.",
+    promptSnippet: "Search or read session history.",
+    promptGuidelines: ["Use recall before repeating work or claiming compacted context is unavailable."],
     parameters: Type.Object({
       action: StringEnum(["search", "read"] as const),
-      target: Type.String({ maxLength: 500, description: "Search keywords (empty lists recent entries), or an exact entry ID to read." }),
+      target: Type.String({ maxLength: 500, description: "Search: literal keywords (empty lists recent entries). Read: exact entry ID." }),
       offset: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER,
-        description: "Start at 0. Search: matching entries to skip. Read: UTF-16 characters to skip." }),
-      scope: StringEnum(["lineage", "all"] as const),
+        description: "Zero-based: matching entries to skip for search, or UTF-16 characters to skip for read. Start at 0." }),
+      scope: StringEnum(["lineage", "all"] as const, { description: "lineage: active branch. all: every branch in this session." }),
     }, { additionalProperties: false }),
     async execute(_id, params, signal, _onUpdate, ctx) {
       signal?.throwIfAborted();
@@ -107,22 +104,37 @@ export function registerRecall(pi: ExtensionAPI) {
       }
 
       const terms = [...new Set(target.toLowerCase().split(/\s+/).filter(Boolean))];
+      const frequencies = terms.map(() => 0);
       const hits = entries.flatMap((raw, index) => {
         signal?.throwIfAborted();
         const entry = renderEntry(raw);
         if (!entry) return [];
         const text = entry.text.toLowerCase();
-        const positions = terms.map((term) => text.indexOf(term)).filter((position) => position >= 0);
-        if (terms.length && !positions.length) return [];
-        const start = Math.max(0, (positions.length ? Math.min(...positions) : 0) - 120);
+        const matches = terms.flatMap((term, termIndex) => {
+          const position = text.indexOf(term);
+          if (position < 0) return [];
+          frequencies[termIndex]++;
+          return [{ termIndex, position }];
+        });
+        if (terms.length && !matches.length) return [];
+        return [{ ...entry, matches, index }];
+      }).map((entry) => {
+        // Count each term once per entry. A rare diagnostic should outweigh
+        // several common words, even when those words appear many times.
+        const score = entry.matches.reduce((sum, match) => sum + 1 / frequencies[match.termIndex], 0);
+        const strongest = entry.matches.reduce<(typeof entry.matches)[number] | undefined>((best, match) =>
+          !best || frequencies[match.termIndex] < frequencies[best.termIndex]
+            || (frequencies[match.termIndex] === frequencies[best.termIndex] && match.position < best.position)
+            ? match : best, undefined);
+        const start = Math.max(0, (strongest?.position ?? 0) - 120);
         const end = Math.min(start + 600, entry.text.length);
-        return [{
+        return {
           id: entry.id,
           role: entry.role,
           snippet: `${start ? "…" : ""}${entry.text.slice(start, end)}${end < entry.text.length ? "…" : ""}`,
-          score: positions.length,
-          index,
-        }];
+          score,
+          index: entry.index,
+        };
       }).sort((a, b) => b.score - a.score || b.index - a.index);
       if (!hits.length) return result(`No matching history in scope '${scope}'.`, { scope, total: 0, next: null });
       if (offset >= hits.length) throw new Error(`offset must be less than ${hits.length} matching entries.`);

@@ -19,6 +19,10 @@ including any split-turn prefix, followed by the retained recent tail. The tail
 lets the summarizer reconcile older evidence with current intent and discard
 superseded goals or decisions; it is not another section to summarize or duplicate.
 Including it increases input usage but prevents a note based only on stale history.
+In this summarization copy only, `write` contents and `edit` replacement payloads
+are replaced with omission markers. Operation names, paths, tool results, and
+recent corrections remain available to the summarizer. Persisted messages and
+Pi's retained tail are unchanged; `recall` can retrieve the original payloads.
 The request asks for a few concise bullets covering the
 active goal, essential constraints, unresolved decisions or blockers, and next
 action, rather than accumulated completed-work inventories. Output is capped at
@@ -38,10 +42,9 @@ extension does not disable caching explicitly; provider defaults apply. The
 output budget bounds generation, not input size, total cost, or wall-clock time.
 Actual usage and latency need measurement with the chosen provider.
 
-Do not use `respawn` when context is fresh or has ample headroom unless the user
-explicitly requests it. Normally wait for a context-pressure reminder. Finish
-directly if nearly done; otherwise respawn at a coherent boundary before more
-substantial work. These are agent instructions, not hard usage gates or cooldowns.
+Use `respawn` at a useful task boundary before substantial work. Avoid respawning
+with fresh context unless the user explicitly requests it. If nearly done,
+finish directly. These are agent instructions, not hard usage gates or cooldowns.
 
 After successful compaction, the agent continues from the note and retained
 tail. If native automatic compaction reaches a pending respawn first, that
@@ -69,10 +72,11 @@ recall({ action: "read", target: "a1b2c3d4", offset: 12000, scope: "lineage" })
 ```
 
 For `search`, `target` contains case-insensitive literal keywords. An empty
-string lists recent entries. Keywords use OR matching and matched-term-count
-ranking, with newer entries first on ties. `offset` is the number of matching
-entries to skip, starting at zero. Each result page contains up to five
-600-character snippets with stable session entry IDs. There is no regex engine
+string lists recent entries. Keywords use OR matching; terms found in fewer
+recallable entries in the selected scope carry more weight, with newer entries
+first on ties. `offset` is the number of matching entries to skip, starting at
+zero. Each result page contains up to five 600-character snippets near the
+rarest matched term, with stable session entry IDs. There is no regex engine
 or model call inside retrieval.
 
 For `read`, `target` is an exact entry ID returned by search. `offset` is the

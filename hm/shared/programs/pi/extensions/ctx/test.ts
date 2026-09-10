@@ -80,7 +80,11 @@ test("reminder state survives persisted resume and resets at native compaction b
   assert.notEqual(reminderKey(manager.getBranch(), 200000, 16384), reminderKey(resumed.getBranch(), 200000, 16384));
 });
 
-async function runtime(t: TestContext, options: { empty?: boolean; extraFactory?: (pi: ExtensionAPI) => void } = {}) {
+async function runtime(t: TestContext, options: {
+  empty?: boolean;
+  seedHistory?: (manager: SessionManager) => void;
+  extraFactory?: (pi: ExtensionAPI) => void;
+} = {}) {
   const faux = fauxProvider({ models: [{ id: "ctx-test", contextWindow: 200000, maxTokens: 4096 }] });
   const modelRuntime = await ModelRuntime.create({
     modelsPath: null,
@@ -91,6 +95,7 @@ async function runtime(t: TestContext, options: { empty?: boolean; extraFactory?
   const settings = SettingsManager.create(directory, directory, { projectTrusted: false });
   const manager = SessionManager.inMemory(directory);
   const oldId = options.empty ? undefined : seed(manager);
+  options.seedHistory?.(manager);
   const loader = new DefaultResourceLoader({
     cwd: directory, agentDir: directory, settingsManager: settings,
     noExtensions: true, noSkills: true, noPromptTemplates: true, noThemes: true,
@@ -111,7 +116,20 @@ async function runtime(t: TestContext, options: { empty?: boolean; extraFactory?
 }
 
 test("real Pi run commits a standalone respawn after its result, retains native tail, and continues exactly once", { timeout: 15000 }, async (t) => {
-  const h = await runtime(t);
+  const originalPayloads: string[] = [];
+  const h = await runtime(t, { seedHistory: (manager) => {
+    for (const name of ["write", "edit"] as const) {
+      const payload = `${name}-payload-marker `.repeat(1000);
+      originalPayloads.push(manager.appendMessage(fauxAssistantMessage(fauxToolCall(name,
+        name === "write" ? { path: "src/generated.ts", content: payload }
+          : { path: "src/controller.ts", edits: [{ oldText: payload, newText: "replacement-payload-marker" }] },
+        { id: `${name}-fixture` }), { stopReason: "toolUse" })));
+      manager.appendMessage({ role: "toolResult", toolCallId: `${name}-fixture`, toolName: name,
+        content: [{ type: "text", text: name === "write" ? "File written" : "Edit failed: original text not found" }],
+        isError: name === "edit", timestamp: Date.now() });
+      if (name === "write") seed(manager); // Exercise both older history and the retained tail.
+    }
+  } });
   h.faux.setResponses([
     fauxAssistantMessage(fauxToolCall("respawn", {}, { id: "checkpoint-1" }), { stopReason: "toolUse" }),
     (_context, options) => {
@@ -123,6 +141,10 @@ test("real Pi run commits a standalone respawn after its result, retains native 
       assert.ok(recentBoundary >= 0 && correction > recentBoundary,
         "The summarizer must see the latest correction in the retained tail, not just older history");
       assert.equal(prompt.indexOf("The old plan is superseded; execute the regression test instead.", correction + 1), -1);
+      assert.doesNotMatch(prompt, /(?:write|edit|replacement)-payload-marker/);
+      assert.match(prompt, /src\/generated\.ts/);
+      assert.match(prompt, /src\/controller\.ts/);
+      assert.match(prompt, /Edit failed: original text not found/);
       return fauxAssistantMessage("Decision retained. Next: execute regression test.");
     },
     fauxAssistantMessage("Regression test completed."),
@@ -145,6 +167,9 @@ test("real Pi run commits a standalone respawn after its result, retains native 
   assert.equal(h.faux.state.callCount, 3);
   assert.ok(compactions[0].usage && compactions[0].usage.totalTokens > 0);
   assert.ok(h.manager.getEntry(h.oldId!));
+  for (const id of originalPayloads) {
+    assert.match(JSON.stringify(h.manager.getEntry(id)), /(?:write|edit)-payload-marker/);
+  }
   assert.ok(h.session.messages.some((message) => message.role === "toolResult" && message.toolName === "respawn"));
   assert.deepEqual(h.session.getActiveToolNames().sort(), ["recall", "respawn"]);
 });
@@ -399,6 +424,17 @@ test("real Pi run searches compacted history then executes the returned read arg
   assert.match(JSON.stringify(last.content), /Recovered original decision/);
   assert.equal(h.faux.state.callCount, 5); // Two native summary requests, then search, read, answer.
   assert.deepEqual(h.errors, []);
+});
+
+test("recall surfaces a rare diagnostic and includes it in the snippet despite common keyword noise", async () => {
+  const h = recallHarness();
+  const diagnostic = user(h.manager, "PSRAM boot log\n" + "boot progress\n".repeat(100)
+    + "Guru Meditation Error: Load address misaligned");
+  for (let i = 0; i < 10; i++) user(h.manager, `PSRAM configuration 250 MHz; 100 allocations; build ${i}`);
+  const result = await h.read({ action: "search", target: "PSRAM 250 100 misaligned", offset: 0, scope: "lineage" });
+  assert.equal(details(result).reads[0].target, diagnostic);
+  const snippet = text(result).split("\nRead:")[0];
+  assert.match(snippet, /Load address misaligned/);
 });
 
 test("recall continuation arguments paginate matches and full text without losing scope", async () => {
