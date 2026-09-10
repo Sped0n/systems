@@ -1,4 +1,4 @@
-FROM nixos/nix:2.35.1
+FROM nixos/nix:2.35.2
 
 LABEL org.opencontainers.image.source=https://github.com/Sped0n/systems
 
