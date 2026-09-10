@@ -25,6 +25,14 @@ specify a Git scope, a review focus, or both. When no scope is given, the
 reviewer examines staged, unstaged, and untracked changes. A bare `/review`
 fails early when there are no uncommitted changes.
 
+The reviewer starts from the problem and constraints, considers the simplest
+viable approach within the repository, then evaluates the changes against it.
+Design findings require concrete correctness, ownership, or maintenance benefits,
+with compatibility and migration costs accounted for—not merely a preferred
+alternative implementation. It applies both correctness/security and structural
+quality lenses, including error recovery, feature gates, operational breakage,
+canonical ownership, and opportunities to remove whole categories of complexity.
+
 ## Conversation Branch
 
 Starting a review appends a non-message anchor at the exact current tree
@@ -67,3 +75,15 @@ feature/auth against main`.
 The conversation branch shares the working tree with the implementation branch;
 it is not a filesystem snapshot. Mutation tools are disabled, and Bash is
 restricted by the scoped interceptor rules described above.
+
+## Rubric sources
+
+The review policy draws on [agent-stuff's review rubric](https://github.com/mitsuhiko/agent-stuff/blob/main/extensions/review.ts)
+and [Thermos's correctness and code-quality reviews](https://github.com/cursor/plugins/tree/main/thermos).
+It uses Pi's direct, task-oriented instruction style and evaluates alternatives
+from the underlying problem and repository constraints.
+
+Both review lenses run in the existing local review session. The policy does not
+require upstream subagent orchestration, PR-discussion access, blanket fail-fast
+behavior, or file-size-based rejection. Findings require concrete impact; the
+report retains this extension's concise verdict and no-findings contract.
