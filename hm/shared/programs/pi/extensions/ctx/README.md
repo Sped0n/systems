@@ -17,17 +17,22 @@ configured authentication and routing.
 The request contains the previous summary and conversation being compacted,
 including any split-turn prefix, followed by the retained recent tail. The tail
 lets the summarizer reconcile older evidence with current intent and discard
-superseded goals or decisions; it is not another section to summarize or duplicate.
+superseded goals or decisions; it is evidence, not a section to reproduce wholesale.
 Including it increases input usage but prevents a note based only on stale history.
 In this summarization copy only, `write` contents and `edit` replacement payloads
 are replaced with omission markers. Operation names, paths, tool results, and
 recent corrections remain available to the summarizer. Persisted messages and
 Pi's retained tail are unchanged; `recall` can retrieve the original payloads.
-The request asks for a few concise bullets covering the
-active goal, essential constraints, unresolved decisions or blockers, and next
-action, rather than accumulated completed-work inventories. Output is capped at
-1,024 tokens, or the model's lower output limit. This is a generation budget,
-not character validation followed by a retry. It does not inherit the working
+The note uses three sections: **Active task**, **Active constraints**, and
+**Next action**, including unresolved decisions and blockers. Active constraints
+preserve applicable user prohibitions, preferences, scope limits, authorization
+boundaries, and qualifications. Explicit corrections supersede older instructions;
+preferences are not promoted to prohibitions, and approvals are not inferred.
+Constraints take priority over historical detail and brevity, even when they also
+appear in the retained tail or can be retrieved through `recall`.
+
+Output is capped at 1,024 tokens, or the model's lower output limit. This is a
+generation budget, not character validation followed by a retry. It does not inherit the working
 agent's thinking-level setting; provider reasoning defaults still apply.
 
 Pi deterministically selects the retained recent tail and keeps tool calls with
@@ -51,6 +56,11 @@ tail. If native automatic compaction reaches a pending respawn first, that
 compaction makes the working-note request instead. The extension avoids a
 second compaction and only supplies a continuation if Pi has not resumed.
 There are no timers or idle polling.
+
+Agent guidance calls for checking active constraints before consequential actions.
+If an applicable instruction or authorization is unclear, recover the original
+user message with `recall` and ask the user if uncertainty remains. This does not
+trigger automatic searches or an extra recovery turn after every compaction.
 
 Cancellation, provider failure, empty notes, tool calls, and token-limit stops
 cancel the compaction without committing a partial note, retrying note generation,

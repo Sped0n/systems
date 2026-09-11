@@ -105,6 +105,7 @@ export function registerRecall(pi: ExtensionAPI) {
     promptSnippet: "Search or read session history.",
     promptGuidelines: [
       "Use recall before repeating work or claiming compacted context is unavailable.",
+      "Before a consequential action, check active constraints. If an applicable instruction or authorization is unclear, recall the original user message; ask the user if uncertainty remains.",
     ],
     parameters: Type.Object(
       {
