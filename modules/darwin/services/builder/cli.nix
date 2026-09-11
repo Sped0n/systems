@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   cfg = config.services.my-linux-builder;
   common = import ./lib.nix { inherit config lib pkgs; };

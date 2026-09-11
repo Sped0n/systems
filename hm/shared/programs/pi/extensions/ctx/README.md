@@ -160,7 +160,7 @@ There are no progress heuristics, cooldowns, or reset circuit breakers.
 Run from `hm/shared/programs/pi`:
 
 ```bash
-npm run check
+pnpm run check
 node --import tsx --test extensions/ctx/test.ts
 ```
 

@@ -1,12 +1,7 @@
 # Pi Configuration
 
 Home Manager configuration for Pi Coding Agent. Enable it with
-`programs.my-pi.enable`. `default.nix` owns the module, age-managed secrets, and
-mapped configuration; `wrapper.nix` builds the `pi`, `pi-control`, and `pcommit`
-executables.
-
-Node.js, UV, and Python are added only to the Pi wrappers' `PATH`; this module
-does not install them into the user's global package environment.
+`programs.my-pi.enable`.
 
 ## Structure
 
@@ -24,8 +19,11 @@ pi/
 ├── skills/             # Auto-discovered Agent Skills
 ├── scripts/            # Standalone CLI and dependency maintenance entry points
 ├── themes/             # Auto-discovered Pi themes
+├── .oxfmtrc.json       # Prettier-compatible Oxfmt settings
+├── .prettierignore     # Shared editor and Oxfmt exclusions
 ├── package.json        # Development dependencies and maintenance commands
-├── package-lock.json   # Pinned development dependency graph
+├── pnpm-lock.yaml      # Pinned development dependency graph
+├── pnpm-workspace.yaml # Explicit dependency build-script approvals
 ├── runtime/            # Minimal independently pinned Nix runtime graph
 └── tsconfig.json       # Extension typechecking
 ```
@@ -45,39 +43,30 @@ content when refreshing; provenance metadata should normally be the only diff.
 `write-discoverable-code` is an intentional Tiger Style fork and records both
 upstream revisions.
 
-`tiers.json` is the single model-selection source. All three tiers use the same
-provider, model, and thinking-level fields:
-
-| Tier          | Provider          | Model         | Thinking | Use                                   |
-| ------------- | ----------------- | ------------- | -------- | ------------------------------------- |
-| `default`     | `circe-responses` | `gpt-6-astra` | `low`    | Pi's primary defaults                 |
-| `performance` | `circe-responses` | `gpt-6-astra` | `low`    | Explicit selection                    |
-| `economy`     | `circe-responses` | `gpt-5.6-sol` | `low`    | `pcommit` and generated session names |
-
-Select any configured tier at startup with `pi --tier NAME`, or inspect
-and switch the current idle session with `/tier [NAME]`.
-
 ## Testing
 
-Install the pinned test dependencies with Nix-provided Node.js:
+Enter the repository development shell and install the pinned dependencies:
 
 ```bash
-nix shell nixpkgs#nodejs_24 -c npm ci --ignore-scripts
+nix develop
+pnpm --dir hm/shared/programs/pi install --frozen-lockfile
 ```
 
-Run strict typechecking and all extension tests:
+From this directory, run formatting, strict typechecking, and all extension tests:
 
 ```bash
-nix shell nixpkgs#nodejs_24 -c npm run check
+pnpm run format
+pnpm run check
 ```
 
-The root and minimal runtime manifests intentionally remain separate so Nix does
-not fetch the full development graph for deployed extensions. `runtime/package.json`
-owns the runtime dependency set. Update it to the latest versions and synchronize
-the resulting exact versions into the root development manifest with:
+The root pnpm development manifest and minimal npm runtime manifest intentionally
+remain separate so Nix does not fetch the full development graph for deployed
+extensions. `runtime/package.json` and `runtime/package-lock.json` own the
+runtime dependency set. Update it to the latest versions and synchronize the
+resulting exact versions into the root development manifest with:
 
 ```bash
-npm run update:runtime-deps
+pnpm run update:runtime-deps
 ```
 
 A test rejects version drift between the two manifests.

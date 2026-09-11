@@ -101,7 +101,10 @@ async function readStandardInput(): Promise<string> {
 }
 
 async function messageArgument(command: "send" | "paste"): Promise<string> {
-  if ((parsed.values.message === undefined) === (parsed.values.stdin !== true)) {
+  if (
+    (parsed.values.message === undefined) ===
+    (parsed.values.stdin !== true)
+  ) {
     throw new UsageError(
       `${command} requires exactly one of --message or --stdin`,
     );
@@ -204,10 +207,7 @@ async function run(): Promise<void> {
         2,
         "Usage: pi-control paste TARGET [--message TEXT | --stdin]",
       );
-      const result = await client.paste(
-        target,
-        await messageArgument("paste"),
-      );
+      const result = await client.paste(target, await messageArgument("paste"));
       if (json) printJson(result);
       else process.stdout.write("Pasted.\n");
       return;
@@ -257,9 +257,7 @@ try {
 } catch (error) {
   const message = error instanceof Error ? error.message : String(error);
   const code =
-    error instanceof Error &&
-    "code" in error &&
-    typeof error.code === "string"
+    error instanceof Error && "code" in error && typeof error.code === "string"
       ? error.code
       : "error";
   if (parsed.values.json) {

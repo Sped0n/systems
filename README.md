@@ -47,6 +47,23 @@ Available recipes:
     update-specific input  # Update only the specified flake inputs. [alias: us]
 ```
 
+## Development
+
+Enter the pinned development environment, install the Pi development graph,
+and enable the repository checks:
+
+```bash
+nix develop
+pnpm --dir hm/shared/programs/pi install --frozen-lockfile
+prek install
+```
+
+Run every formatting, typechecking, and test hook on demand with:
+
+```bash
+prek run --all-files
+```
+
 ## Provisioning
 
 ### How-tos

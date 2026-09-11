@@ -1,0 +1,47 @@
+repos:
+  - repo: local
+    hooks:
+      - id: nix-format
+        name: Format Nix
+        entry: nixfmt
+        language: system
+        files: '\.nix$'
+
+      - id: python-fix
+        name: Fix Python
+        entry: ruff check --fix --force-exclude --exit-zero --no-cache
+        language: system
+        files: '\.py$'
+
+      - id: python-organize-imports
+        name: Organize Python imports
+        entry: ruff check --fix --force-exclude --select=I001 --exit-zero --no-cache
+        language: system
+        files: '\.py$'
+
+      - id: python-format
+        name: Format Python
+        entry: ruff format --force-exclude
+        language: system
+        files: '\.py$'
+
+      - id: pi-format
+        name: Format Pi configuration
+        entry: pnpm --dir hm/shared/programs/pi run format
+        language: system
+        pass_filenames: false
+        files: '^hm/shared/programs/pi/'
+
+      - id: pi-typecheck
+        name: Typecheck Pi configuration
+        entry: pnpm --dir hm/shared/programs/pi run typecheck
+        language: system
+        pass_filenames: false
+        files: '^hm/shared/programs/pi/'
+
+      - id: pi-test
+        name: Test Pi configuration
+        entry: pnpm --dir hm/shared/programs/pi test
+        language: system
+        pass_filenames: false
+        files: '^hm/shared/programs/pi/'

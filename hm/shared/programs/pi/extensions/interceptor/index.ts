@@ -35,7 +35,9 @@ const OPERATIONS: Operation[] = ["read", "write"];
 const ACTIONS: PermissionAction[] = ["allow", "deny"];
 const REASON_CHARACTERS_MAX = 500;
 const FILE_POLICY_CACHE_ENTRIES_MAX = 32;
-const FILE_POLICY_CACHE_SYMBOL = Symbol.for("pi.interceptor.last-valid-file-policies");
+const FILE_POLICY_CACHE_SYMBOL = Symbol.for(
+  "pi.interceptor.last-valid-file-policies",
+);
 
 const runtimeRuleGroups = new Map<symbol, ScopedPermissionRule[]>();
 
@@ -152,7 +154,10 @@ function scopedRules(
 }
 
 /** Appends a validated last-match-wins rule group until its disposer is called. */
-export function appendInterceptorRules(value: unknown, scope: string): () => void {
+export function appendInterceptorRules(
+  value: unknown,
+  scope: string,
+): () => void {
   const id = Symbol("interceptor-runtime-rules");
   runtimeRuleGroups.set(id, scopedRules(parsePolicy(value), scope));
   let active = true;
@@ -409,7 +414,11 @@ type TreeSitterModule = typeof import("web-tree-sitter");
 
 let bashParser: Promise<TreeSitterParser> | undefined;
 
-function dependencyFile(packageName: string, fileName: string, legacyFileName?: string): string {
+function dependencyFile(
+  packageName: string,
+  fileName: string,
+  legacyFileName?: string,
+): string {
   const nodeModules = process.env.PI_CONFIG_NODE_MODULES?.trim();
   if (nodeModules) {
     const preferredPath = path.join(nodeModules, packageName, fileName);
@@ -425,13 +434,23 @@ async function loadBashParser(): Promise<TreeSitterParser> {
   const nodeModules = process.env.PI_CONFIG_NODE_MODULES?.trim();
   const moduleSpecifier = nodeModules
     ? pathToFileURL(
-        dependencyFile("web-tree-sitter", "web-tree-sitter.js", "tree-sitter.js"),
+        dependencyFile(
+          "web-tree-sitter",
+          "web-tree-sitter.js",
+          "tree-sitter.js",
+        ),
       ).href
     : "web-tree-sitter";
-  const { Language, Parser } = (await import(moduleSpecifier)) as TreeSitterModule;
+  const { Language, Parser } = (await import(
+    moduleSpecifier
+  )) as TreeSitterModule;
   await Parser.init({
     locateFile: () =>
-      dependencyFile("web-tree-sitter", "web-tree-sitter.wasm", "tree-sitter.wasm"),
+      dependencyFile(
+        "web-tree-sitter",
+        "web-tree-sitter.wasm",
+        "tree-sitter.wasm",
+      ),
   });
   const language = await Language.load(
     dependencyFile("tree-sitter-bash", "tree-sitter-bash.wasm"),

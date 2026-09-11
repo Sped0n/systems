@@ -53,6 +53,14 @@
       ...
     }:
     let
+      supportedSystems = [
+        "aarch64-darwin"
+        "aarch64-linux"
+        "x86_64-linux"
+      ];
+
+      forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
+
       genSpecialArgs =
         {
           system,
@@ -160,6 +168,29 @@
       ];
     in
     {
+      devShells = forAllSystems (
+        system:
+        let
+          pkgs = import nixpkgs {
+            inherit system;
+            config = nixpkgsConfig;
+            overlays = overlaysList;
+          };
+          pkgs-unstable = pkgsUnstableFor system;
+        in
+        {
+          default = pkgs.mkShellNoCC {
+            packages = [
+              pkgs.nodejs_24
+              pkgs.pnpm_11
+              pkgs-unstable.nixfmt
+              pkgs-unstable.prek
+              pkgs-unstable.ruff
+            ];
+          };
+        }
+      );
+
       darwinConfigurations = {
         "wks-0" = nix-darwin.lib.darwinSystem rec {
           system = "aarch64-darwin";

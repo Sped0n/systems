@@ -2,13 +2,12 @@ import errno
 import fcntl
 import os
 import pty
-import shlex
 import select
+import shlex
 import signal
 import subprocess
 import sys
 import termios
-
 
 USAGE = """Usage:
   nixos-deploy <flake> <target-host>

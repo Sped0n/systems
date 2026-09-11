@@ -32,10 +32,7 @@ import {
   type SendOptions,
   type SessionEndpoint,
 } from "./protocol.ts";
-import {
-  SessionControlServer,
-  type ControlledSession,
-} from "./server.ts";
+import { SessionControlServer, type ControlledSession } from "./server.ts";
 
 const AUTISTIC_MODE_FLAG = "autistic-mode";
 const SESSION_MESSAGE_TYPE = "session-message";
@@ -277,7 +274,11 @@ export default function controlExtension(pi: ExtensionAPI): void {
       return;
     const controlDirectory = getSessionControlDirectory(getAgentDir());
     await ensureSessionControlDirectory(controlDirectory);
-    const endpoint = endpointFor(ctx, controlDirectory, new Date().toISOString());
+    const endpoint = endpointFor(
+      ctx,
+      controlDirectory,
+      new Date().toISOString(),
+    );
     await removeSessionEndpoint(controlDirectory, endpoint.sessionId);
     state.context = ctx;
     state.endpoint = endpoint;

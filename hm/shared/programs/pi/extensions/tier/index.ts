@@ -14,14 +14,19 @@ import {
   type ModelTiers,
 } from "./model-tiers.ts";
 
-const EXPLICIT_MODEL_ARGUMENTS = new Set(["--provider", "--model", "--thinking"]);
+const EXPLICIT_MODEL_ARGUMENTS = new Set([
+  "--provider",
+  "--model",
+  "--thinking",
+]);
 
 type TierRuntime = Pick<ExtensionAPI, "setModel" | "setThinkingLevel">;
 type TierContext = Pick<ExtensionContext, "modelRegistry">;
 
 export function findTierFlagConflicts(argv: readonly string[]): string[] {
-  return argv.filter((argument, index) =>
-    EXPLICIT_MODEL_ARGUMENTS.has(argument) && index + 1 < argv.length
+  return argv.filter(
+    (argument, index) =>
+      EXPLICIT_MODEL_ARGUMENTS.has(argument) && index + 1 < argv.length,
   );
 }
 
@@ -73,7 +78,9 @@ export default function modelTierExtension(pi: ExtensionAPI): void {
         const names = Object.keys(await readModelTiers())
           .filter((name) => name.startsWith(prefix))
           .sort();
-        return names.length > 0 ? names.map((name) => ({ value: name, label: name })) : null;
+        return names.length > 0
+          ? names.map((name) => ({ value: name, label: name }))
+          : null;
       } catch {
         return null;
       }
@@ -83,17 +90,26 @@ export default function modelTierExtension(pi: ExtensionAPI): void {
       try {
         if (!requestedName) {
           const tiers = await readModelTiers();
-          ctx.ui.notify(formatTierStatus(tiers, ctx.model, pi.getThinkingLevel()), "info");
+          ctx.ui.notify(
+            formatTierStatus(tiers, ctx.model, pi.getThinkingLevel()),
+            "info",
+          );
           return;
         }
         if (!ctx.isIdle()) {
-          ctx.ui.notify("Wait for the current response to finish before switching model tiers", "warning");
+          ctx.ui.notify(
+            "Wait for the current response to finish before switching model tiers",
+            "warning",
+          );
           return;
         }
         await switchToTier(pi, ctx, requestedName);
         ctx.ui.notify(`Model tier switched to ${requestedName}`, "info");
       } catch (error) {
-        ctx.ui.notify(`Could not switch model tier: ${error instanceof Error ? error.message : String(error)}`, "error");
+        ctx.ui.notify(
+          `Could not switch model tier: ${error instanceof Error ? error.message : String(error)}`,
+          "error",
+        );
       }
     },
   });
@@ -104,7 +120,10 @@ export default function modelTierExtension(pi: ExtensionAPI): void {
 
     const conflicts = findTierFlagConflicts(process.argv.slice(2));
     if (conflicts.length > 0) {
-      ctx.ui.notify(`--tier cannot be combined with ${conflicts.join(", ")}`, "error");
+      ctx.ui.notify(
+        `--tier cannot be combined with ${conflicts.join(", ")}`,
+        "error",
+      );
       ctx.shutdown();
       return;
     }
@@ -113,7 +132,10 @@ export default function modelTierExtension(pi: ExtensionAPI): void {
       await switchToTier(pi, ctx, flag.trim());
       ctx.ui.notify(`Model tier selected: ${flag.trim()}`, "info");
     } catch (error) {
-      ctx.ui.notify(`Could not select model tier: ${error instanceof Error ? error.message : String(error)}`, "error");
+      ctx.ui.notify(
+        `Could not select model tier: ${error instanceof Error ? error.message : String(error)}`,
+        "error",
+      );
       ctx.shutdown();
     }
   });

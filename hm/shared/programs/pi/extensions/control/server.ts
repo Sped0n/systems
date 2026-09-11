@@ -77,7 +77,8 @@ export class SessionControlServer {
   }
 
   async start(): Promise<void> {
-    if (this.server) throw new Error("Session control server is already started");
+    if (this.server)
+      throw new Error("Session control server is already started");
     const endpoint = this.session.describe();
     if (endpoint.socketPath !== this.socketPath) {
       throw new Error(

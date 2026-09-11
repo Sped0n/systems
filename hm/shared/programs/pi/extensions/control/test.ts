@@ -5,10 +5,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import test from "node:test";
 
-import {
-  ClientControlError,
-  UnixSessionControlClient,
-} from "./client.ts";
+import { ClientControlError, UnixSessionControlClient } from "./client.ts";
 import {
   ensureSessionControlDirectory,
   getSessionEndpointPaths,
@@ -28,10 +25,7 @@ import {
   type SendOptions,
   type SessionEndpoint,
 } from "./protocol.ts";
-import {
-  SessionControlServer,
-  type ControlledSession,
-} from "./server.ts";
+import { SessionControlServer, type ControlledSession } from "./server.ts";
 
 const sessionId = "0195f052-ef3b-7aaa-8000-0123456789ab";
 
@@ -90,7 +84,8 @@ test("response validation preserves success and error invariants", () => {
     /must be response/u,
   );
   assertProtocolError(
-    () => validateControlResponse({ id: "x", type: "response", success: false }),
+    () =>
+      validateControlResponse({ id: "x", type: "response", success: false }),
     "invalid_record",
     /must contain an error/u,
   );
@@ -156,8 +151,11 @@ test("discovery publishes owner-only metadata and resolves unique targets", asyn
       await publishSessionEndpoint(controlDirectory, endpoint);
       assert.equal((await fs.stat(controlDirectory)).mode & 0o777, 0o700);
       assert.equal(
-        (await fs.stat(getSessionEndpointPaths(controlDirectory, sessionId).metadataPath))
-          .mode & 0o777,
+        (
+          await fs.stat(
+            getSessionEndpointPaths(controlDirectory, sessionId).metadataPath,
+          )
+        ).mode & 0o777,
         0o600,
       );
       const listed = await listSessionEndpoints(controlDirectory, {
@@ -324,11 +322,14 @@ test("client rejects a mismatched response id", async () => {
       await publishSessionEndpoint(controlDirectory, endpoint);
       const client = new UnixSessionControlClient({ controlDirectory });
       try {
-        await assert.rejects(client.getLastMessage("build"), (error: unknown) => {
-          assert.ok(error instanceof ClientControlError);
-          assert.equal(error.code, "protocol_error");
-          return true;
-        });
+        await assert.rejects(
+          client.getLastMessage("build"),
+          (error: unknown) => {
+            assert.ok(error instanceof ClientControlError);
+            assert.equal(error.code, "protocol_error");
+            return true;
+          },
+        );
       } finally {
         await new Promise<void>((resolve) => server.close(() => resolve()));
       }
@@ -407,8 +408,14 @@ test("CLI exposes only asynchronous text bridge commands", async () => {
       "--json",
     ]);
     assert.equal(last.code, 0, last.stderr);
-    assert.equal((JSON.parse(last.stdout) as { text: string }).text, "Latest result");
-    assert.deepEqual(session.sent.map((item) => item.message), ["message text"]);
+    assert.equal(
+      (JSON.parse(last.stdout) as { text: string }).text,
+      "Latest result",
+    );
+    assert.deepEqual(
+      session.sent.map((item) => item.message),
+      ["message text"],
+    );
     assert.deepEqual(session.pasted, ["draft text"]);
 
     assert.equal(

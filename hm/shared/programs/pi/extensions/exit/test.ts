@@ -22,6 +22,10 @@ test("exit command uses standard autocomplete and gracefully shuts down", async 
   assert.ok(command);
   assert.equal(command.description, "Quit pi");
   let shutdown = false;
-  await command.handler("", { shutdown: () => { shutdown = true; } });
+  await command.handler("", {
+    shutdown: () => {
+      shutdown = true;
+    },
+  });
   assert.equal(shutdown, true);
 });

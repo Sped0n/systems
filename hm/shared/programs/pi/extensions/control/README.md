@@ -38,11 +38,11 @@ participating Pi.
 
 Exit statuses:
 
-| Status | Meaning |
-| ---: | --- |
-| 0 | Success |
-| 2 | Invalid usage |
-| 3 | Target missing, ambiguous, or unreachable |
-| 4 | Server rejected the operation |
-| 5 | Invalid control protocol data |
-| 124 | Timeout |
+| Status | Meaning                                   |
+| -----: | ----------------------------------------- |
+|      0 | Success                                   |
+|      2 | Invalid usage                             |
+|      3 | Target missing, ambiguous, or unreachable |
+|      4 | Server rejected the operation             |
+|      5 | Invalid control protocol data             |
+|    124 | Timeout                                   |

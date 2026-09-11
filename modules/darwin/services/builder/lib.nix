@@ -1,4 +1,8 @@
-{ config, lib, pkgs }:
+{
+  config,
+  lib,
+  pkgs,
+}:
 let
   cfg = config.services.my-linux-builder;
   user = config.system.primaryUser;
@@ -19,7 +23,8 @@ let
     maxJobs = cfg.maxJobs;
   };
 
-  mkPlist = label: serviceConfig:
+  mkPlist =
+    label: serviceConfig:
     pkgs.writeText "${label}.plist" (lib.generators.toPlist { escape = true; } serviceConfig);
 in
 rec {
