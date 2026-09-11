@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
-import * as os from "node:os";
 import * as path from "node:path";
 import test from "node:test";
 
@@ -110,9 +109,9 @@ test("JSONL framing handles fragmentation and bounded UTF-8 payloads", () => {
 async function withTemporaryControlDirectory(
   callback: (controlDirectory: string, rootDirectory: string) => Promise<void>,
 ): Promise<void> {
-  const rootDirectory = await fs.mkdtemp(
-    path.join(os.tmpdir(), "pi-control-test-"),
-  );
+  // Unix socket paths are short (107 bytes on Linux); Nix CI can provide a
+  // much longer TMPDIR than the production agent path.
+  const rootDirectory = await fs.mkdtemp("/tmp/pi-ctl-");
   const controlDirectory = path.join(rootDirectory, "session-control");
   try {
     await callback(controlDirectory, rootDirectory);
