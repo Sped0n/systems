@@ -17,7 +17,6 @@
     "iina"
 
     # productivity
-    "raycast"
     "obsidian"
 
     # browsers
