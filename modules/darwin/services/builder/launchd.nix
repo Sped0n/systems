@@ -20,7 +20,7 @@ let
 
     expected_install_root=${lib.escapeShellArg "${pkgs.apple-container}/"}
     if system_status="$(${containerBin} system status --format json 2>/dev/null)"; then
-      install_root="$(printf '%s' "$system_status" | ${lib.getExe pkgs.jq} -er '.installRoot')"
+      install_root="$(printf '%s' "$system_status" | ${lib.getExe pkgs.jq} -er '.paths.installRoot // .installRoot')"
       if [ "$install_root" != "$expected_install_root" ]; then
         ${containerBin} system stop
       fi
