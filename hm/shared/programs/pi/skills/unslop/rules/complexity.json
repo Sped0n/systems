@@ -1,0 +1,109 @@
+[
+  {
+    "languages": ["JavaScript", "TypeScript", "Tsx"],
+    "functions": [
+      "function_declaration",
+      "function_expression",
+      "generator_function_declaration",
+      "generator_function",
+      "arrow_function",
+      "method_definition"
+    ],
+    "decisions": [
+      "if_statement",
+      "for_statement",
+      "for_in_statement",
+      "while_statement",
+      "do_statement",
+      "switch_case",
+      "catch_clause",
+      "ternary_expression"
+    ],
+    "logical": ["$A && $B", "$A || $B", "$A ?? $B"],
+    "comments": ["comment"]
+  },
+  {
+    "languages": ["Python"],
+    "functions": ["function_definition", "lambda"],
+    "decisions": [
+      "if_statement",
+      "elif_clause",
+      "for_statement",
+      "while_statement",
+      "except_clause",
+      "conditional_expression",
+      "boolean_operator",
+      "for_in_clause",
+      "if_clause"
+    ],
+    "logical": [],
+    "comments": ["comment"]
+  },
+  {
+    "languages": ["C"],
+    "functions": ["function_definition"],
+    "decisions": [
+      "if_statement",
+      "for_statement",
+      "while_statement",
+      "do_statement",
+      "conditional_expression"
+    ],
+    "logical": ["$A && $B", "$A || $B"],
+    "comments": ["comment"],
+    "cases": {
+      "all": [{ "kind": "case_statement" }, { "regex": "^case\\b" }]
+    }
+  },
+  {
+    "languages": ["Cpp"],
+    "functions": ["function_definition", "lambda_expression"],
+    "decisions": [
+      "if_statement",
+      "for_statement",
+      "for_range_loop",
+      "while_statement",
+      "do_statement",
+      "conditional_expression",
+      "catch_clause"
+    ],
+    "logical": ["$A && $B", "$A || $B"],
+    "comments": ["comment"],
+    "cases": {
+      "all": [{ "kind": "case_statement" }, { "regex": "^case\\b" }]
+    }
+  },
+  {
+    "languages": ["Go"],
+    "functions": ["function_declaration", "method_declaration", "func_literal"],
+    "decisions": [
+      "if_statement",
+      "for_statement",
+      "expression_case",
+      "type_case",
+      "communication_case"
+    ],
+    "logical": ["$A && $B", "$A || $B"],
+    "comments": ["comment"]
+  },
+  {
+    "languages": ["Rust"],
+    "functions": ["function_item", "closure_expression"],
+    "decisions": [
+      "if_expression",
+      "for_expression",
+      "while_expression",
+      "match_arm",
+      "try_expression"
+    ],
+    "logical": ["$A && $B", "$A || $B"],
+    "comments": ["line_comment", "block_comment"]
+  },
+  {
+    "languages": ["Nix"],
+    "functions": ["function_expression"],
+    "decisions": ["if_expression", "assert_expression"],
+    "logical": ["$A && $B", "$A || $B", "$A -> $B"],
+    "comments": ["comment"]
+  }
+]

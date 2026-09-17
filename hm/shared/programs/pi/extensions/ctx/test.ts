@@ -5,28 +5,43 @@ import { join } from "node:path";
 import test, { after, before, type TestContext } from "node:test";
 
 import {
-  fauxProvider,
   fauxAssistantMessage,
+  fauxProvider,
   fauxToolCall,
   InMemoryCredentialStore,
   InMemoryModelsStore,
   validateToolArguments,
 } from "@earendil-works/pi-ai";
-import { convertResponsesTools } from "@earendil-works/pi-ai/api/openai-responses-shared";
 import {
   createAgentSession,
   DefaultResourceLoader,
   ModelRuntime,
   SessionManager,
   SettingsManager,
+  sessionEntryToContextMessages,
   type ExtensionAPI,
   type ExtensionContext,
   type ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 
 import ctxExtension from "./index.ts";
-import { nextReminder, reminderKey, REMINDER_TYPE } from "./pressure.ts";
+import {
+  buildObservationPrompt,
+  OBSERVATION_MAX_OUTPUT_TOKENS,
+} from "./observer.ts";
+import {
+  contextPressure,
+  CONTEXT_PRESSURE_THRESHOLDS,
+  renderContextPressure,
+} from "./pressure.ts";
 import { registerRecall } from "./recall.ts";
+import {
+  compileTrace,
+  compileTraceEntry,
+  LARGE_TOOL_RESULT_CHARS,
+  maskConsumedToolResults,
+  renderTrace,
+} from "./view.ts";
 
 let directory: string;
 const originalAgentDir = process.env.PI_CODING_AGENT_DIR;
@@ -57,76 +72,202 @@ function user(manager: SessionManager, content: string) {
     timestamp: Date.now(),
   });
 }
+
 function seed(manager: SessionManager) {
   const id = user(manager, "Original decision: refresh-key-4829.");
-  for (let i = 0; i < 30; i++) {
-    user(manager, `Work item ${i}`);
+  for (let index = 0; index < 30; index++) {
+    user(manager, `Work item ${index}`);
     manager.appendMessage(
-      fauxAssistantMessage(
-        `Finished investigation ${i}. ${"evidence ".repeat(100)}`,
-      ),
+      fauxAssistantMessage(`Finished ${index}. ${"evidence ".repeat(100)}`),
     );
   }
   return id;
 }
-function recordReminder(
+
+function toolResult(
   manager: SessionManager,
-  tokens: number,
-  window = 200000,
-  reserve = 16384,
+  id: string,
+  name: string,
+  value: string,
+  isError = false,
 ) {
-  const reminder = nextReminder(manager.getBranch(), tokens, window, reserve);
-  if (reminder)
-    manager.appendCustomMessageEntry(REMINDER_TYPE, reminder.text, true, {
-      key: reminder.key,
-      level: reminder.level,
-    });
-  return reminder;
+  return manager.appendMessage({
+    role: "toolResult",
+    toolCallId: id,
+    toolName: name,
+    content: [{ type: "text", text: value }],
+    isError,
+    timestamp: Date.now(),
+  });
 }
 
-test("milestones escalate once, skip crossed levels, and restore correctly on branch navigation", () => {
+test("shared trace compiler preserves coordinates while omitting mutation payloads and recall echoes", () => {
   const manager = SessionManager.inMemory();
-  const root = user(manager, "Work");
-  assert.equal(recordReminder(manager, 128531), undefined);
-  assert.equal(recordReminder(manager, 128532)?.level, 0);
-  assert.equal(recordReminder(manager, 140000), undefined);
-  assert.equal(recordReminder(manager, 156074)?.level, 1);
-  assert.equal(recordReminder(manager, 174436)?.level, 2);
-  assert.equal(recordReminder(manager, 180000), undefined);
-  manager.branch(root);
-  assert.equal(recordReminder(manager, 174436)?.level, 2);
-  assert.equal(recordReminder(manager, 156074), undefined);
-  manager.appendCompaction("Handoff", root, 180000);
-  assert.equal(recordReminder(manager, 128532)?.level, 0);
-  assert.equal(recordReminder(manager, 75000, 100000, 16384)?.level, 1);
-  assert.equal(nextReminder([], 10, 16000, 16384), undefined);
-  assert.equal(nextReminder([], Number.NaN, 200000, 16384), undefined);
+  const source = user(manager, "Do not modify generated files.");
+  const write = manager.appendMessage(
+    fauxAssistantMessage(
+      [
+        { type: "text", text: "The invariant belongs in transport.ts." },
+        fauxToolCall(
+          "write",
+          { path: "generated.ts", content: "secret-payload" },
+          { id: "write-1" },
+        ),
+        fauxToolCall(
+          "edit",
+          {
+            path: "transport.ts",
+            edits: [{ oldText: "old-secret", newText: "new-secret" }],
+          },
+          { id: "edit-1" },
+        ),
+      ],
+      { stopReason: "toolUse" },
+    ),
+  );
+  const failed = toolResult(
+    manager,
+    "write-1",
+    "write",
+    "permission denied",
+    true,
+  );
+  manager.appendMessage(
+    fauxAssistantMessage(
+      fauxToolCall(
+        "recall",
+        { action: "search", target: "secret", offset: 0, scope: "lineage" },
+        { id: "recall-1" },
+      ),
+      { stopReason: "toolUse" },
+    ),
+  );
+  toolResult(manager, "recall-1", "recall", "recall echo");
+
+  const blocks = compileTrace(manager.getBranch());
+  const rendered = renderTrace(blocks, 4096);
+  assert.match(rendered, new RegExp(`entry ${source}; user`));
+  assert.match(rendered, new RegExp(`entry ${write}; assistant`));
+  assert.match(rendered, /write\(.*generated\.ts/);
+  assert.match(rendered, /\[payload omitted\]/);
+  assert.match(rendered, /1 edit payload\(s\) omitted/);
+  assert.doesNotMatch(
+    rendered,
+    /secret-payload|old-secret|new-secret|recall echo/,
+  );
+  assert.match(rendered, new RegExp(`entry ${failed}; tool_result`));
+  assert.match(rendered, /permission denied/);
 });
 
-test("reminder state survives persisted resume and resets at native compaction boundaries", async () => {
-  const manager = SessionManager.create(directory, join(directory, "sessions"));
-  const root = user(manager, "Work");
-  manager.appendMessage(fauxAssistantMessage("Starting"));
-  recordReminder(manager, 156074);
-  const resumed = SessionManager.open(manager.getSessionFile()!);
-  assert.equal(recordReminder(resumed, 156074), undefined);
-  resumed.appendCompaction("Checkpoint", root, 160000);
-  assert.notEqual(
-    reminderKey(manager.getBranch(), 200000, 16384),
-    reminderKey(resumed.getBranch(), 200000, 16384),
+test("trace rendering is bounded with deterministic head and tail coordinates", () => {
+  const manager = SessionManager.inMemory();
+  const first = user(manager, `first-marker ${"a".repeat(3000)}`);
+  for (let index = 0; index < 8; index++)
+    user(manager, `middle-${index} ${"m".repeat(3000)}`);
+  const last = user(manager, `last-marker ${"z".repeat(3000)}`);
+  const rendered = renderTrace(compileTrace(manager.getBranch()), 1800);
+  assert.ok(rendered.length <= 7200);
+  assert.match(rendered, new RegExp(first));
+  assert.match(rendered, new RegExp(last));
+  assert.match(rendered, /omitted to fit the observer input/);
+});
+
+test("stateless masking uses exact entries and never masks unconsumed or stored results", () => {
+  const manager = SessionManager.inMemory();
+  user(manager, "Inspect both files.");
+  manager.appendMessage(
+    fauxAssistantMessage(
+      fauxToolCall("read", { path: "old.ts" }, { id: "same" }),
+      {
+        stopReason: "toolUse",
+      },
+    ),
   );
+  const consumed = toolResult(
+    manager,
+    "same",
+    "read",
+    `old-marker ${"x".repeat(LARGE_TOOL_RESULT_CHARS + 100)}`,
+  );
+  manager.appendMessage(fauxAssistantMessage("The old result was consumed."));
+  manager.appendMessage(
+    fauxAssistantMessage(
+      fauxToolCall("read", { path: "new.ts" }, { id: "same" }),
+      {
+        stopReason: "toolUse",
+      },
+    ),
+  );
+  const unconsumed = toolResult(
+    manager,
+    "same",
+    "read",
+    `new-marker ${"y".repeat(LARGE_TOOL_RESULT_CHARS + 100)}`,
+  );
+  const entries = manager.getBranch();
+  const projected = maskConsumedToolResults(
+    entries.flatMap(sessionEntryToContextMessages),
+    entries,
+  );
+  assert.match(JSON.stringify(projected), new RegExp(`recall.*${consumed}`));
+  assert.doesNotMatch(JSON.stringify(projected), /old-marker/);
+  assert.match(JSON.stringify(projected), /new-marker/);
+  assert.match(JSON.stringify(manager.getEntry(consumed)), /old-marker/);
+  assert.match(JSON.stringify(manager.getEntry(unconsumed)), /new-marker/);
+});
+
+test("pressure calculation is pure, tiered at 60/75/90, and renders actual usage", () => {
+  assert.deepEqual(CONTEXT_PRESSURE_THRESHOLDS, {
+    advisory: 0.6,
+    high: 0.75,
+    critical: 0.9,
+  });
+  assert.equal(contextPressure(59, 110, 10), undefined);
+  const advisory = contextPressure(60, 110, 10)!;
+  assert.equal(advisory.level, "advisory");
+  assert.match(renderContextPressure(advisory), /Do not compact solely/);
+  assert.equal(contextPressure(75, 110, 10)?.level, "high");
+  const critical = contextPressure(95, 110, 10)!;
+  assert.equal(critical.level, "critical");
+  assert.match(renderContextPressure(critical), /used-tokens="95"/);
+  assert.match(renderContextPressure(critical), /budget-tokens="100"/);
+  assert.match(renderContextPressure(critical), /remaining-tokens="5"/);
+  assert.match(renderContextPressure(critical), /5 estimated tokens remain/);
+  assert.match(renderContextPressure(critical), /usage="95\.0%"/);
+  assert.equal(contextPressure(null, 100, 10), undefined);
+  assert.equal(contextPressure(10, 10, 10), undefined);
+});
+
+test("observer prompt rewrites previous memory from compacted and retained shared views", () => {
+  const manager = SessionManager.inMemory();
+  user(manager, "Old requirement.");
+  const split = manager.getBranch().length;
+  user(manager, "New correction.");
+  const prompt = buildObservationPrompt({
+    previousObservation: "## Current task\nOld task",
+    compactedEntries: manager.getBranch().slice(0, split),
+    retainedEntries: manager.getBranch().slice(split),
+    focus: "Focus on blockers",
+  });
+  assert.match(prompt, /^<conversation>/);
+  assert.match(prompt, /<newly-compacted-trace>[\s\S]*Old requirement/);
+  assert.match(prompt, /<retained-tail-trace>[\s\S]*New correction/);
+  assert.ok(
+    prompt.indexOf("</conversation>") <
+      prompt.indexOf("<previous-observation>"),
+  );
+  assert.match(prompt, /Additional focus: Focus on blockers$/);
+  assert.doesNotMatch(prompt, /<focus>/);
+  assert.match(prompt, /Use this EXACT format:/);
+  assert.match(prompt, /## Active context/);
 });
 
 async function runtime(
   t: TestContext,
-  options: {
-    empty?: boolean;
-    seedHistory?: (manager: SessionManager) => void;
-    extraFactory?: (pi: ExtensionAPI) => void;
-  } = {},
+  options: { extraFactory?: (pi: ExtensionAPI) => void; empty?: boolean } = {},
 ) {
   const faux = fauxProvider({
-    models: [{ id: "ctx-test", contextWindow: 200000, maxTokens: 4096 }],
+    models: [{ id: "ctx-test", contextWindow: 200000, maxTokens: 65536 }],
   });
   const modelRuntime = await ModelRuntime.create({
     modelsPath: null,
@@ -141,7 +282,6 @@ async function runtime(
   });
   const manager = SessionManager.inMemory(directory);
   const oldId = options.empty ? undefined : seed(manager);
-  options.seedHistory?.(manager);
   const loader = new DefaultResourceLoader({
     cwd: directory,
     agentDir: directory,
@@ -166,103 +306,55 @@ async function runtime(
     sessionManager: manager,
     settingsManager: settings,
     resourceLoader: loader,
-    tools: ["respawn", "recall"],
+    tools: ["compact", "recall"],
   });
   const errors: string[] = [];
   await session.bindExtensions({
     onError: (error) => errors.push(error.error),
   });
   t.after(() => session.dispose());
-  return { faux, session, manager, oldId, errors, settings };
+  return { faux, session, manager, oldId, errors };
 }
 
+const observation = `## Current task
+Run the regression test.
+
+## Active context
+- Preserve original history.
+
+## Observations
+- Investigation complete.
+
+## Open work
+- Run tests.
+
+## Suggested next action
+Run the regression test.`;
+
 test(
-  "real Pi run commits a standalone respawn after its result, retains native tail, and continues exactly once",
+  "compact runs observational compaction after its standalone result and continues exactly once",
   { timeout: 15000 },
   async (t) => {
-    const originalPayloads: string[] = [];
-    const h = await runtime(t, {
-      seedHistory: (manager) => {
-        for (const name of ["write", "edit"] as const) {
-          const payload = `${name}-payload-marker `.repeat(1000);
-          originalPayloads.push(
-            manager.appendMessage(
-              fauxAssistantMessage(
-                fauxToolCall(
-                  name,
-                  name === "write"
-                    ? { path: "src/generated.ts", content: payload }
-                    : {
-                        path: "src/controller.ts",
-                        edits: [
-                          {
-                            oldText: payload,
-                            newText: "replacement-payload-marker",
-                          },
-                        ],
-                      },
-                  { id: `${name}-fixture` },
-                ),
-                { stopReason: "toolUse" },
-              ),
-            ),
-          );
-          manager.appendMessage({
-            role: "toolResult",
-            toolCallId: `${name}-fixture`,
-            toolName: name,
-            content: [
-              {
-                type: "text",
-                text:
-                  name === "write"
-                    ? "File written"
-                    : "Edit failed: original text not found",
-              },
-            ],
-            isError: name === "edit",
-            timestamp: Date.now(),
-          });
-          if (name === "write") seed(manager); // Exercise both older history and the retained tail.
-        }
-      },
-    });
+    const h = await runtime(t);
     h.faux.setResponses([
-      fauxAssistantMessage(
-        fauxToolCall("respawn", {}, { id: "checkpoint-1" }),
-        {
-          stopReason: "toolUse",
-        },
-      ),
-      (_context, options) => {
-        assert.equal(options?.maxTokens, 1024);
-        assert.equal(_context.tools?.length ?? 0, 0);
-        const prompt = JSON.stringify(_context.messages);
-        const recentBoundary = prompt.indexOf("Retained recent tail");
-        const correction = prompt.indexOf(
-          "The old plan is superseded; execute the regression test instead.",
+      fauxAssistantMessage(fauxToolCall("compact", {}, { id: "compact-1" }), {
+        stopReason: "toolUse",
+      }),
+      (context, options) => {
+        assert.equal(options?.maxTokens, OBSERVATION_MAX_OUTPUT_TOKENS);
+        assert.equal(options?.cacheRetention, "none");
+        assert.match(options?.sessionId ?? "", /:ctx-observer:/);
+        assert.equal(context.tools?.length ?? 0, 0);
+        assert.match(
+          context.systemPrompt ?? "",
+          /Do NOT continue the conversation/,
         );
-        assert.ok(
-          recentBoundary >= 0 && correction > recentBoundary,
-          "The summarizer must see the latest correction in the retained tail, not just older history",
-        );
-        assert.equal(
-          prompt.indexOf(
-            "The old plan is superseded; execute the regression test instead.",
-            correction + 1,
-          ),
-          -1,
-        );
-        assert.doesNotMatch(
-          prompt,
-          /(?:write|edit|replacement)-payload-marker/,
-        );
-        assert.match(prompt, /src\/generated\.ts/);
-        assert.match(prompt, /src\/controller\.ts/);
-        assert.match(prompt, /Edit failed: original text not found/);
-        return fauxAssistantMessage(
-          "Decision retained. Next: execute regression test.",
-        );
+        assert.match(context.systemPrompt ?? "", /ONLY output/);
+        const prompt = JSON.stringify(context.messages);
+        assert.match(prompt, /newly-compacted-trace/);
+        assert.match(prompt, /retained-tail-trace/);
+        assert.doesNotMatch(prompt, /ctx-observational-compact/);
+        return fauxAssistantMessage(observation);
       },
       fauxAssistantMessage("Regression test completed."),
     ]);
@@ -285,391 +377,69 @@ test(
       )
         finished.resolve();
     });
-    await h.session.prompt(
-      "The old plan is superseded; execute the regression test instead.",
-    );
+    await h.session.prompt("Continue the work.");
     await finished.promise;
-    assert.deepEqual(h.errors, []);
     const entries = h.manager.getBranch();
-    const compactions = entries.filter((entry) => entry.type === "compaction");
-    assert.equal(compactions.length, 1);
-    assert.equal(
-      compactions[0].summary,
-      "Decision retained. Next: execute regression test.",
-    );
+    const compacted = entries.filter((entry) => entry.type === "compaction");
+    assert.equal(compacted.length, 1);
+    assert.equal(compacted[0].summary, observation);
+    assert.deepEqual(Object.keys(compacted[0].details as object).sort(), [
+      "compactor",
+      "modifiedFiles",
+      "readFiles",
+    ]);
     const resultIndex = entries.findIndex(
       (entry) =>
         entry.type === "message" &&
         entry.message.role === "toolResult" &&
-        entry.message.toolName === "respawn",
+        entry.message.toolName === "compact",
     );
-    assert.ok(
-      resultIndex >= 0 && entries.indexOf(compactions[0]) > resultIndex,
-    );
+    assert.ok(resultIndex >= 0 && entries.indexOf(compacted[0]) > resultIndex);
     assert.equal(h.faux.state.callCount, 3);
-    assert.ok(compactions[0].usage && compactions[0].usage.totalTokens > 0);
     assert.ok(h.manager.getEntry(h.oldId!));
-    for (const id of originalPayloads) {
-      assert.match(
-        JSON.stringify(h.manager.getEntry(id)),
-        /(?:write|edit)-payload-marker/,
-      );
-    }
-    assert.ok(
-      h.session.messages.some(
-        (message) =>
-          message.role === "toolResult" && message.toolName === "respawn",
-      ),
-    );
-    assert.deepEqual(h.session.getActiveToolNames().sort(), [
-      "recall",
-      "respawn",
-    ]);
-  },
-);
-
-test(
-  "ordinary manual compaction remains native model summarization",
-  { timeout: 15000 },
-  async (t) => {
-    const h = await runtime(t);
-    h.faux.setResponses([
-      fauxAssistantMessage("Native fallback summary"),
-      fauxAssistantMessage("Native turn prefix"),
-    ]);
-    const result = await h.session.compact("Focus on outstanding work");
-    assert.equal(result.summary.includes("Native fallback summary"), true);
-    assert.equal(h.faux.state.callCount, 2);
     assert.deepEqual(h.errors, []);
   },
 );
 
-test(
-  "automatic compaction uses Pi's native fallback when no respawn was requested",
-  { timeout: 15000 },
-  async (t) => {
-    const h = await runtime(t, {
-      extraFactory: (pi) => {
-        pi.on("message_end", (event) => {
-          const message = event.message;
-          if (
-            message.role === "assistant" &&
-            message.content.some(
-              (part) => part.type === "toolCall" && part.id === "pressure",
-            )
-          ) {
-            return {
-              message: {
-                ...message,
-                usage: {
-                  ...message.usage,
-                  input: 190000,
-                  output: 0,
-                  cacheRead: 0,
-                  cacheWrite: 0,
-                  totalTokens: 190000,
-                },
-              },
-            };
-          }
-        });
-      },
-    });
-    h.faux.setResponses([
-      fauxAssistantMessage(
-        fauxToolCall(
-          "recall",
-          {
-            action: "search",
-            target: "refresh-key",
-            offset: 0,
-            scope: "lineage",
-          },
-          { id: "pressure" },
-        ),
-        { stopReason: "toolUse" },
-      ),
-      ...Array.from({ length: 3 }, () =>
-        fauxAssistantMessage("Native fallback response"),
-      ),
-    ]);
-    await h.session.prompt("Continue investigating");
-    const compacted = h.manager
-      .getBranch()
-      .filter((entry) => entry.type === "compaction");
-    assert.equal(compacted.length, 1);
-    assert.equal(compacted[0].fromHook, false);
-    assert.match(compacted[0].summary, /Native fallback response/);
-    assert.deepEqual(h.errors, []);
-  },
-);
+test("manual compaction uses the observer and passes user focus", async (t) => {
+  const h = await runtime(t);
+  h.faux.setResponses([
+    (context) => {
+      assert.match(JSON.stringify(context.messages), /Focus on open blockers/);
+      return fauxAssistantMessage(observation);
+    },
+  ]);
+  const result = await h.session.compact("Focus on open blockers");
+  assert.equal(result.summary, observation);
+  assert.equal(h.faux.state.callCount, 1);
+  assert.equal(
+    h.manager.getBranch().filter((entry) => entry.type === "compaction").length,
+    1,
+  );
+});
 
-test(
-  "Pi reaching its threshold during respawn fulfills that request and queues only one continuation",
-  { timeout: 15000 },
-  async (t) => {
-    const h = await runtime(t, {
-      extraFactory: (pi) => {
-        pi.on("message_end", (event) => {
-          const message = event.message;
-          if (
-            message.role === "assistant" &&
-            message.content.some(
-              (part) => part.type === "toolCall" && part.id === "urgent",
-            )
-          ) {
-            return {
-              message: {
-                ...message,
-                usage: {
-                  ...message.usage,
-                  input: 190000,
-                  output: 0,
-                  cacheRead: 0,
-                  cacheWrite: 0,
-                  totalTokens: 190000,
-                },
-              },
-            };
-          }
-        });
-      },
-    });
-    h.faux.setResponses([
-      fauxAssistantMessage(fauxToolCall("respawn", {}, { id: "urgent" }), {
-        stopReason: "toolUse",
-      }),
-      fauxAssistantMessage("Next: finish regression"),
-      fauxAssistantMessage("Regression finished"),
-    ]);
-    const finished = Promise.withResolvers<void>();
-    h.session.subscribe((event) => {
-      if (
-        event.type === "agent_settled" &&
-        h.manager
-          .getBranch()
-          .some(
-            (entry) =>
-              entry.type === "message" &&
-              entry.message.role === "assistant" &&
-              entry.message.content.some(
-                (part) =>
-                  part.type === "text" && part.text === "Regression finished",
-              ),
+test("automatic threshold compaction uses the same observer", async (t) => {
+  const h = await runtime(t, {
+    extraFactory: (pi) => {
+      pi.on("message_end", (event) => {
+        const message = event.message;
+        if (
+          message.role === "assistant" &&
+          message.content.some(
+            (part) => part.type === "toolCall" && part.id === "auto-pressure",
           )
-      )
-        finished.resolve();
-    });
-    await h.session.prompt("Continue");
-    await finished.promise;
-    const compacted = h.manager
-      .getBranch()
-      .filter((entry) => entry.type === "compaction");
-    assert.equal(compacted.length, 1);
-    assert.equal(compacted[0].summary, "Next: finish regression");
-    assert.equal(h.faux.state.callCount, 3);
-    assert.deepEqual(h.errors, []);
-  },
-);
-
-test(
-  "respawn refuses a mixed tool batch without stopping other work or committing a compaction",
-  { timeout: 15000 },
-  async (t) => {
-    const h = await runtime(t);
-    h.faux.setResponses([
-      fauxAssistantMessage(
-        [
-          fauxToolCall("respawn", {}, { id: "mixed-respawn" }),
-          fauxToolCall(
-            "recall",
-            {
-              action: "search",
-              target: "refresh-key",
-              offset: 0,
-              scope: "lineage",
+        )
+          return {
+            message: {
+              ...message,
+              usage: { ...message.usage, input: 190000, totalTokens: 190000 },
             },
-            { id: "mixed-recall" },
-          ),
-        ],
-        { stopReason: "toolUse" },
-      ),
-      fauxAssistantMessage("Continuing normally"),
-    ]);
-    await h.session.prompt("Investigate");
-    const failed = h.manager
-      .getBranch()
-      .find(
-        (entry) =>
-          entry.type === "message" &&
-          entry.message.role === "toolResult" &&
-          entry.message.toolCallId === "mixed-respawn",
-      );
-    assert.ok(
-      failed?.type === "message" &&
-        failed.message.role === "toolResult" &&
-        failed.message.isError,
-    );
-    assert.equal(
-      h.manager.getBranch().filter((entry) => entry.type === "compaction")
-        .length,
-      0,
-    );
-    assert.equal(h.faux.state.callCount, 2);
-  },
-);
-
-test(
-  "cancelled compaction never starts a continuation",
-  { timeout: 15000 },
-  async (t) => {
-    const h = await runtime(t, {
-      extraFactory: (pi) => {
-        pi.on("session_before_compact", () => ({ cancel: true }));
-      },
-    });
-    h.faux.setResponses([
-      fauxAssistantMessage(fauxToolCall("respawn", {}, { id: "cancel-1" }), {
-        stopReason: "toolUse",
-      }),
-      fauxAssistantMessage("Continue safely"),
-    ]);
-    const failed = Promise.withResolvers<void>();
-    h.session.subscribe((event) => {
-      if (event.type === "compaction_end") failed.resolve();
-    });
-    await h.session.prompt("Work");
-    await failed.promise;
-    assert.equal(
-      h.manager.getBranch().filter((entry) => entry.type === "compaction")
-        .length,
-      0,
-    );
-    assert.equal(h.faux.state.callCount, 2);
-  },
-);
-
-test(
-  "failed working notes cancel without native summarization fallback or continuation",
-  { timeout: 15000 },
-  async (t) => {
-    for (const response of [
-      fauxAssistantMessage("Partial note", { stopReason: "length" }),
-      fauxAssistantMessage("", {
-        stopReason: "error",
-        errorMessage: "Provider unavailable",
-      }),
-      fauxAssistantMessage("   "),
-      fauxAssistantMessage(fauxToolCall("recall", {}), {
-        stopReason: "toolUse",
-      }),
-    ]) {
-      await t.test(
-        response.stopReason + JSON.stringify(response.content),
-        async (t) => {
-          const h = await runtime(t);
-          h.faux.setResponses([
-            fauxAssistantMessage(fauxToolCall("respawn", {}), {
-              stopReason: "toolUse",
-            }),
-            response,
-          ]);
-          const ended = Promise.withResolvers<void>();
-          h.session.subscribe((event) => {
-            if (event.type === "compaction_end") ended.resolve();
-          });
-          await h.session.prompt("Continue");
-          await ended.promise;
-          assert.equal(
-            h.manager.getBranch().filter((entry) => entry.type === "compaction")
-              .length,
-            0,
-          );
-          assert.equal(h.faux.state.callCount, 2);
-          assert.ok(h.manager.getEntry(h.oldId!));
-        },
-      );
-    }
-  },
-);
-
-test(
-  "cancelling the working-note request propagates its signal and preserves history",
-  { timeout: 15000 },
-  async (t) => {
-    const h = await runtime(t);
-    const started = Promise.withResolvers<void>();
-    const cancelled = Promise.withResolvers<void>();
-    const ended = Promise.withResolvers<void>();
-    h.session.subscribe((event) => {
-      if (event.type === "compaction_end") ended.resolve();
-    });
-    h.faux.setResponses([
-      fauxAssistantMessage(fauxToolCall("respawn", {}), {
-        stopReason: "toolUse",
-      }),
-      async (_context, options) => {
-        assert.ok(options?.signal);
-        options.signal.addEventListener("abort", () => cancelled.resolve(), {
-          once: true,
-        });
-        started.resolve();
-        await cancelled.promise;
-        options.signal.throwIfAborted();
-        return fauxAssistantMessage("Unreachable");
-      },
-    ]);
-    await h.session.prompt("Continue");
-    await started.promise;
-    h.session.abortCompaction();
-    await cancelled.promise;
-    await ended.promise;
-    assert.equal(
-      h.manager.getBranch().filter((entry) => entry.type === "compaction")
-        .length,
-      0,
-    );
-    assert.equal(h.faux.state.callCount, 2);
-    assert.ok(h.manager.getEntry(h.oldId!));
-  },
-);
-
-test(
-  "reminders reach ongoing tool turns, not a new run after a final answer, and old reminders are filtered",
-  { timeout: 15000 },
-  async (t) => {
-    const seen: unknown[] = [];
-    const h = await runtime(t, {
-      extraFactory: (pi) => {
-        pi.on("context", (event) => {
-          seen.push(event.messages);
-        });
-        pi.on("message_end", (event) => {
-          const message = event.message;
-          if (
-            message.role === "assistant" &&
-            message.content.some(
-              (part) => part.type === "toolCall" && part.id === "lookup-1",
-            )
-          ) {
-            return {
-              message: {
-                ...message,
-                usage: {
-                  ...message.usage,
-                  input: 150000,
-                  output: 0,
-                  cacheRead: 0,
-                  cacheWrite: 0,
-                  totalTokens: 150000,
-                },
-              },
-            };
-          }
-        });
-      },
-    });
-    const highUsage = fauxAssistantMessage(
+          };
+      });
+    },
+  });
+  h.faux.setResponses([
+    fauxAssistantMessage(
       fauxToolCall(
         "recall",
         {
@@ -678,32 +448,92 @@ test(
           offset: 0,
           scope: "lineage",
         },
-        { id: "lookup-1" },
+        { id: "auto-pressure" },
       ),
       { stopReason: "toolUse" },
-    );
-    h.faux.setResponses([highUsage, fauxAssistantMessage("Answer")]);
-    await h.session.prompt("Find the original decision");
-    assert.equal(h.faux.state.callCount, 2);
-    assert.ok(JSON.stringify(seen.at(-1)).includes("70% milestone"));
-    const reminder = h.manager
+    ),
+    fauxAssistantMessage(observation),
+    fauxAssistantMessage("Continued after automatic compaction."),
+  ]);
+  await h.session.prompt("Continue the investigation.");
+  const compacted = h.manager
+    .getBranch()
+    .filter((entry) => entry.type === "compaction");
+  assert.equal(compacted.length, 1);
+  assert.equal(compacted[0].summary, observation);
+  assert.equal(compacted[0].fromHook, true);
+  assert.equal(h.faux.state.callCount, 3);
+});
+
+test("incomplete observation cancels compaction without native fallback", async (t) => {
+  const h = await runtime(t);
+  h.faux.setResponses([
+    fauxAssistantMessage("Partial observation", { stopReason: "length" }),
+    fauxAssistantMessage("native fallback must not run"),
+  ]);
+  await assert.rejects(h.session.compact(), /cancelled|failed/i);
+  assert.equal(h.faux.state.callCount, 1);
+  assert.equal(
+    h.manager.getBranch().filter((entry) => entry.type === "compaction").length,
+    0,
+  );
+  assert.ok(h.manager.getEntry(h.oldId!));
+});
+
+test("pressure annotation is transient provider context only", async (t) => {
+  const observed: unknown[] = [];
+  const h = await runtime(t, {
+    extraFactory: (pi) => {
+      pi.on("context", (event) => {
+        observed.push(event.messages);
+      });
+      pi.on("message_end", (event) => {
+        const message = event.message;
+        if (
+          message.role === "assistant" &&
+          message.content.some(
+            (part) => part.type === "toolCall" && part.id === "pressure-read",
+          )
+        )
+          return {
+            message: {
+              ...message,
+              usage: { ...message.usage, input: 140000, totalTokens: 140000 },
+            },
+          };
+      });
+    },
+  });
+  h.faux.setResponses([
+    fauxAssistantMessage(
+      fauxToolCall(
+        "recall",
+        {
+          action: "search",
+          target: "refresh-key",
+          offset: 0,
+          scope: "lineage",
+        },
+        { id: "pressure-read" },
+      ),
+      { stopReason: "toolUse" },
+    ),
+    fauxAssistantMessage("Done."),
+  ]);
+  await h.session.prompt("Find the decision.");
+  assert.match(JSON.stringify(observed.at(-1)), /context-pressure/);
+  assert.match(JSON.stringify(observed.at(-1)), /used-tokens/);
+  assert.equal(
+    h.manager
       .getBranch()
-      .find(
+      .some(
         (entry) =>
-          entry.type === "custom_message" && entry.customType === REMINDER_TYPE,
-      );
-    assert.ok(reminder);
-    h.faux.setResponses([
-      fauxAssistantMessage("Native summary"),
-      fauxAssistantMessage("Native prefix"),
-      fauxAssistantMessage("Resumed"),
-    ]);
-    await h.session.compact();
-    await h.session.prompt("Continue");
-    assert.ok(!JSON.stringify(seen.at(-1)).includes("70% milestone"));
-    assert.deepEqual(h.errors, []);
-  },
-);
+          entry.type === "custom_message" &&
+          entry.customType === "ctx-pressure",
+      ),
+    false,
+  );
+});
 
 function recallHarness(manager = SessionManager.inMemory()) {
   let tool: ToolDefinition | undefined;
@@ -729,26 +559,17 @@ function recallHarness(manager = SessionManager.inMemory()) {
     manager,
     sent,
     command,
-    tool: tool!,
-    read: async (params: Record<string, unknown>, signal?: AbortSignal) => {
+    read: async (params: Record<string, unknown>) => {
       const validated = validateToolArguments(
         tool!,
         fauxToolCall("recall", params),
       );
-      return tool!.execute("test", validated, signal, undefined, context);
+      return tool!.execute("test", validated, undefined, undefined, context);
     },
   };
 }
-function details(
-  result: Awaited<ReturnType<ReturnType<typeof recallHarness>["read"]>>,
-) {
-  return result.details as {
-    scope: string;
-    next: Record<string, unknown> | null;
-    reads: Record<string, unknown>[];
-  };
-}
-function text(
+
+function resultText(
   result: Awaited<ReturnType<ReturnType<typeof recallHarness>["read"]>>,
 ) {
   return result.content
@@ -757,198 +578,39 @@ function text(
     .join("\n");
 }
 
-test("recall search and read remain valid through normal and strict provider serialization", () => {
-  const { tool } = recallHarness();
-  for (const strict of [false, true]) {
-    const [wire] = convertResponsesTools([tool], { strict });
-    assert.ok(wire.type === "function" && wire.parameters);
-    const exposed = {
-      ...tool,
-      parameters: wire.parameters as typeof tool.parameters,
-    };
-    for (const args of [
-      { action: "search", target: "", offset: 0, scope: "lineage" },
-      { action: "read", target: "abc123", offset: 12000, scope: "all" },
-    ]) {
-      const call = fauxToolCall("recall", args);
-      assert.deepEqual(validateToolArguments(exposed, call), args);
-      assert.deepEqual(validateToolArguments(tool, call), args);
-      for (const bad of [
-        { ...args, action: "unknown" },
-        { ...args, offset: -1 },
-        { ...args, query: "mixed" },
-      ]) {
-        assert.throws(
-          () => validateToolArguments(exposed, fauxToolCall("recall", bad)),
-          /Validation failed/,
-        );
-        assert.throws(
-          () => validateToolArguments(tool, fauxToolCall("recall", bad)),
-          /Validation failed/,
-        );
-      }
-    }
-  }
-});
-
-test(
-  "real Pi run searches compacted history then executes the returned read arguments",
-  { timeout: 15000 },
-  async (t) => {
-    const h = await runtime(t);
-    h.faux.setResponses([
-      fauxAssistantMessage("Native summary"),
-      fauxAssistantMessage("Native prefix"),
-    ]);
-    await h.session.compact();
-    h.faux.setResponses([
-      (context) => {
-        assert.doesNotMatch(
-          JSON.stringify(context.messages),
-          /refresh-key-4829/,
-        );
-        return fauxAssistantMessage(
-          fauxToolCall("recall", {
-            action: "search",
-            target: "refresh-key",
-            offset: 0,
-            scope: "lineage",
-          }),
-          { stopReason: "toolUse" },
-        );
-      },
-      (context) => {
-        const result = context.messages.at(-1);
-        assert.ok(result?.role === "toolResult" && !result.isError);
-        const body = result.content
-          .filter((part) => part.type === "text")
-          .map((part) => part.text)
-          .join("\n");
-        const match = body.match(/^Read: recall\((.+)\)$/m);
-        assert.ok(match);
-        const args = JSON.parse(match[1]);
-        assert.equal(args.target, h.oldId);
-        return fauxAssistantMessage(fauxToolCall("recall", args), {
-          stopReason: "toolUse",
-        });
-      },
-      (context) => {
-        const result = context.messages.at(-1);
-        assert.ok(result?.role === "toolResult" && !result.isError);
-        assert.match(
-          JSON.stringify(result.content),
-          /Original decision: refresh-key-4829/,
-        );
-        return fauxAssistantMessage("Recovered original decision");
-      },
-    ]);
-    await h.session.prompt("Recover the original decision from history");
-    const last = h.session.messages.at(-1);
-    assert.ok(last?.role === "assistant" && last.stopReason === "stop");
-    assert.match(JSON.stringify(last.content), /Recovered original decision/);
-    assert.equal(h.faux.state.callCount, 5); // Two native summary requests, then search, read, answer.
-    assert.deepEqual(h.errors, []);
-  },
-);
-
-test("recall surfaces a rare diagnostic and includes it in the snippet despite common keyword noise", async () => {
+test("recall searches and exactly pages shared trace entries after compaction", async () => {
   const h = recallHarness();
-  const diagnostic = user(
-    h.manager,
-    "PSRAM boot log\n" +
-      "boot progress\n".repeat(100) +
-      "Guru Meditation Error: Load address misaligned",
-  );
-  for (let i = 0; i < 10; i++)
-    user(h.manager, `PSRAM configuration 250 MHz; 100 allocations; build ${i}`);
-  const result = await h.read({
-    action: "search",
-    target: "PSRAM 250 100 misaligned",
-    offset: 0,
-    scope: "lineage",
-  });
-  assert.equal(details(result).reads[0].target, diagnostic);
-  const snippet = text(result).split("\nRead:")[0];
-  assert.match(snippet, /Load address misaligned/);
-});
-
-test("recall continuation arguments paginate matches and full text without losing scope", async () => {
-  const h = recallHarness();
-  const original = user(
-    h.manager,
-    "needle " + "x".repeat(24000) + "end-marker",
-  );
-  for (let i = 0; i < 6; i++) user(h.manager, `needle ${i}`);
-  const page = await h.read({
+  const original = user(h.manager, `needle ${"x".repeat(24000)} end-marker`);
+  const tail = user(h.manager, "Current tail");
+  h.manager.appendCompaction(observation, tail, 40000);
+  const search = await h.read({
     action: "search",
     target: "needle",
     offset: 0,
-    scope: "all",
-  });
-  const nextPage = await h.read(details(page).next!);
-  assert.equal(details(nextPage).next, null);
-  const read = details(nextPage).reads.find((args) => args.target === original);
-  assert.ok(read);
-  let result = await h.read(read);
-  let body = "";
-  while (true) {
-    assert.equal(details(result).scope, "all");
-    body += text(result);
-    const next = details(result).next;
-    if (!next) break;
-    assert.match(text(result), /Continue: recall\(/);
-    result = await h.read(next);
-  }
-  assert.match(body, /end-marker/);
-});
-
-test("/recall preserves a natural-language request and queues agent-led recovery", async () => {
-  const h = recallHarness();
-  await h.command!.handler(
-    "  Why did we change the refresh strategy?  ",
-    {} as never,
-  );
-  const sent = h.sent[0] as [string, { deliverAs: string }];
-  assert.ok(sent[0].endsWith("Why did we change the refresh strategy?"));
-  assert.equal(sent[1].deliverAs, "followUp");
-  await h.command!.handler("", {} as never);
-  assert.equal(h.sent.length, 2);
-});
-
-test("recall stays branch-scoped, pages full text, ranks keywords, and works after compaction without sidecars", async () => {
-  const h = recallHarness();
-  const root = user(h.manager, "auth token decision");
-  const foreign = user(h.manager, "branch-only-marker");
-  h.manager.branch(root);
-  const body = "🙂".repeat(15000) + "end-marker";
-  const large = user(h.manager, body);
-  h.manager.appendCompaction("Summary", large, 40000);
-  const search = (target: string, offset = 0) => ({
-    action: "search",
-    target,
-    offset,
     scope: "lineage",
   });
-  const read = (target: string, offset = 0, scope = "lineage") => ({
+  assert.match(resultText(search), new RegExp(original));
+  const first = await h.read({
     action: "read",
-    target,
-    offset,
-    scope,
+    target: original,
+    offset: 0,
+    scope: "lineage",
   });
-  assert.match(text(await h.read(search("auth token"))), /auth token decision/);
-  await assert.rejects(h.read(read(foreign)), /scope 'lineage'/);
-  assert.match(
-    text(await h.read(read(foreign, 0, "all"))),
-    /branch-only-marker/,
-  );
-  const first = await h.read(read(large));
-  assert.ok(Buffer.byteLength(text(first)) < 50000);
-  assert.deepEqual(details(first).next, read(large, 12000));
-  assert.match(text(await h.read(read(large, 30000))), /end-marker/);
-  await assert.rejects(h.read(search("auth", 100)), /matching entries/);
-  await assert.rejects(h.read(read(large, body.length)), /offset/);
-  h.manager.appendCustomEntry("private", { value: "secret-marker" });
-  assert.doesNotMatch(text(await h.read(search("secret-marker"))), /private/);
+  assert.match(resultText(first), /Continue: recall/);
+  const second = await h.read({
+    action: "read",
+    target: original,
+    offset: 12000,
+    scope: "lineage",
+  });
+  const third = await h.read({
+    action: "read",
+    target: original,
+    offset: 24000,
+    scope: "lineage",
+  });
+  assert.match(resultText(second) + resultText(third), /end-marker/);
+  assert.ok(compileTraceEntry(h.manager.getEntry(original)!).length > 0);
   assert.deepEqual(
     (await readdir(directory)).filter((name) => name.startsWith(".pi")),
     [],

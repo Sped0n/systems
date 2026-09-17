@@ -1,71 +1,8 @@
 import { StringEnum } from "@earendil-works/pi-ai";
-import type {
-  ExtensionAPI,
-  SessionEntry,
-} from "@earendil-works/pi-coding-agent";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
-import { sanitize } from "./sanitize.ts";
-
-interface RecallEntry {
-  id: string;
-  role: string;
-  text: string;
-}
-
-/** Render session text without binary payloads, private custom state, or recall echoes. */
-function renderEntry(entry: SessionEntry): RecallEntry | undefined {
-  if (entry.type === "branch_summary") {
-    return { id: entry.id, role: "branchSummary", text: entry.summary };
-  }
-  if (entry.type !== "message" && entry.type !== "custom_message") return;
-  const message =
-    entry.type === "message"
-      ? entry.message
-      : { ...entry, role: "custom" as const };
-  if (message.role === "bashExecution") {
-    if (message.excludeFromContext) return;
-    return {
-      id: entry.id,
-      role: message.role,
-      text: `$ ${message.command}\n${message.output}`,
-    };
-  }
-  if (
-    message.role === "compactionSummary" ||
-    message.role === "branchSummary"
-  ) {
-    return { id: entry.id, role: message.role, text: message.summary };
-  }
-  if (
-    message.role === "toolResult" &&
-    ["recall", "vcc_recall"].includes(message.toolName)
-  )
-    return;
-  const text =
-    typeof message.content === "string"
-      ? message.content
-      : message.content
-          .map((part) => {
-            if (part.type === "text") return part.text;
-            if (part.type === "thinking") return part.thinking;
-            if (part.type === "image") return `[image: ${part.mimeType}]`;
-            if (part.type === "toolCall") {
-              return ["recall", "vcc_recall"].includes(part.name)
-                ? ""
-                : `${part.name} ${JSON.stringify(part.arguments)}`;
-            }
-            return "";
-          })
-          .filter(Boolean)
-          .join("\n");
-  if (!text.trim()) return;
-  const role =
-    message.role === "toolResult"
-      ? `toolResult:${message.toolName}`
-      : message.role;
-  return { id: entry.id, role, text: sanitize(text) };
-}
+import { recallTraceEntry } from "./view.ts";
 
 export function registerRecall(pi: ExtensionAPI) {
   pi.registerCommand("recall", {
@@ -142,7 +79,7 @@ export function registerRecall(pi: ExtensionAPI) {
 
       if (action === "read") {
         const raw = entries.find((entry) => entry.id === target);
-        const entry = raw && renderEntry(raw);
+        const entry = raw && recallTraceEntry(raw);
         if (!entry)
           throw new Error(
             `Entry ${JSON.stringify(target)} has no recallable text in scope '${scope}'. Search first and copy a returned read request.`,
@@ -169,7 +106,7 @@ export function registerRecall(pi: ExtensionAPI) {
       const hits = entries
         .flatMap((raw, index) => {
           signal?.throwIfAborted();
-          const entry = renderEntry(raw);
+          const entry = recallTraceEntry(raw);
           if (!entry) return [];
           const text = entry.text.toLowerCase();
           const matches = terms.flatMap((term, termIndex) => {

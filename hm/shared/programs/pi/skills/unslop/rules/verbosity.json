@@ -1,0 +1,18 @@
+[
+  {
+    "languages": ["C", "Cpp", "JavaScript", "TypeScript", "Tsx", "Java"],
+    "pattern": "if ($CONDITION) { $$$BODY } else { $$$BODY }"
+  },
+  {
+    "languages": ["Go", "Rust"],
+    "pattern": "if $CONDITION { $$$BODY } else { $$$BODY }"
+  },
+  {
+    "languages": ["Python"],
+    "pattern": "if $CONDITION:\n    $$$BODY\nelse:\n    $$$BODY\n"
+  },
+  {
+    "languages": ["Python"],
+    "pattern": "if $CONDITION:\n    return True\nelse:\n    return False\n"
+  }
+]

@@ -41,7 +41,9 @@ Skills with an upstream source record its repository and pinned revision in
 `metadata.source` and `metadata.commit`. Preserve upstream frontmatter and body
 content when refreshing; provenance metadata should normally be the only diff.
 `write-discoverable-code` is an intentional Tiger Style fork and records both
-upstream revisions.
+upstream revisions. `unslop` is a local adaptation: its prose reference preserves
+the upstream body without discovery frontmatter, while its entry point and code
+evaluation guidance are maintained locally.
 
 ## Testing
 

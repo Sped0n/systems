@@ -1,186 +1,144 @@
 # Context management
 
-Model-triggered compaction with a separately budgeted working note, recent-tail
-continuity, deterministic history retrieval, and progressive context-pressure
-advice. There is no configuration file and no separate usage or reset tool.
+Observational compaction, lossless session recall, stateless tool-result masking,
+and transient context-pressure guidance. Pi's native session is the only durable
+source: the extension creates disposable views and stores no sidecars, indices,
+ledgers, or external memory.
+
+## Memory model
+
+```text
+                         ┌─ observer view ─> bounded Markdown observation
+native session entries ─┼─ context view  ─> consumed large results masked
+                         └─ recall view   ─> search and exact entry reads
+                              │
+                       native session entry IDs
+```
+
+Pi continues to own compaction thresholds, cut points, retained tails, session
+persistence, branching, events, and token accounting. Original entries are
+never rewritten or deleted.
+
+### Shared trace view
+
+`view.ts` lowers native entries into chronological, role-aware blocks identified
+by native entry ID. It preserves user text, assistant conclusions, concise tool
+calls, errors, and tool results; strips `write` and `edit` payload bodies;
+represents images as metadata; and excludes recall echoes, hidden shell output,
+and private custom state.
+
+Observer rendering bounds successful tool-result excerpts and supplies exact
+entry pointers. If the whole input is too large, it keeps deterministic head and
+tail regions with an omitted-entry-range marker. It does not assign semantic
+priority or decide which natural-language state is active.
+
+### Evolving observation
+
+Every automatic, overflow, or manual `/compact [focus]` compaction gives the
+observer:
+
+- the previous observation;
+- the newly compacted trace;
+- Pi's retained-tail trace;
+- optional manual focus instructions.
+
+The selected model rewrites these into bounded Markdown:
+
+```markdown
+## Current task
+
+## Active context
+
+## Observations
+
+## Open work
+
+## Suggested next action
+```
+
+The observer preserves applicable constraints and decisions, incorporates newer
+corrections, merges repetition, removes stale procedural detail, and retains
+useful outcomes, blockers, paths, commands, errors, identifiers, and entry IDs.
+Output is limited to 8,192 tokens. The request is tool-free, uses no prompt-cache
+retention, and has a separate routing session ID.
+
+Only a non-empty response with a normal `stop` commits. Provider errors,
+cancellation, tool calls, output-length termination, empty output, and stale
+session or branch state commit nothing. There is deliberately no fallback to
+Pi's native summarizer, so every compaction route has one memory format.
+
+Compaction details retain only `compactor: "ctx"` and Pi-compatible read/modified
+file lists. Observation history and original evidence remain in native session
+entries.
 
 ## Tools
 
-### `respawn({})`
+### `compact({})`
 
-Call `respawn` alone in its tool batch, without writing a summary. The tool
-records the compaction request and ends that agent run. Once Pi settles, the
-extension uses Pi's compaction preparation and makes one tool-free working-note
-request through the active model registry, using the selected model and its
-configured authentication and routing.
-
-The request contains the previous summary and conversation being compacted,
-including any split-turn prefix, followed by the retained recent tail. The tail
-lets the summarizer reconcile older evidence with current intent and discard
-superseded goals or decisions; it is evidence, not a section to reproduce wholesale.
-Including it increases input usage but prevents a note based only on stale history.
-In this summarization copy only, `write` contents and `edit` replacement payloads
-are replaced with omission markers. Operation names, paths, tool results, and
-recent corrections remain available to the summarizer. Persisted messages and
-Pi's retained tail are unchanged; `recall` can retrieve the original payloads.
-The note uses three sections: **Active task**, **Active constraints**, and
-**Next action**, including unresolved decisions and blockers. Active constraints
-preserve applicable user prohibitions, preferences, scope limits, authorization
-boundaries, and qualifications. Explicit corrections supersede older instructions;
-preferences are not promoted to prohibitions, and approvals are not inferred.
-Constraints take priority over historical detail and brevity, even when they also
-appear in the retained tail or can be retrieved through `recall`.
-
-Output is capped at 1,024 tokens, or the model's lower output limit. This is a
-generation budget, not character validation followed by a retry. It does not inherit the working
-agent's thinking-level setting; provider reasoning defaults still apply.
-
-Pi deterministically selects the retained recent tail and keeps tool calls with
-their results. The generated note and request usage are persisted in the native
-compaction entry. This is in-place compaction, not a new session or empty context
-window. Original evidence remains available through `recall`, following VCC's
-retrieval-first principle.
-
-This uses a separate summarization prompt, not the working conversation's
-original request layout. Working-prefix cache reuse is not guaranteed. The
-extension does not disable caching explicitly; provider defaults apply. The
-output budget bounds generation, not input size, total cost, or wall-clock time.
-Actual usage and latency need measurement with the chosen provider.
-
-Use `respawn` at a useful task boundary before substantial work. Avoid respawning
-with fresh context unless the user explicitly requests it. If nearly done,
-finish directly. These are agent instructions, not hard usage gates or cooldowns.
-
-After successful compaction, the agent continues from the note and retained
-tail. If native automatic compaction reaches a pending respawn first, that
-compaction makes the working-note request instead. The extension avoids a
-second compaction and only supplies a continuation if Pi has not resumed.
-There are no timers or idle polling.
-
-Agent guidance calls for checking active constraints before consequential actions.
-If an applicable instruction or authorization is unclear, recover the original
-user message with `recall` and ask the user if uncertainty remains. This does not
-trigger automatic searches or an extra recovery turn after every compaction.
-
-Cancellation, provider failure, empty notes, tool calls, and token-limit stops
-cancel the compaction without committing a partial note, retrying note generation,
-falling through to native summarization, or starting a continuation. Original
-history remains intact. Pi may decline to compact a session that is too small.
-There is no save-only checkpoint mode. Historical notes are evidence, not
-additional current instructions.
+Call `compact` alone in its tool batch at a coherent boundary. It terminates the
+current tool run, waits for settlement, performs the same observational
+compaction used automatically, and continues exactly once after success. It
+cancels cleanly on failure, abort, shutdown, or branch change.
 
 ### `recall({ action, target, offset, scope })`
 
-Search or read the current Pi session, including history hidden by compaction.
-All four fields are required and meaningful in both modes:
+Search or read the current native session, including entries hidden by
+compaction:
 
 ```text
 recall({ action: "search", target: "auth token", offset: 0, scope: "lineage" })
-recall({ action: "search", target: "auth token", offset: 5, scope: "all" })
 recall({ action: "read", target: "a1b2c3d4", offset: 0, scope: "lineage" })
-recall({ action: "read", target: "a1b2c3d4", offset: 12000, scope: "lineage" })
 ```
 
-For `search`, `target` contains case-insensitive literal keywords. An empty
-string lists recent entries. Keywords use OR matching; terms found in fewer
-recallable entries in the selected scope carry more weight, with newer entries
-first on ties. `offset` is the number of matching entries to skip, starting at
-zero. Each result page contains up to five 600-character snippets near the
-rarest matched term, with stable session entry IDs. There is no regex engine
-or model call inside retrieval.
+Search uses case-insensitive literal OR terms, ranks rarer terms before common
+ones and newer entries on ties, and returns up to five role-labelled snippets
+with exact read arguments. Empty search lists recent entries. Read returns up to
+12,000 UTF-16 characters and supplies continuation arguments. `lineage` follows
+the active branch; `all` includes every branch in this session, never other
+session files. `/recall [request]` queues agent-led recovery.
 
-For `read`, `target` is an exact entry ID returned by search. `offset` is the
-number of UTF-16 characters to skip, starting at zero. Reads return up to 12,000
-characters. Images are represented as metadata, not returned binary data.
-Private custom-entry state, `!!` output, and recall-result echoes are excluded.
+## Disposable provider context
 
-Search results include complete `Read: recall({...})` arguments for each entry.
-Both modes include `Continue: recall({...})` when more remains; copy those
-arguments to preserve the target, scope, and correct offset. These arguments
-are also available in result details as `reads` and `next` (`null` at the end).
+### Tool-result masking
 
-Use `scope: "lineage"` for the active branch. `scope: "all"` includes other
-branches of this session, not other session files. Data comes directly from
-Pi's current session manager, including in-memory sessions.
+On each context build, `view.ts` masks a tool result only when:
 
-The flat, explicit action contract needs neither optional-field omission nor
-object unions, and supports Pi's normal and strict provider serialization.
+- its exact native entry is present in provider context;
+- its text exceeds 8,000 characters; and
+- a later assistant entry has consumed it.
 
-## User commands
+The replacement contains the tool name and an exact-entry `recall(read, ...)`
+pointer. Results after the latest assistant remain unchanged. Reused provider
+call IDs cannot select another entry, and stored history is never mutated. No
+projection metadata is persisted.
 
-`/recall` starts agent-led recovery of the current task. `/recall <request>`
-focuses it on a natural-language question. The agent chooses keyword searches,
-reads original entries, and verifies current files when necessary. This starts
-a normal model turn, or queues a follow-up during an existing run; it requires
-the `recall` tool to be active.
+### Context pressure
 
-`/compact [instructions]` remains Pi's native manual compaction command.
-There is no separate `/respawn` command.
-
-## Context-pressure advice
-
-The pre-compaction budget is:
+`pressure.ts` is pure and calculates usage against Pi's pre-compaction budget:
 
 ```text
-active model context window − Pi compaction.reserveTokens
+budget = context window - reserve tokens
+ratio  = used tokens / budget
 ```
 
-At the end of a successful tool-using turn, the extension checks Pi's context
-usage estimate. It sends advice for the highest crossed milestone:
+When `compact` is active, `index.ts` appends one transient, undisplayed provider
+annotation at the highest current level:
 
-| Budget used | Advice                                                                                  |
-| ----------- | --------------------------------------------------------------------------------------- |
-| 70%         | Consider checkpointing before another substantial step; finish directly if nearly done. |
-| 85%         | Checkpoint at the next coherent boundary unless the task can finish now.                |
-| 95%         | Checkpoint now if work remains; Pi's automatic compaction is approaching.               |
+| Usage | Level    | Guidance                                                                |
+| ----: | -------- | ----------------------------------------------------------------------- |
+|   60% | advisory | Do not compact solely due to pressure; plan toward a coherent boundary. |
+|   75% | high     | Compact at the next coherent boundary if substantial work remains.      |
+|   90% | critical | Compact now unless finishing immediately.                               |
 
-Thresholds round upward to whole tokens. Each level fires once per compaction
-cycle and model-window/reserve combination. Jumps emit only the highest level.
-Delivered reminder state lives in the session branch, so resume and tree
-navigation do not require a separate cache. Old-cycle and old-budget reminders
-are filtered out of model input, not deleted from history.
+The annotation includes actual used, budget, and remaining token estimates plus
+the percentage used. It is recalculated for every request, never added to
+session history, and disappears automatically when pressure falls.
 
-Advice is queued for the next response of an already tool-using turn. It does
-not start another run after a final answer. No advice is sent while respawn is
-pending, while the tool is inactive, when usage is unknown, when settings cannot
-be read, or when automatic compaction is disabled.
+## Validation
 
-Pi 0.85.1 does not expose its live compaction settings through extension context.
-Reminder budgeting therefore uses Pi's native file-backed SettingsManager,
-respecting project trust. SDK-only in-memory settings overrides are not visible
-to this reminder calculation. Pi still owns the actual compaction boundary.
-
-## Fallback and storage
-
-With no pending respawn, automatic threshold/overflow compaction and manual
-compaction remain Pi's normal model-based implementation. The extension never
-changes Pi's compaction settings. Reminders are advice, not forced resets.
-
-The extension writes no notes, indices, or configuration files. Handoffs are
-stored in compaction entries; requests are ordinary tool results and reminders
-are custom session messages. All original session entries remain available for recall.
-There is no VCC summary compiler running alongside Pi's fallback.
-
-The handoff prompt and recent tail encourage immediate task progress and
-selective recall, but do not guarantee that a model never repeats compaction.
-There are no progress heuristics, cooldowns, or reset circuit breakers.
-
-## Validation and provenance
-
-Run from `hm/shared/programs/pi`:
+From `hm/shared/programs/pi`:
 
 ```bash
 pnpm run check
 node --import tsx --test extensions/ctx/test.ts
 ```
-
-Tests run the real pinned Pi SDK with its in-memory faux model provider: tool
-execution, native tail preparation, compaction commit order, cancellation,
-automatic fallback, and continuation delivery are exercised without API calls.
-Additional tests cover milestone escalation, persisted resume, branching,
-normal/strict provider schema serialization, and a search-to-read agent run
-that retrieves original evidence hidden by compaction.
-
-The approach combines budgeted working notes with the retrieval workflow of
-[VCC](https://github.com/lllyasviel/VCC). The text sanitizer derives from
-[pi-vcc](https://github.com/sting8k/pi-vcc).
