@@ -1,5 +1,4 @@
-const ANSI_RE = /\x1b\[[0-9;]*[A-Za-z]/g;
-const CTRL_RE = /[\x00-\x08\x0b\x0c\x0e-\x1f]/g;
+import { ANSI_RE, CTRL_RE } from "./constants.ts";
 
 export const sanitize = (text: string): string =>
   text

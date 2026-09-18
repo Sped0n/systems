@@ -1,8 +1,134 @@
 import { StringEnum } from "@earendil-works/pi-ai";
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import type {
+  ExtensionAPI,
+  SessionEntry,
+} from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
 import { recallTraceEntry } from "./view.ts";
+
+type RecallScope = "lineage" | "all";
+
+function recallResult(text: string, details: Record<string, unknown>) {
+  return { content: [{ type: "text" as const, text }], details };
+}
+
+function readEntry(
+  entries: readonly SessionEntry[],
+  target: string,
+  offset: number,
+  scope: RecallScope,
+) {
+  const raw = entries.find((entry) => entry.id === target);
+  const entry = raw && recallTraceEntry(raw);
+  if (!entry)
+    throw new Error(
+      `Entry ${JSON.stringify(target)} has no recallable text in scope '${scope}'. Search first and copy a returned read request.`,
+    );
+  if (offset >= entry.text.length)
+    throw new Error(`offset must be less than ${entry.text.length}.`);
+  const end = Math.min(offset + 12000, entry.text.length);
+  const next =
+    end < entry.text.length
+      ? { action: "read" as const, target, offset: end, scope }
+      : null;
+  return recallResult(
+    `[${entry.id}; ${entry.timestamp}] ${entry.role} (characters ${offset}-${end} of ${entry.text.length})\n` +
+      entry.text.slice(offset, end) +
+      (next ? `\nContinue: recall(${JSON.stringify(next)})` : ""),
+    { scope, entryId: entry.id, next },
+  );
+}
+
+function searchEntries(
+  entries: readonly SessionEntry[],
+  target: string,
+  offset: number,
+  scope: RecallScope,
+  signal?: AbortSignal,
+) {
+  const terms = [...new Set(target.toLowerCase().split(/\s+/).filter(Boolean))];
+  const frequencies = terms.map(() => 0);
+  const hits = entries
+    .flatMap((raw, index) => {
+      signal?.throwIfAborted();
+      const entry = recallTraceEntry(raw);
+      if (!entry) return [];
+      const text = entry.text.toLowerCase();
+      const matches = terms.flatMap((term, termIndex) => {
+        const position = text.indexOf(term);
+        if (position < 0) return [];
+        frequencies[termIndex]++;
+        return [{ termIndex, position }];
+      });
+      if (terms.length && !matches.length) return [];
+      return [{ ...entry, matches, index }];
+    })
+    .map((entry) => {
+      // Count each term once per entry. A rare diagnostic should outweigh
+      // several common words, even when those words appear many times.
+      const score = entry.matches.reduce(
+        (sum, match) => sum + 1 / frequencies[match.termIndex],
+        0,
+      );
+      const strongest = entry.matches.reduce<
+        (typeof entry.matches)[number] | undefined
+      >(
+        (best, match) =>
+          !best ||
+          frequencies[match.termIndex] < frequencies[best.termIndex] ||
+          (frequencies[match.termIndex] === frequencies[best.termIndex] &&
+            match.position < best.position)
+            ? match
+            : best,
+        undefined,
+      );
+      const start = Math.max(0, (strongest?.position ?? 0) - 120);
+      const end = Math.min(start + 600, entry.text.length);
+      return {
+        id: entry.id,
+        timestamp: entry.timestamp,
+        role: entry.role,
+        snippet: `${start ? "…" : ""}${entry.text.slice(start, end)}${end < entry.text.length ? "…" : ""}`,
+        score,
+        index: entry.index,
+      };
+    })
+    .sort((a, b) => b.score - a.score || b.index - a.index);
+  if (!hits.length)
+    return recallResult(`No matching history in scope '${scope}'.`, {
+      scope,
+      total: 0,
+      next: null,
+    });
+  if (offset >= hits.length)
+    throw new Error(
+      `offset must be less than ${hits.length} matching entries.`,
+    );
+  const selected = hits.slice(offset, offset + 5);
+  const end = offset + selected.length;
+  const next =
+    end < hits.length
+      ? { action: "search" as const, target, offset: end, scope }
+      : null;
+  const reads = selected.map((entry) => ({
+    action: "read" as const,
+    target: entry.id,
+    offset: 0,
+    scope,
+  }));
+  return recallResult(
+    `Scope: ${scope}; matches ${offset + 1}-${end}/${hits.length}.\n\n` +
+      selected
+        .map(
+          (entry, index) =>
+            `[${entry.id}; ${entry.timestamp}] ${entry.role}\n${entry.snippet}\nRead: recall(${JSON.stringify(reads[index])})`,
+        )
+        .join("\n\n") +
+      (next ? `\n\nContinue: recall(${JSON.stringify(next)})` : ""),
+    { scope, total: hits.length, reads, next },
+  );
+}
 
 export function registerRecall(pi: ExtensionAPI) {
   pi.registerCommand("recall", {
@@ -72,113 +198,9 @@ export function registerRecall(pi: ExtensionAPI) {
         scope === "all"
           ? ctx.sessionManager.getEntries()
           : ctx.sessionManager.getBranch();
-      const result = (text: string, details: Record<string, unknown>) => ({
-        content: [{ type: "text" as const, text }],
-        details,
-      });
-
-      if (action === "read") {
-        const raw = entries.find((entry) => entry.id === target);
-        const entry = raw && recallTraceEntry(raw);
-        if (!entry)
-          throw new Error(
-            `Entry ${JSON.stringify(target)} has no recallable text in scope '${scope}'. Search first and copy a returned read request.`,
-          );
-        if (offset >= entry.text.length)
-          throw new Error(`offset must be less than ${entry.text.length}.`);
-        const end = Math.min(offset + 12000, entry.text.length);
-        const next =
-          end < entry.text.length
-            ? { action, target, offset: end, scope }
-            : null;
-        return result(
-          `[${entry.id}] ${entry.role} (characters ${offset}-${end} of ${entry.text.length})\n` +
-            entry.text.slice(offset, end) +
-            (next ? `\nContinue: recall(${JSON.stringify(next)})` : ""),
-          { scope, entryId: entry.id, next },
-        );
-      }
-
-      const terms = [
-        ...new Set(target.toLowerCase().split(/\s+/).filter(Boolean)),
-      ];
-      const frequencies = terms.map(() => 0);
-      const hits = entries
-        .flatMap((raw, index) => {
-          signal?.throwIfAborted();
-          const entry = recallTraceEntry(raw);
-          if (!entry) return [];
-          const text = entry.text.toLowerCase();
-          const matches = terms.flatMap((term, termIndex) => {
-            const position = text.indexOf(term);
-            if (position < 0) return [];
-            frequencies[termIndex]++;
-            return [{ termIndex, position }];
-          });
-          if (terms.length && !matches.length) return [];
-          return [{ ...entry, matches, index }];
-        })
-        .map((entry) => {
-          // Count each term once per entry. A rare diagnostic should outweigh
-          // several common words, even when those words appear many times.
-          const score = entry.matches.reduce(
-            (sum, match) => sum + 1 / frequencies[match.termIndex],
-            0,
-          );
-          const strongest = entry.matches.reduce<
-            (typeof entry.matches)[number] | undefined
-          >(
-            (best, match) =>
-              !best ||
-              frequencies[match.termIndex] < frequencies[best.termIndex] ||
-              (frequencies[match.termIndex] === frequencies[best.termIndex] &&
-                match.position < best.position)
-                ? match
-                : best,
-            undefined,
-          );
-          const start = Math.max(0, (strongest?.position ?? 0) - 120);
-          const end = Math.min(start + 600, entry.text.length);
-          return {
-            id: entry.id,
-            role: entry.role,
-            snippet: `${start ? "…" : ""}${entry.text.slice(start, end)}${end < entry.text.length ? "…" : ""}`,
-            score,
-            index: entry.index,
-          };
-        })
-        .sort((a, b) => b.score - a.score || b.index - a.index);
-      if (!hits.length)
-        return result(`No matching history in scope '${scope}'.`, {
-          scope,
-          total: 0,
-          next: null,
-        });
-      if (offset >= hits.length)
-        throw new Error(
-          `offset must be less than ${hits.length} matching entries.`,
-        );
-      const selected = hits.slice(offset, offset + 5);
-      const end = offset + selected.length;
-      const next =
-        end < hits.length ? { action, target, offset: end, scope } : null;
-      const reads = selected.map((entry) => ({
-        action: "read" as const,
-        target: entry.id,
-        offset: 0,
-        scope,
-      }));
-      return result(
-        `Scope: ${scope}; matches ${offset + 1}-${end}/${hits.length}.\n\n` +
-          selected
-            .map(
-              (entry, index) =>
-                `[${entry.id}] ${entry.role}\n${entry.snippet}\nRead: recall(${JSON.stringify(reads[index])})`,
-            )
-            .join("\n\n") +
-          (next ? `\n\nContinue: recall(${JSON.stringify(next)})` : ""),
-        { scope, total: hits.length, reads, next },
-      );
+      return action === "read"
+        ? readEntry(entries, target, offset, scope)
+        : searchEntries(entries, target, offset, scope, signal);
     },
   });
 }

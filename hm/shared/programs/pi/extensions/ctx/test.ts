@@ -24,21 +24,20 @@ import {
   type ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
 
-import ctxExtension from "./index.ts";
 import {
-  buildObservationPrompt,
-  OBSERVATION_MAX_OUTPUT_TOKENS,
-} from "./observer.ts";
-import {
-  contextPressure,
+  COMPACTION_CONTINUATION,
+  COMPACTION_CONTINUATION_TYPE,
   CONTEXT_PRESSURE_THRESHOLDS,
-  renderContextPressure,
-} from "./pressure.ts";
+  LARGE_TOOL_RESULT_CHARS,
+  OBSERVATION_MAX_OUTPUT_TOKENS,
+} from "./constants.ts";
+import ctxExtension from "./index.ts";
+import { buildObservationPrompt } from "./observer.ts";
+import { contextPressure, renderContextPressure } from "./pressure.ts";
 import { registerRecall } from "./recall.ts";
 import {
   compileTrace,
   compileTraceEntry,
-  LARGE_TOOL_RESULT_CHARS,
   maskConsumedToolResults,
   renderTrace,
 } from "./view.ts";
@@ -146,6 +145,7 @@ test("shared trace compiler preserves coordinates while omitting mutation payloa
 
   const blocks = compileTrace(manager.getBranch());
   const rendered = renderTrace(blocks, 4096);
+  assert.equal(blocks[0]?.timestamp, manager.getEntry(source)?.timestamp);
   assert.match(rendered, new RegExp(`entry ${source}; user`));
   assert.match(rendered, new RegExp(`entry ${write}; assistant`));
   assert.match(rendered, /write\(.*generated\.ts/);
@@ -206,7 +206,7 @@ test("stateless masking uses exact entries and never masks unconsumed or stored 
   );
   const entries = manager.getBranch();
   const projected = maskConsumedToolResults(
-    entries.flatMap(sessionEntryToContextMessages),
+    structuredClone(entries.flatMap(sessionEntryToContextMessages)),
     entries,
   );
   assert.match(JSON.stringify(projected), new RegExp(`recall.*${consumed}`));
@@ -238,9 +238,32 @@ test("pressure calculation is pure, tiered at 60/75/90, and renders actual usage
   assert.equal(contextPressure(10, 10, 10), undefined);
 });
 
+test("observer preserves user directives omitted from a tool-heavy general trace", () => {
+  const manager = SessionManager.inMemory();
+  manager.appendMessage(fauxAssistantMessage(`before ${"x".repeat(50_000)}`));
+  const directive = user(manager, "Never place build output in tmpfs.");
+  manager.appendMessage(fauxAssistantMessage(`after ${"y".repeat(50_000)}`));
+  const prompt = buildObservationPrompt({
+    compactedEntries: manager.getBranch(),
+    retainedEntries: [],
+  });
+  const directiveEvidence =
+    prompt.match(
+      /<user-directive-evidence>([\s\S]*?)<\/user-directive-evidence>/,
+    )?.[1] ?? "";
+  const generalTrace =
+    prompt.match(
+      /<newly-compacted-trace>([\s\S]*?)<\/newly-compacted-trace>/,
+    )?.[1] ?? "";
+  assert.match(directiveEvidence, new RegExp(`entry ${directive}`));
+  assert.match(directiveEvidence, /Never place build output in tmpfs/);
+  assert.doesNotMatch(generalTrace, /Never place build output in tmpfs/);
+});
+
 test("observer prompt rewrites previous memory from compacted and retained shared views", () => {
   const manager = SessionManager.inMemory();
   user(manager, "Old requirement.");
+  user(manager, COMPACTION_CONTINUATION);
   const split = manager.getBranch().length;
   user(manager, "New correction.");
   const prompt = buildObservationPrompt({
@@ -250,6 +273,13 @@ test("observer prompt rewrites previous memory from compacted and retained share
     focus: "Focus on blockers",
   });
   assert.match(prompt, /^<conversation>/);
+  assert.match(prompt, /<user-directive-evidence>[\s\S]*Old requirement/);
+  assert.doesNotMatch(
+    prompt.match(
+      /<user-directive-evidence>([\s\S]*?)<\/user-directive-evidence>/,
+    )?.[1] ?? "",
+    new RegExp(COMPACTION_CONTINUATION),
+  );
   assert.match(prompt, /<newly-compacted-trace>[\s\S]*Old requirement/);
   assert.match(prompt, /<retained-tail-trace>[\s\S]*New correction/);
   assert.ok(
@@ -258,8 +288,11 @@ test("observer prompt rewrites previous memory from compacted and retained share
   );
   assert.match(prompt, /Additional focus: Focus on blockers$/);
   assert.doesNotMatch(prompt, /<focus>/);
-  assert.match(prompt, /Use this EXACT format:/);
-  assert.match(prompt, /## Active context/);
+  assert.match(prompt, /Use this exact format:/);
+  assert.match(prompt, /## Active user directives/);
+  assert.match(prompt, /## Accepted decisions/);
+  assert.match(prompt, /## Current state/);
+  assert.match(prompt, /task or phase change alone does not revoke it/);
 });
 
 async function runtime(
@@ -319,10 +352,13 @@ async function runtime(
 const observation = `## Current task
 Run the regression test.
 
-## Active context
+## Active user directives
 - Preserve original history.
 
-## Observations
+## Accepted decisions
+- Use the existing regression harness.
+
+## Current state
 - Investigation complete.
 
 ## Open work
@@ -397,6 +433,22 @@ test(
     assert.ok(resultIndex >= 0 && entries.indexOf(compacted[0]) > resultIndex);
     assert.equal(h.faux.state.callCount, 3);
     assert.ok(h.manager.getEntry(h.oldId!));
+    assert.equal(
+      entries.some(
+        (entry) =>
+          entry.type === "message" &&
+          entry.message.role === "user" &&
+          entry.message.content === COMPACTION_CONTINUATION,
+      ),
+      false,
+    );
+    assert.ok(
+      entries.some(
+        (entry) =>
+          entry.type === "custom_message" &&
+          entry.customType === COMPACTION_CONTINUATION_TYPE,
+      ),
+    );
     assert.deepEqual(h.errors, []);
   },
 );
@@ -590,6 +642,10 @@ test("recall searches and exactly pages shared trace entries after compaction", 
     scope: "lineage",
   });
   assert.match(resultText(search), new RegExp(original));
+  assert.match(
+    resultText(search),
+    new RegExp(h.manager.getEntry(original)!.timestamp),
+  );
   const first = await h.read({
     action: "read",
     target: original,

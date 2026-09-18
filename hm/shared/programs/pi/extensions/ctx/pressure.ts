@@ -1,8 +1,4 @@
-export const CONTEXT_PRESSURE_THRESHOLDS = {
-  advisory: 0.6,
-  high: 0.75,
-  critical: 0.9,
-} as const;
+import { CONTEXT_PRESSURE_THRESHOLDS } from "./constants.ts";
 
 export type ContextPressureLevel = keyof typeof CONTEXT_PRESSURE_THRESHOLDS;
 

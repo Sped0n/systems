@@ -3,19 +3,21 @@ import {
   getAgentDir,
   type ExtensionAPI,
   type ExtensionContext,
+  type SessionBeforeCompactEvent,
   type SessionEntry,
 } from "@earendil-works/pi-coding-agent";
 import { Type } from "typebox";
 
-import { observe } from "./observer.ts";
+import { observe, type ObservationInput } from "./observer.ts";
+import {
+  COMPACT_SENTINEL,
+  COMPACTION_CONTINUATION,
+  COMPACTION_CONTINUATION_TYPE,
+  PRESSURE_MESSAGE_TYPE,
+} from "./constants.ts";
 import { contextPressure, renderContextPressure } from "./pressure.ts";
 import { registerRecall } from "./recall.ts";
 import { maskConsumedToolResults } from "./view.ts";
-
-const CONTINUE =
-  "Continue the task from the checkpoint and retained recent context. Perform the next concrete action; recall only missing details.";
-const COMPACT_SENTINEL = "ctx-observational-compact:";
-const PRESSURE_MESSAGE_TYPE = "ctx-pressure";
 
 interface ContextCompactionDetails {
   compactor: "ctx";
@@ -33,12 +35,78 @@ function previousCompaction(entries: readonly SessionEntry[]) {
   return entries.findLast((entry) => entry.type === "compaction");
 }
 
+function prepareObservation(
+  event: SessionBeforeCompactEvent,
+): ObservationInput {
+  const tailStart = event.branchEntries.findIndex(
+    (entry) => entry.id === event.preparation.firstKeptEntryId,
+  );
+  if (tailStart < 0) throw new Error("Retained-tail boundary is missing.");
+  const prior = previousCompaction(event.branchEntries);
+  const compactedStart = prior
+    ? event.branchEntries.findIndex(
+        (entry) => entry.id === prior.firstKeptEntryId,
+      )
+    : 0;
+  if (prior && compactedStart < 0)
+    throw new Error("Previous observation boundary is missing.");
+  const internalRequest =
+    event.customInstructions?.startsWith(COMPACT_SENTINEL);
+  return {
+    previousObservation: event.preparation.previousSummary,
+    compactedEntries: event.branchEntries.slice(compactedStart, tailStart),
+    retainedEntries: event.branchEntries.slice(tailStart),
+    focus: internalRequest ? undefined : event.customInstructions,
+  };
+}
+
+function compactionDetails(
+  event: SessionBeforeCompactEvent,
+): ContextCompactionDetails {
+  return {
+    compactor: "ctx",
+    readFiles: [...event.preparation.fileOps.read],
+    modifiedFiles: [
+      ...new Set([
+        ...event.preparation.fileOps.written,
+        ...event.preparation.fileOps.edited,
+      ]),
+    ],
+  };
+}
+
 export default function contextManagement(pi: ExtensionAPI) {
   registerRecall(pi);
   let pending: CompactRequest | undefined;
   let active = true;
   let generation = 0;
   let needsContinuation = false;
+
+  function isCurrentGeneration(startedIn: number): boolean {
+    return active && generation === startedIn;
+  }
+
+  function isCurrentSession(
+    ctx: ExtensionContext,
+    startedIn: number,
+    sessionId: string,
+  ): boolean {
+    return (
+      isCurrentGeneration(startedIn) &&
+      ctx.sessionManager.getSessionId() === sessionId
+    );
+  }
+
+  function continueAfterCompaction() {
+    pi.sendMessage(
+      {
+        customType: COMPACTION_CONTINUATION_TYPE,
+        content: COMPACTION_CONTINUATION,
+        display: false,
+      },
+      { deliverAs: "followUp", triggerTurn: true },
+    );
+  }
 
   // ExtensionContext does not expose Pi's live SettingsManager. Resolve the
   // same file-backed settings, including project trust, without mutating them.
@@ -125,7 +193,7 @@ export default function contextManagement(pi: ExtensionAPI) {
   pi.on("agent_settled", (_event, ctx) => {
     if (needsContinuation) {
       needsContinuation = false;
-      pi.sendUserMessage(CONTINUE, { deliverAs: "followUp" });
+      continueAfterCompaction();
       return;
     }
     if (pending?.phase !== "ready") return;
@@ -143,7 +211,7 @@ export default function contextManagement(pi: ExtensionAPI) {
         )
           return;
         pending = undefined;
-        pi.sendUserMessage(CONTINUE, { deliverAs: "followUp" });
+        continueAfterCompaction();
       },
       onError: (error) => {
         if (!active || generation !== startedIn || pending !== request) return;
@@ -162,67 +230,25 @@ export default function contextManagement(pi: ExtensionAPI) {
     const startedIn = generation;
     try {
       event.signal.throwIfAborted();
-      const tailStart = event.branchEntries.findIndex(
-        (entry) => entry.id === event.preparation.firstKeptEntryId,
-      );
-      if (tailStart < 0) throw new Error("Retained-tail boundary is missing.");
-      const prior = previousCompaction(event.branchEntries);
-      const compactedStart = prior
-        ? event.branchEntries.findIndex(
-            (entry) => entry.id === prior.firstKeptEntryId,
-          )
-        : 0;
-      if (prior && compactedStart < 0)
-        throw new Error("Previous observation boundary is missing.");
-      const internalRequest =
-        event.customInstructions?.startsWith(COMPACT_SENTINEL);
       const result = await observe(
         ctx,
-        {
-          previousObservation: event.preparation.previousSummary,
-          compactedEntries: event.branchEntries.slice(
-            Math.max(0, compactedStart),
-            tailStart,
-          ),
-          retainedEntries: event.branchEntries.slice(tailStart),
-          focus: internalRequest ? undefined : event.customInstructions,
-        },
+        prepareObservation(event),
         event.signal,
         `${sessionId}:ctx-observer:${event.preparation.firstKeptEntryId}`,
       );
       event.signal.throwIfAborted();
-      if (
-        !active ||
-        generation !== startedIn ||
-        ctx.sessionManager.getSessionId() !== sessionId
-      )
-        return { cancel: true };
-      const details: ContextCompactionDetails = {
-        compactor: "ctx",
-        readFiles: [...event.preparation.fileOps.read],
-        modifiedFiles: [
-          ...new Set([
-            ...event.preparation.fileOps.written,
-            ...event.preparation.fileOps.edited,
-          ]),
-        ],
-      };
+      if (!isCurrentSession(ctx, startedIn, sessionId)) return { cancel: true };
       return {
         compaction: {
           summary: result.observation,
           firstKeptEntryId: event.preparation.firstKeptEntryId,
           tokensBefore: event.preparation.tokensBefore,
           usage: result.usage,
-          details,
+          details: compactionDetails(event),
         },
       };
     } catch (error) {
-      if (
-        !event.signal.aborted &&
-        active &&
-        generation === startedIn &&
-        ctx.hasUI
-      )
+      if (!event.signal.aborted && isCurrentGeneration(startedIn) && ctx.hasUI)
         ctx.ui.notify(
           error instanceof Error ? error.message : String(error),
           "error",

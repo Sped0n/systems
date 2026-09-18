@@ -3,10 +3,11 @@ import {
   type SessionEntry,
 } from "@earendil-works/pi-coding-agent";
 
+import {
+  LARGE_TOOL_RESULT_CHARS,
+  OBSERVER_TOOL_RESULT_CHARS,
+} from "./constants.ts";
 import { sanitize } from "./sanitize.ts";
-
-const OBSERVER_TOOL_RESULT_CHARS = 2_000;
-export const LARGE_TOOL_RESULT_CHARS = 8_000;
 
 export type TraceRole =
   | "user"
@@ -17,6 +18,7 @@ export type TraceRole =
 
 export interface TraceBlock {
   entryId: string;
+  timestamp: string;
   role: TraceRole;
   text: string;
 }
@@ -65,64 +67,94 @@ function isRecallTool(name: string): boolean {
   return name === "recall" || name === "vcc_recall";
 }
 
-/** Lower one native entry into the shared, role-aware trace representation. */
-export function compileTraceEntry(entry: SessionEntry): TraceBlock[] {
-  if (entry.type === "branch_summary") {
-    return entry.summary
-      ? [{ entryId: entry.id, role: "other", text: sanitize(entry.summary) }]
-      : [];
-  }
-  if (entry.type !== "message") return [];
-  const message = entry.message;
-  if (message.role === "bashExecution") {
-    if (message.excludeFromContext) return [];
-    return [
-      {
-        entryId: entry.id,
-        role: "tool_result",
-        text: sanitize(`$ ${message.command}\n${message.output}`),
-      },
-    ];
-  }
-  if (
-    message.role === "compactionSummary" ||
-    message.role === "branchSummary"
-  ) {
-    return [
-      { entryId: entry.id, role: "other", text: sanitize(message.summary) },
-    ];
-  }
-  if (message.role === "toolResult") {
-    if (isRecallTool(message.toolName)) return [];
-    const text = contentText(message.content, true);
-    return text
-      ? [
-          {
-            entryId: entry.id,
-            role: "tool_result",
-            text: `${message.toolName}${message.isError ? " error" : " result"}\n${text}`,
-          },
-        ]
-      : [];
-  }
-  if (message.role === "user") {
-    const text = contentText(message.content);
-    return text ? [{ entryId: entry.id, role: "user", text }] : [];
-  }
-  if (message.role !== "assistant") return [];
+type TraceCoordinates = Pick<TraceBlock, "entryId" | "timestamp">;
+type Message = Extract<SessionEntry, { type: "message" }>["message"];
 
+function compileToolResult(
+  coordinates: TraceCoordinates,
+  message: Extract<Message, { role: "toolResult" }>,
+): TraceBlock[] {
+  if (isRecallTool(message.toolName)) return [];
+  const text = contentText(message.content, true);
+  return text
+    ? [
+        {
+          ...coordinates,
+          role: "tool_result",
+          text: `${message.toolName}${message.isError ? " error" : " result"}\n${text}`,
+        },
+      ]
+    : [];
+}
+
+function compileAssistant(
+  coordinates: TraceCoordinates,
+  message: Extract<Message, { role: "assistant" }>,
+): TraceBlock[] {
   const blocks: TraceBlock[] = [];
   const text = contentText(message.content);
-  if (text) blocks.push({ entryId: entry.id, role: "assistant", text });
+  if (text) blocks.push({ ...coordinates, role: "assistant", text });
   for (const part of message.content) {
     if (part.type !== "toolCall" || isRecallTool(part.name)) continue;
     blocks.push({
-      entryId: entry.id,
+      ...coordinates,
       role: "tool_call",
       text: `${part.name}(${JSON.stringify(conciseArguments(part.name, part.arguments))})`,
     });
   }
   return blocks;
+}
+
+function compileMessageEntry(
+  entry: Extract<SessionEntry, { type: "message" }>,
+): TraceBlock[] {
+  const coordinates = { entryId: entry.id, timestamp: entry.timestamp };
+  const message = entry.message;
+  if (message.role === "bashExecution") {
+    return message.excludeFromContext
+      ? []
+      : [
+          {
+            ...coordinates,
+            role: "tool_result",
+            text: sanitize(`$ ${message.command}\n${message.output}`),
+          },
+        ];
+  }
+  if (message.role === "compactionSummary" || message.role === "branchSummary")
+    return [
+      {
+        ...coordinates,
+        role: "other",
+        text: sanitize(message.summary),
+      },
+    ];
+  if (message.role === "toolResult")
+    return compileToolResult(coordinates, message);
+  if (message.role === "user") {
+    const text = contentText(message.content);
+    return text ? [{ ...coordinates, role: "user", text }] : [];
+  }
+  return message.role === "assistant"
+    ? compileAssistant(coordinates, message)
+    : [];
+}
+
+/** Lower one native entry into the shared, role-aware trace representation. */
+export function compileTraceEntry(entry: SessionEntry): TraceBlock[] {
+  if (entry.type === "branch_summary") {
+    return entry.summary
+      ? [
+          {
+            entryId: entry.id,
+            timestamp: entry.timestamp,
+            role: "other",
+            text: sanitize(entry.summary),
+          },
+        ]
+      : [];
+  }
+  return entry.type === "message" ? compileMessageEntry(entry) : [];
 }
 
 export function compileTrace(entries: readonly SessionEntry[]): TraceBlock[] {
@@ -138,7 +170,7 @@ function observerBlock(block: TraceBlock): string {
     const marker = `\n[…tool result clipped; read original entry ${block.entryId} with recall…]`;
     text = `${text.slice(0, OBSERVER_TOOL_RESULT_CHARS - marker.length)}${marker}`;
   }
-  return `[entry ${block.entryId}; ${block.role}]\n${text}`;
+  return `[entry ${block.entryId}; ${block.role}; ${block.timestamp}]\n${text}`;
 }
 
 /** Render chronological trace text, retaining deterministic head and tail regions. */
@@ -182,9 +214,19 @@ export function recallTraceEntry(entry: SessionEntry) {
   if (!blocks.length) return undefined;
   return {
     id: entry.id,
+    timestamp: entry.timestamp,
     role: [...new Set(blocks.map((block) => block.role))].join("+"),
     text: blocks.map((block) => block.text).join("\n\n"),
   };
+}
+
+function toolResultKey(message: ContextMessage): string | undefined {
+  if (message.role !== "toolResult") return undefined;
+  return JSON.stringify([
+    message.timestamp,
+    message.toolCallId,
+    message.toolName,
+  ]);
 }
 
 /** Mask exact, large, already-consumed results in a disposable provider view. */
@@ -193,31 +235,27 @@ export function maskConsumedToolResults(
   contextEntries: readonly SessionEntry[],
 ): ContextMessage[] {
   let latestAssistantIndex = -1;
-  const sourceByMessage = new Map<
-    ContextMessage,
-    { entry: SessionEntry; index: number }
-  >();
+  const sourcesByKey = new Map<string, { entryId: string; index: number }[]>();
   contextEntries.forEach((entry, index) => {
-    if (entry.type === "message" && entry.message.role === "assistant")
-      latestAssistantIndex = index;
-    for (const message of sessionEntryToContextMessages(entry))
-      sourceByMessage.set(message, { entry, index });
+    if (entry.type !== "message") return;
+    if (entry.message.role === "assistant") latestAssistantIndex = index;
+    const key = toolResultKey(entry.message);
+    if (!key) return;
+    const sources = sourcesByKey.get(key) ?? [];
+    sources.push({ entryId: entry.id, index });
+    sourcesByKey.set(key, sources);
   });
 
-  let changed = false;
+  const occurrences = new Map<string, number>();
   const projected = messages.map((message) => {
-    if (message.role !== "toolResult") return message;
-    const source = sourceByMessage.get(message);
-    if (
-      !source ||
-      source.index >= latestAssistantIndex ||
-      source.entry.type !== "message" ||
-      source.entry.message !== message
-    )
-      return message;
+    const key = toolResultKey(message);
+    if (!key || message.role !== "toolResult") return message;
+    const occurrence = occurrences.get(key) ?? 0;
+    occurrences.set(key, occurrence + 1);
+    const source = sourcesByKey.get(key)?.[occurrence];
+    if (!source || source.index >= latestAssistantIndex) return message;
     const text = contentText(message.content, true);
     if (text.length <= LARGE_TOOL_RESULT_CHARS) return message;
-    changed = true;
     return {
       ...message,
       content: [
@@ -225,12 +263,12 @@ export function maskConsumedToolResults(
           type: "text" as const,
           text:
             `[Consumed ${message.toolName} output omitted from active context. ` +
-            `Read original: recall({"action":"read","target":"${source.entry.id}","offset":0,"scope":"lineage"})]`,
+            `Read original: recall({"action":"read","target":"${source.entryId}","offset":0,"scope":"lineage"})]`,
         },
       ],
     };
   });
-  return changed ? projected : [...messages];
+  return projected;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
