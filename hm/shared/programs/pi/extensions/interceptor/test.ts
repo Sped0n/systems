@@ -4,12 +4,13 @@ import {
   mkdir,
   readFile,
   realpath,
+  rm,
   symlink,
   writeFile,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import test from "node:test";
+import test, { type TestContext } from "node:test";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 import interceptorExtension, {
@@ -23,8 +24,10 @@ import interceptorExtension, {
   pathDecision,
 } from "./index.ts";
 
-async function tempRoot(): Promise<string> {
-  return mkdtemp(path.join(tmpdir(), "pi-permissions-"));
+async function tempRoot(t: TestContext): Promise<string> {
+  const root = await mkdtemp(path.join(tmpdir(), "pi-interceptor-"));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  return root;
 }
 
 test("runtime dependency versions match development dependencies", async () => {
@@ -47,8 +50,8 @@ test("runtime dependency versions match development dependencies", async () => {
   assert.deepEqual(developmentVersions, runtimePackage.dependencies);
 });
 
-test("canonicalizePath resolves a symlinked write parent", async () => {
-  const root = await tempRoot();
+test("canonicalizePath resolves a symlinked write parent", async (t) => {
+  const root = await tempRoot(t);
   const actual = path.join(root, "actual");
   await mkdir(actual);
   await symlink(actual, path.join(root, "link"));
@@ -91,7 +94,7 @@ function interceptorLifecycleHarness() {
   return { handlers, notifications };
 }
 
-test("runtime rules append after file policy and dispose independently", async () => {
+test("runtime rules append after file policy and dispose independently", async (t) => {
   const handlers = new Map<string, (...args: unknown[]) => unknown>();
   const pi = {
     on(name: string, handler: (...args: unknown[]) => unknown) {
@@ -104,7 +107,7 @@ test("runtime rules append after file policy and dispose independently", async (
   assert.ok(sessionStart);
   assert.ok(toolCall);
 
-  const root = await tempRoot();
+  const root = await tempRoot(t);
   const config = path.join(root, "config");
   await mkdir(config);
   await writeFile(
@@ -162,8 +165,8 @@ test("runtime rules append after file policy and dispose independently", async (
   }
 });
 
-test("file policy changes take effect only after session start or reload", async () => {
-  const root = await tempRoot();
+test("file policy changes take effect only after session start or reload", async (t) => {
+  const root = await tempRoot(t);
   const config = path.join(root, "config");
   await mkdir(config);
   const policyFile = path.join(config, "interceptor.json");
@@ -206,8 +209,8 @@ test("file policy changes take effect only after session start or reload", async
   }
 });
 
-test("invalid reload warns and retains the matching last valid policy", async () => {
-  const root = await tempRoot();
+test("invalid reload warns and retains the matching last valid policy", async (t) => {
+  const root = await tempRoot(t);
   const config = path.join(root, "config");
   await mkdir(config);
   const policyFile = path.join(config, "interceptor.json");
@@ -255,8 +258,8 @@ test("invalid reload warns and retains the matching last valid policy", async ()
   }
 });
 
-test("invalid initial policy warns and falls back to an empty policy", async () => {
-  const root = await tempRoot();
+test("invalid initial policy warns and falls back to an empty policy", async (t) => {
+  const root = await tempRoot(t);
   const config = path.join(root, "config");
   await mkdir(config);
   await writeFile(path.join(config, "interceptor.json"), "not JSON");
@@ -507,8 +510,8 @@ test("a restrictive rule after catch-all allow evaluates nested commands", async
   );
 });
 
-test("last matching path rule wins and no match denies", async () => {
-  const root = await tempRoot();
+test("last matching path rule wins and no match denies", async (t) => {
+  const root = await tempRoot(t);
   const policy = parsePolicy({
     rules: [
       { path: "/**", operations: ["read"], action: "allow" },
@@ -535,8 +538,8 @@ test("last matching path rule wins and no match denies", async () => {
   );
 });
 
-test("trusted project rules append after global rules", async () => {
-  const root = await tempRoot();
+test("trusted project rules append after global rules", async (t) => {
+  const root = await tempRoot(t);
   const global = path.join(root, "global");
   await mkdir(global);
   await mkdir(path.join(root, ".pi"));
@@ -582,8 +585,8 @@ test("trusted project rules append after global rules", async () => {
     );
 });
 
-test("malformed eligible project policy fails closed", async () => {
-  const root = await tempRoot();
+test("malformed eligible project policy fails closed", async (t) => {
+  const root = await tempRoot(t);
   await mkdir(path.join(root, ".pi"));
   await writeFile(
     path.join(root, ".pi", "interceptor.json"),
@@ -608,8 +611,8 @@ test("malformed eligible project policy fails closed", async () => {
   );
 });
 
-test("dangling policy symlinks fail closed instead of looking absent", async () => {
-  const root = await tempRoot();
+test("dangling policy symlinks fail closed instead of looking absent", async (t) => {
+  const root = await tempRoot(t);
   const global = path.join(root, "global");
   await mkdir(global);
   await symlink(
@@ -626,9 +629,9 @@ test("dangling policy symlinks fail closed instead of looking absent", async () 
   );
 });
 
-test("placeholders and symlinks retain sensitive lexical matching without allowing escapes", async () => {
-  const root = await tempRoot();
-  const outside = await tempRoot();
+test("placeholders and symlinks retain sensitive lexical matching without allowing escapes", async (t) => {
+  const root = await tempRoot(t);
+  const outside = await tempRoot(t);
   const actual = path.join(root, "actual");
   await mkdir(actual);
   await symlink(outside, path.join(root, "link"));
