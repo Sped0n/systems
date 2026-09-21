@@ -8,9 +8,12 @@ import {
   fauxAssistantMessage,
   fauxProvider,
   fauxToolCall,
+  getCurrentSystemPrompt,
+  getCurrentTools,
   InMemoryCredentialStore,
   InMemoryModelsStore,
   validateToolArguments,
+  type JsonObject,
 } from "@earendil-works/pi-ai";
 import {
   createAgentSession,
@@ -380,12 +383,10 @@ test(
         assert.equal(options?.maxTokens, OBSERVATION_MAX_OUTPUT_TOKENS);
         assert.equal(options?.cacheRetention, "none");
         assert.match(options?.sessionId ?? "", /:ctx-observer:/);
-        assert.equal(context.tools?.length ?? 0, 0);
-        assert.match(
-          context.systemPrompt ?? "",
-          /Do NOT continue the conversation/,
-        );
-        assert.match(context.systemPrompt ?? "", /ONLY output/);
+        assert.equal(getCurrentTools(context.messages).length, 0);
+        const systemPrompt = getCurrentSystemPrompt(context.messages);
+        assert.match(systemPrompt, /Do NOT continue the conversation/);
+        assert.match(systemPrompt, /ONLY output/);
         const prompt = JSON.stringify(context.messages);
         assert.match(prompt, /newly-compacted-trace/);
         assert.match(prompt, /retained-tail-trace/);
@@ -611,7 +612,7 @@ function recallHarness(manager = SessionManager.inMemory()) {
     manager,
     sent,
     command,
-    read: async (params: Record<string, unknown>) => {
+    read: async (params: JsonObject) => {
       const validated = validateToolArguments(
         tool!,
         fauxToolCall("recall", params),
