@@ -270,15 +270,20 @@ def analyze(text, language):
     errors = root.find_all(kind="ERROR")
     functions, skipped = measure_complexity(text, root, language, errors)
     lines = text.split("\n")
-    masses = [
-        (function["cc"], function["cc"] * math.sqrt(function["sloc"]))
+    measured_functions = [
+        {**function, "mass": function["cc"] * math.sqrt(function["sloc"])}
         for function in functions or []
     ]
     result = {
-        "mass": sum(mass for _, mass in masses)
+        "mass": sum(function["mass"] for function in measured_functions)
         if functions is not None and (not errors or functions)
         else None,
-        "highCcMass": sum(mass for cc, mass in masses if cc > 10),
+        "highCcMass": sum(
+            function["mass"] for function in measured_functions if function["cc"] > 10
+        ),
+        "highComplexityFunctions": [
+            function for function in measured_functions if function["cc"] > 10
+        ],
         "functionCount": len(functions or []),
     }
 
@@ -405,7 +410,7 @@ def measure_file(file, base, language, limits):
 
 def summarize(results, discovery, settings):
     groups, source_lines, clone_ranges = defaultdict(list), {}, defaultdict(list)
-    sources, unsupported = [], []
+    sources, unsupported, files, high_complexity_functions = [], [], [], []
     flagged, clones = set(), set()
     loc = analyzed_loc = complexity_loc = ast_files = complexity_files = 0
     mass = high_cc_mass = function_count = skipped_functions = 0
@@ -413,6 +418,21 @@ def summarize(results, discovery, settings):
     for result in results:
         file = result["file"]
         loc += result["loc"] or 0
+        file_summary = {
+            "file": file,
+            "loc": result["loc"],
+            "analyzedLoc": 0,
+            "complexityLoc": 0,
+            "functionCount": 0,
+            "cloneLines": 0,
+            "flaggedLines": 0,
+            "unionLines": 0,
+            "verbosity": None,
+            "mass": None,
+            "highCcMass": None,
+            "erosion": None,
+        }
+        files.append(file_summary)
 
         if result["digest"]:
             sources.append([file, result["digest"]])
@@ -436,6 +456,23 @@ def summarize(results, discovery, settings):
         if result["mass"] is None:
             unsupported.append(file)
         else:
+            file_summary.update(
+                {
+                    "complexityLoc": result.get("complexityLoc", result["loc"]),
+                    "functionCount": result["functionCount"],
+                    "mass": result["mass"],
+                    "highCcMass": result["highCcMass"],
+                    "erosion": (
+                        result["highCcMass"] / result["mass"]
+                        if result["mass"]
+                        else None
+                    ),
+                }
+            )
+            high_complexity_functions.extend(
+                {"file": file, **function}
+                for function in result["highComplexityFunctions"]
+            )
             complexity_files += 1
             complexity_loc += result.get("complexityLoc", result["loc"])
             function_count += result["functionCount"]
@@ -456,6 +493,7 @@ def summarize(results, discovery, settings):
 
         ast_files += 1
         analyzed_loc += result["loc"]
+        file_summary["analyzedLoc"] = result["loc"]
         source_lines[file] = result["nonblankLines"]
         flagged.update((file, line) for line in result["flagged"])
 
@@ -482,6 +520,28 @@ def summarize(results, discovery, settings):
                 clones.add((file, lines[index]))
                 index += 1
 
+    clones_by_file = defaultdict(set)
+    flagged_by_file = defaultdict(set)
+    for file, line in clones:
+        clones_by_file[file].add(line)
+    for file, line in flagged:
+        flagged_by_file[file].add(line)
+
+    for item in files:
+        if not item["analyzedLoc"]:
+            continue
+        file_clones = clones_by_file[item["file"]]
+        file_flagged = flagged_by_file[item["file"]]
+        union = file_clones | file_flagged
+        item.update(
+            {
+                "cloneLines": len(file_clones),
+                "flaggedLines": len(file_flagged),
+                "unionLines": len(union),
+                "verbosity": len(union) / item["analyzedLoc"],
+            }
+        )
+
     return {
         "sourceHash": digest(json.dumps(sources, separators=(",", ":")).encode()),
         "settings": settings,
@@ -497,6 +557,15 @@ def summarize(results, discovery, settings):
         "analyzedLoc": analyzed_loc,
         **discovery,
         "complexityUnsupported": unsupported,
+        "files": files,
+        "highComplexityFunctions": sorted(
+            high_complexity_functions,
+            key=lambda function: (
+                -function["mass"],
+                function["file"],
+                function["line"],
+            ),
+        ),
         "cloneLines": len(clones),
         "flaggedLines": len(flagged),
         "unionLines": len(clones | flagged),

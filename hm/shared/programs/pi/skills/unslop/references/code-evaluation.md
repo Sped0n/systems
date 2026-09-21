@@ -32,9 +32,15 @@ These are observed averages, **not an ideal-human threshold or a pass/fail stand
 
 Aim for passing behavior checks, adequate coverage, and justified improvements relative to the baseline. Preserve necessary complexity and safeguards rather than optimizing toward zero. The local scoring conventions are not calibrated against the paper, so do not directly rank these results against the human averages, especially across different languages.
 
+Treat the CC 10 boundary as a review signal, not a refactoring target. Do not create
+one-use wrappers merely to move decisions into another function or below the threshold.
+Extract a helper when it gives a durable responsibility a useful name, is independently
+testable, is reused, or hides a genuinely separate mechanism. Otherwise keep cohesive
+control flow together and accept the measured complexity.
+
 ## Measure and compare
 
-The evaluator emits a JSON report; the agent owns behavior checks and before/after comparison. Requires uv, Python 3.13+, and Git on Linux or macOS. Resolve these examples from the skill directory; use `--help` for other options.
+The evaluator emits a detailed JSON report; the agent owns behavior checks and before/after comparison. Requires uv, Python 3.13+, and Git on Linux or macOS. Resolve these examples from the skill directory; use `--help` for other options.
 
 ```bash
 # Scan a source directory.
@@ -48,6 +54,9 @@ uvx --from ast-grep-py python scripts/evaluate.py /path/to/project \
   --include 'src/**/*.cpp' --include 'src/**/*.h' \
   --exclude 'src/generated/**' --language cpp > /tmp/unslop-cpp.json
 ```
+
+Reports include aggregate scores, a `files` breakdown, and a focused
+`highComplexityFunctions` list for functions above CC 10.
 
 Patterns are relative to the scan root; exclusions win. Git ignores apply by default.
 
