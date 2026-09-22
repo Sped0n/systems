@@ -37,6 +37,11 @@
           port = 27227;
         }
         // gitBlock;
+        "glab.espressif.cn" = {
+          hostname = "glab.espressif.cn";
+          port = 8266;
+        }
+        // gitBlock;
         "gitlab.com" = gitBlock;
         "git.sped0n.com" = {
           hostname = vars."srv-de-0".ipv4;
