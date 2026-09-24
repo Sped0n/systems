@@ -6,16 +6,16 @@ import type {
 
 import {
   COMPACTED_TRACE_TOKENS,
-  COMPACTION_CONTINUATION,
   OBSERVATION_MAX_OUTPUT_TOKENS,
   OBSERVER_SYSTEM_PROMPT,
   PREVIOUS_OBSERVATION_TOKENS,
   RETAINED_TRACE_TOKENS,
-  USER_DIRECTIVE_TOKENS,
 } from "./constants.ts";
-import { compileTrace, renderTrace } from "./view.ts";
+import { compileTrace, renderObserverTrace, renderTrace } from "./view.ts";
 
 export interface ObservationInput {
+  /** Original user entries from the entire active lineage, including the retained tail. */
+  userEntries: readonly SessionEntry[];
   previousObservation?: string;
   compactedEntries: readonly SessionEntry[];
   retainedEntries: readonly SessionEntry[];
@@ -37,17 +37,14 @@ function bounded(text: string | undefined, tokens: number): string {
 }
 
 export function buildObservationPrompt(input: ObservationInput): string {
-  const compactedBlocks = compileTrace(input.compactedEntries);
-  const directives = renderTrace(
-    compactedBlocks.filter(
-      (block) =>
-        block.role === "user" && block.text.trim() !== COMPACTION_CONTINUATION,
-    ),
-    USER_DIRECTIVE_TOKENS,
+  // Intent is never clipped: reject an oversized request at the model boundary instead.
+  const directives = renderTrace(compileTrace(input.userEntries), Infinity);
+  const compacted = renderObserverTrace(
+    input.compactedEntries,
+    COMPACTED_TRACE_TOKENS,
   );
-  const compacted = renderTrace(compactedBlocks, COMPACTED_TRACE_TOKENS);
-  const retained = renderTrace(
-    compileTrace(input.retainedEntries),
+  const retained = renderObserverTrace(
+    input.retainedEntries,
     RETAINED_TRACE_TOKENS,
   );
   let prompt = `<conversation>
@@ -68,40 +65,30 @@ ${retained}
 ${bounded(input.previousObservation, PREVIOUS_OBSERVATION_TOKENS)}
 </previous-observation>
 
-Update the existing observation with the new conversation evidence. Another model will use the result to continue the work.
+Regenerate active instructions from original user evidence and update the working-state checkpoint. Another model will use the result to continue the work.
 
 Use this exact format:
 
-## Current task
-[The user's current objective and scope]
+## Active instructions
+- [Durable constraints and current task requirements, with native entry IDs. Quote consequential user wording exactly.]
 
-## Active user directives
-- [Applicable requirements, prohibitions, preferences, authorization limits, and workflow constraints. Include native entry IDs.]
-
-## Accepted decisions
-- [Current technical and product decisions. Include native entry IDs when exact recall is useful.]
-
-## Current state
-- [Important results, durable facts, and implementation progress.]
+## Decisions and current state
+- [Decisions, completed outcomes, durable facts, and implementation progress, with native entry IDs. Historical choices are revisable state, not user mandates.]
 
 ## Open work
 - [Unresolved tasks, blockers, and unanswered questions]
 
-## Suggested next action
+## Next action
 [The next concrete action]
 
 Rules:
-- Use <user-directive-evidence> to identify genuine user intent in the newly compacted span. It excludes extension-generated continuation messages.
-- Preserve every applicable user requirement, prohibition, preference, authorization limit, workflow constraint, decision, scope boundary, and qualification.
-- Keep an active user directive until a later genuine user message explicitly supersedes it. A task or phase change alone does not revoke it.
-- If applicability is uncertain, retain the directive with its native entry ID for exact recall.
-- Apply newer corrections and remove only explicitly superseded plans. State what changed so the current state is unambiguous.
-- Replace completed procedural narration with durable outcomes.
-- Preserve unresolved blockers, exact paths, commands, errors, identifiers, measured values, and wording that the user may need reproduced.
-- Preserve timestamps when chronology, relative dates, or the order of state changes matters.
-- Add native entry IDs to important facts when exact recall may help.
-- Merge repetition rather than writing an exhaustive history.
-- The retained tail remains visible to the working agent. Summarize it only when needed to interpret current intent.
+- Rebuild intent from chronological <user-directive-evidence>, including retained-tail corrections. Generated continuations are excluded by entry provenance. The previous observation is a fallible working-state checkpoint, not authoritative intent; recover applicable instructions it omitted regardless of its format.
+- Preserve instruction strength, scope, conditions, and qualifications. Quote the shortest sufficient original wording for prohibitions, permissions, scope boundaries, and ambiguous preferences. "Don't care about X" is not "Do not modify X". Questions and assistant interpretations are not user mandates.
+- Keep durable constraints until the user supersedes them; a task or phase change alone does not revoke them. Update the current objective from the latest request, including discussion versus implementation. Mark uncertain applicability and retain the source for clarification.
+- Reconcile tasks against actions and results. Move completed requests to outcomes, retaining constraints on the resulting behavior. A proposal is not completion. Retire superseded plans; historical implementation choices remain revisable when the user asks to reconsider them.
+- Preserve one-time authorization scope and consumption. Performing the authorized operation consumes permission; a checkpoint or similar task does not renew it. If uncertain, retain the original wording and require clarification before consequential action.
+- Keep unresolved blockers and exact paths, commands, errors, identifiers, measurements, and wording needed to resume. Include timestamps for consequential corrections or decisions and whenever chronology matters. Link important facts to native entry IDs.
+- Tool excerpts and omitted ranges are incomplete evidence: retain recall pointers for unresolved details. Merge repetition and replace procedural narration with outcomes. The retained tail stays visible; summarize it only to clarify current intent.
 
 Keep each section concise and self-contained. Output Markdown only.`;
   if (input.focus?.trim())
@@ -116,6 +103,21 @@ export async function observe(
   routingId: string,
 ): Promise<ObservationResult> {
   if (!ctx.model) throw new Error("No model selected for context observation.");
+  const prompt = buildObservationPrompt(input);
+  const maxTokens = Math.min(
+    OBSERVATION_MAX_OUTPUT_TOKENS,
+    ctx.model.maxTokens > 0
+      ? ctx.model.maxTokens
+      : OBSERVATION_MAX_OUTPUT_TOKENS,
+  );
+  // Match Pi's approximate text accounting; provider overflow still cancels safely.
+  const estimatedInputTokens = Math.ceil(
+    (OBSERVER_SYSTEM_PROMPT.length + prompt.length) / 4,
+  );
+  if (estimatedInputTokens + maxTokens > ctx.model.contextWindow)
+    throw new Error(
+      "Context observer input exceeds the selected model's context window; original user evidence was not truncated. Select a larger-context model and retry.",
+    );
   const response = await ctx.modelRegistry.complete(
     ctx.model,
     {
@@ -123,18 +125,13 @@ export async function observe(
       messages: [
         {
           role: "user",
-          content: [{ type: "text", text: buildObservationPrompt(input) }],
+          content: [{ type: "text", text: prompt }],
           timestamp: Date.now(),
         },
       ],
     },
     {
-      maxTokens: Math.min(
-        OBSERVATION_MAX_OUTPUT_TOKENS,
-        ctx.model.maxTokens > 0
-          ? ctx.model.maxTokens
-          : OBSERVATION_MAX_OUTPUT_TOKENS,
-      ),
+      maxTokens,
       signal,
       cacheRetention: "none",
       sessionId: routingId,

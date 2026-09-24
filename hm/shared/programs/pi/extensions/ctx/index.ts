@@ -29,6 +29,7 @@ interface CompactRequest {
   toolCallId: string;
   sessionId: string;
   phase: "requested" | "ready" | "compacting";
+  userInputReceived: boolean;
 }
 
 function previousCompaction(entries: readonly SessionEntry[]) {
@@ -53,6 +54,9 @@ function prepareObservation(
   const internalRequest =
     event.customInstructions?.startsWith(COMPACT_SENTINEL);
   return {
+    userEntries: event.branchEntries.filter(
+      (entry) => entry.type === "message" && entry.message.role === "user",
+    ),
     previousObservation: event.preparation.previousSummary,
     compactedEntries: event.branchEntries.slice(compactedStart, tailStart),
     retainedEntries: event.branchEntries.slice(tailStart),
@@ -97,7 +101,8 @@ export default function contextManagement(pi: ExtensionAPI) {
     );
   }
 
-  function continueAfterCompaction() {
+  function continueAfterCompaction(ctx: ExtensionContext) {
+    if (!ctx.isIdle() || ctx.hasPendingMessages()) return;
     pi.sendMessage(
       {
         customType: COMPACTION_CONTINUATION_TYPE,
@@ -110,19 +115,27 @@ export default function contextManagement(pi: ExtensionAPI) {
 
   // ExtensionContext does not expose Pi's live SettingsManager. Resolve the
   // same file-backed settings, including project trust, without mutating them.
-  function compactionSettings(ctx: ExtensionContext) {
+  function currentPressure(ctx: ExtensionContext) {
+    const usage = ctx.getContextUsage();
+    if (!usage) return undefined;
     const manager = SettingsManager.create(ctx.cwd, getAgentDir(), {
       projectTrusted: ctx.isProjectTrusted(),
     });
     if (manager.drainErrors().length) return undefined;
-    return manager.getCompactionSettings();
+    const settings = manager.getCompactionSettings();
+    const pressure = contextPressure(
+      usage.tokens,
+      usage.contextWindow,
+      settings.reserveTokens,
+    );
+    return pressure && { ...pressure, enabled: settings.enabled };
   }
 
   pi.registerTool({
     name: "compact",
     label: "Compact",
     description:
-      "Rewrite older context into a bounded observation while preserving Pi's recent tail and lossless history. Call alone; continues exactly once after success.",
+      "Rewrite older context into a bounded observation while preserving Pi's recent tail and lossless history. Call alone; resumes once after success unless new input takes over.",
     promptSnippet: "Compact older context and continue with the retained tail.",
     promptGuidelines: [
       "Use compact at a useful task boundary before substantial work. Avoid compacting with fresh context unless explicitly requested. If nearly done, finish directly.",
@@ -132,12 +145,11 @@ export default function contextManagement(pi: ExtensionAPI) {
     async execute(toolCallId, _params, signal, _onUpdate, ctx) {
       signal?.throwIfAborted();
       if (pending) throw new Error("A compact request is already pending.");
-      const assistant = ctx.sessionManager
-        .getBranch()
-        .findLast(
-          (entry) =>
-            entry.type === "message" && entry.message.role === "assistant",
-        );
+      const branch = ctx.sessionManager.getBranch();
+      const assistant = branch.findLast(
+        (entry) =>
+          entry.type === "message" && entry.message.role === "assistant",
+      );
       if (
         assistant?.type !== "message" ||
         assistant.message.role !== "assistant" ||
@@ -150,10 +162,53 @@ export default function contextManagement(pi: ExtensionAPI) {
         throw new Error(
           "Call compact alone in its own tool batch, after other work has completed.",
         );
+      const checkpointIndex = branch.findLastIndex(
+        (entry) => entry.type === "compaction",
+      );
+      if (checkpointIndex >= 0) {
+        // The current compact call, generated continuations, and previous
+        // compact attempts are not new work. Retained pre-checkpoint messages
+        // must not make a freshly compacted branch eligible again either.
+        const hasNewWork = branch.slice(checkpointIndex + 1).some((entry) => {
+          if (entry === assistant || entry.type !== "message") return false;
+          const message = entry.message;
+          if (message.role === "toolResult")
+            return message.toolName !== "compact";
+          if (
+            message.role !== "assistant" ||
+            message.stopReason === "aborted" ||
+            message.stopReason === "error"
+          )
+            return false;
+          return message.content.some((part) =>
+            part.type === "text"
+              ? part.text.trim().length > 0
+              : part.type === "toolCall" && part.name !== "compact",
+          );
+        });
+        const pressure = currentPressure(ctx);
+        // Unknown pressure must not block recovery; large new user inputs can
+        // legitimately require compaction without any intervening agent work.
+        if (
+          !hasNewWork &&
+          (pressure?.level === "low" || pressure?.level === "advisory")
+        ) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: "Compaction skipped: the latest checkpoint is still fresh, no new assistant/tool work needs summarizing, and context pressure is below the high threshold. Continue with the existing checkpoint and the user's latest request; do not retry compact without new work or high context pressure. Manual /compact remains available.",
+              },
+            ],
+            details: {},
+          };
+        }
+      }
       pending = {
         toolCallId,
         sessionId: ctx.sessionManager.getSessionId(),
         phase: "requested",
+        userInputReceived: false,
       };
       return {
         content: [
@@ -184,6 +239,14 @@ export default function contextManagement(pi: ExtensionAPI) {
     else pending = undefined;
   });
 
+  pi.on("input", () => {
+    // The TUI flushes compaction input before onComplete, but prompt preflight
+    // can still be awaiting hooks/auth while isIdle() is true. Let that input
+    // own resumption instead of racing it with a synthetic prompt.
+    if (pending) pending.userInputReceived = true;
+    needsContinuation = false;
+  });
+
   pi.on("turn_start", () => {
     // Automatic compaction can resume the same run inline. In that case Pi is
     // already continuing and an additional follow-up would duplicate it.
@@ -193,7 +256,7 @@ export default function contextManagement(pi: ExtensionAPI) {
   pi.on("agent_settled", (_event, ctx) => {
     if (needsContinuation) {
       needsContinuation = false;
-      continueAfterCompaction();
+      continueAfterCompaction(ctx);
       return;
     }
     if (pending?.phase !== "ready") return;
@@ -211,7 +274,7 @@ export default function contextManagement(pi: ExtensionAPI) {
         )
           return;
         pending = undefined;
-        continueAfterCompaction();
+        if (!request.userInputReceived) continueAfterCompaction(ctx);
       },
       onError: (error) => {
         if (!active || generation !== startedIn || pending !== request) return;
@@ -262,7 +325,10 @@ export default function contextManagement(pi: ExtensionAPI) {
   pi.on("session_compact", (event) => {
     if (pending?.phase !== "ready") return;
     needsContinuation =
-      event.fromExtension && event.reason !== "manual" && !event.willRetry;
+      !pending.userInputReceived &&
+      event.fromExtension &&
+      event.reason !== "manual" &&
+      !event.willRetry;
     pending = undefined;
   });
   pi.on("session_compact_failed", () => {
@@ -287,23 +353,15 @@ export default function contextManagement(pi: ExtensionAPI) {
       ctx.sessionManager.buildContextEntries(),
     );
     if (pi.getActiveTools().includes("compact")) {
-      const usage = ctx.getContextUsage();
-      const settings = compactionSettings(ctx);
-      const pressure =
-        usage && settings?.enabled
-          ? contextPressure(
-              usage.tokens,
-              usage.contextWindow,
-              settings.reserveTokens,
-            )
-          : undefined;
-      if (pressure)
+      const pressure = currentPressure(ctx);
+      const notice = pressure?.enabled ? renderContextPressure(pressure) : "";
+      if (notice)
         messages = [
           ...messages,
           {
             role: "custom",
             customType: PRESSURE_MESSAGE_TYPE,
-            content: renderContextPressure(pressure),
+            content: notice,
             display: false,
             timestamp: Date.now(),
           },

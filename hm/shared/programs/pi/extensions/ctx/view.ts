@@ -161,16 +161,58 @@ export function compileTrace(entries: readonly SessionEntry[]): TraceBlock[] {
   return entries.flatMap(compileTraceEntry);
 }
 
-function observerBlock(block: TraceBlock): string {
-  let text = block.text;
-  if (
-    block.role === "tool_result" &&
-    text.length > OBSERVER_TOOL_RESULT_CHARS
-  ) {
-    const marker = `\n[…tool result clipped; read original entry ${block.entryId} with recall…]`;
-    text = `${text.slice(0, OBSERVER_TOOL_RESULT_CHARS - marker.length)}${marker}`;
+function renderBlock(block: TraceBlock): string {
+  return `[entry ${block.entryId}; ${block.role}; ${block.timestamp}]\n${block.text}`;
+}
+
+/** Reserve space for conversation before allocating tool-result excerpts. */
+export function renderObserverTrace(
+  entries: readonly SessionEntry[],
+  tokenBudget: number,
+): string {
+  const blocks = compileTrace(entries);
+  const compact = blocks.map((block) => {
+    if (block.role !== "tool_result") return block;
+    const omitted = `${block.text.split("\n", 1)[0]}\n[…tool result body omitted; read original entry ${block.entryId} with recall…]`;
+    return {
+      ...block,
+      text: block.text.length <= omitted.length ? block.text : omitted,
+    };
+  });
+  const limit = Math.floor(tokenBudget * 4);
+  const baseLength = compact.reduce(
+    (length, block, index) =>
+      length + renderBlock(block).length + (index ? 2 : 0),
+    0,
+  );
+  const resultCount = blocks.filter(
+    (block) => block.role === "tool_result",
+  ).length;
+  const excerptLimit = Math.min(
+    OBSERVER_TOOL_RESULT_CHARS,
+    Math.floor(Math.max(0, limit - baseLength) / Math.max(1, resultCount)),
+  );
+  if (excerptLimit > 0) {
+    for (let index = 0; index < blocks.length; index++) {
+      const block = blocks[index]!;
+      if (block.role !== "tool_result") continue;
+      const projected = compact[index]!;
+      const available = Math.min(
+        OBSERVER_TOOL_RESULT_CHARS,
+        projected.text.length + excerptLimit,
+      );
+      if (block.text.length <= available) {
+        projected.text = block.text;
+      } else {
+        const marker = `\n[…tool result excerpt; read original entry ${block.entryId} with recall…]\n`;
+        const visible = Math.max(0, available - marker.length);
+        const head = Math.ceil(visible / 2);
+        const tail = Math.floor(visible / 2);
+        projected.text = `${block.text.slice(0, head)}${marker}${tail ? block.text.slice(-tail) : ""}`;
+      }
+    }
   }
-  return `[entry ${block.entryId}; ${block.role}; ${block.timestamp}]\n${text}`;
+  return renderTrace(compact, tokenBudget);
 }
 
 /** Render chronological trace text, retaining deterministic head and tail regions. */
@@ -179,7 +221,7 @@ export function renderTrace(
   budgetTokens: number,
 ): string {
   const budgetChars = Math.max(1, Math.floor(budgetTokens)) * 4;
-  const rendered = blocks.map(observerBlock);
+  const rendered = blocks.map(renderBlock);
   const complete = rendered.join("\n\n");
   if (complete.length <= budgetChars) return complete || "(none)";
 

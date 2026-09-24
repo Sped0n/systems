@@ -8,7 +8,6 @@ export const COMPACT_SENTINEL = "ctx-observational-compact:";
 export const PRESSURE_MESSAGE_TYPE = "ctx-pressure";
 
 export const PREVIOUS_OBSERVATION_TOKENS = 8_192;
-export const USER_DIRECTIVE_TOKENS = 8_192;
 export const COMPACTED_TRACE_TOKENS = 12_288;
 export const RETAINED_TRACE_TOKENS = 8_192;
 export const OBSERVATION_MAX_OUTPUT_TOKENS = 8_192;

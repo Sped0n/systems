@@ -1,6 +1,8 @@
 import { CONTEXT_PRESSURE_THRESHOLDS } from "./constants.ts";
 
-export type ContextPressureLevel = keyof typeof CONTEXT_PRESSURE_THRESHOLDS;
+export type ContextPressureLevel =
+  | "low"
+  | keyof typeof CONTEXT_PRESSURE_THRESHOLDS;
 
 export interface ContextPressure {
   level: ContextPressureLevel;
@@ -25,13 +27,13 @@ export function contextPressure(
   )
     return undefined;
   const ratio = usedTokens / budgetTokens;
-  const level = (
-    Object.entries(CONTEXT_PRESSURE_THRESHOLDS) as [
-      ContextPressureLevel,
-      number,
-    ][]
-  ).findLast(([, threshold]) => ratio >= threshold)?.[0];
-  if (!level) return undefined;
+  const level =
+    (
+      Object.entries(CONTEXT_PRESSURE_THRESHOLDS) as [
+        Exclude<ContextPressureLevel, "low">,
+        number,
+      ][]
+    ).findLast(([, threshold]) => ratio >= threshold)?.[0] ?? "low";
   return {
     level,
     usedTokens,
@@ -42,6 +44,7 @@ export function contextPressure(
 }
 
 export function renderContextPressure(pressure: ContextPressure): string {
+  if (pressure.level === "low") return "";
   const advice = {
     advisory:
       "Context pressure is advisory. Do not compact solely because this notice is present; plan toward a coherent boundary if substantial work remains.",
