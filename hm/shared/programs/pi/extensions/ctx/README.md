@@ -1,41 +1,64 @@
 # Context management
 
-Ctx adds observational compaction, session recall, tool-result masking, and
-context-pressure guidance. Pi's native session is the only durable source.
-Original history stays intact; there are no sidecar files or external memory
-services.
-
-## Memory model
+Ctx combines a [VCC](https://arxiv.org/abs/2603.29678)-style trace compiler,
+deterministic compaction, and LLM-assisted recall. Pi's session JSONL is the only
+durable store; compaction makes no model calls.
 
 ```text
-                        ┌─ observer view ─> bounded Markdown observation
-native session entries ─┼─ context view  ─> consumed large results masked
-                        └─ recall view   ─> search and exact entry reads
-                              │
-                       native session entry IDs
+Pi session JSONL
+  |
+  v
+Typed trace + source coordinates
+  |-- Full view ------> recall read / around
+  |-- UI view --------> compacted context + native recent tail
+  `-- Adaptive view --> recall search
+                            ^
+                      /recall + main model
 ```
 
-Compaction preserves active constraints, current decisions, unresolved work, and
-a next action alongside recent messages. Original user evidence takes precedence
-over earlier summaries. Observations remain fallible; recall provides the source
-when exact wording or authorization matters.
+## Views
 
-Pi owns compaction scheduling, retained tails, persistence, and branching.
-Existing sessions need no migration.
+One typed trace preserves roles and supplies three views:
 
-## Usage
+- **Full:** original sanitized text, including tool arguments and results;
+  images are metadata only.
+- **UI:** chronological dialogue and folded tool calls with source pointers.
+- **Adaptive:** matching source blocks, ranked and labeled by role.
 
-- `/compact [focus]` requests compaction with optional focus instructions.
-- The `compact` tool requests compaction at a useful task boundary and skips
-  redundant requests when context is still fresh. Call it alone.
-- `/recall [request]` asks the agent to recover context from session history.
-- The `recall` tool searches or reads exact entries. Use `lineage` for the active
-  branch or `all` for every branch in this session, and copy returned arguments
-  to continue reading. It does not search other sessions.
+Pointers use `entryId:start-end`: zero-based, end-exclusive UTF-16 offsets in
+the full textual view. Use `recall` with `target=entryId, offset=start` to read
+one. Canonical replacements point to context-edit entries; originals remain
+readable. Tool calls, results, and approvals are not interchangeable evidence.
 
-Input queued during compaction takes over the next turn without interrupting
-compaction. Failed or cancelled compaction leaves history intact.
+## Compaction
 
-## Validation
+Pi owns scheduling, model capacity, safe recent-tail boundaries, persistence,
+and recovery. Ctx rebuilds older dialogue from source, respects canonical edits,
+and leaves the native recent tail unduplicated.
 
-Run `pnpm run check` from `hm/shared/programs/pi`.
+Briefs use at most an estimated one-eighth of capacity, capped at 8,192 tokens.
+Selection prioritizes original user evidence, then recent work, preserving
+chronology and marking omissions. Older large tool results may also be masked
+in the disposable provider view, with recall pointers; storage is untouched.
+
+Use `/compact [focus]` manually. Focus is retained as a bounded note, not
+semantically processed. Compaction requires active recall; failure commits
+nothing and does not fall back to a model summarizer.
+
+**History is lossless; the brief is not.** Retrieve original instructions when
+scope or authorization is unclear, and ask if ambiguity remains. Compaction
+never renews historical permission.
+
+## Recall
+
+`/recall [question]` asks the main model to retrieve evidence, cite source IDs,
+and identify gaps—for example, `/recall What requirements still apply?`.
+The model can also call the tool directly:
+
+- `search`: case-insensitive literal OR matching; five role-tagged snippets.
+- `read`: up to 12,000 UTF-16 characters, including complete mutation payloads.
+- `around`: five chronological entry excerpts surrounding an anchor.
+
+Copy returned read and continuation arguments. Scope is `lineage` for the active
+branch or `all` for every branch in this session; all-branch neighborhoods can
+interleave branches. Recall does not inspect other sessions or current files.

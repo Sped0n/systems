@@ -1,318 +1,400 @@
 import {
+  estimateTokens,
   sessionEntryToContextMessages,
+  type ContextEditEntry,
   type SessionEntry,
 } from "@earendil-works/pi-coding-agent";
 
 import {
   LARGE_TOOL_RESULT_CHARS,
-  OBSERVER_TOOL_RESULT_CHARS,
+  PROTECTED_ASSISTANT_TURNS,
+  PROTECTED_RECENT_TOKENS,
 } from "./constants.ts";
 import { sanitize } from "./sanitize.ts";
 
-export type TraceRole =
-  | "user"
-  | "assistant"
-  | "tool_call"
-  | "tool_result"
-  | "other";
+type ContextMessage = ReturnType<typeof sessionEntryToContextMessages>[number];
 
+/** Coordinates are entry-local UTF-16 offsets in the full view, never UI offsets. */
 export interface TraceBlock {
   entryId: string;
   timestamp: string;
-  role: TraceRole;
+  role:
+    | "user"
+    | "assistant"
+    | "thinking"
+    | "tool_call"
+    | "tool_result"
+    | "other";
   text: string;
+  header: string;
+  offset: number;
+  end: number;
+  uiText?: string;
+  searchable: boolean;
+  callId?: string;
+  isError?: boolean;
 }
 
-type ContextMessage = ReturnType<typeof sessionEntryToContextMessages>[number];
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
 
-function contentText(
-  content: string | readonly unknown[],
-  includeThinking = false,
-): string {
+function contentText(content: string | readonly unknown[]): string {
   if (typeof content === "string") return sanitize(content);
   return content
     .flatMap((part) => {
       if (!isRecord(part)) return [];
       if (part.type === "text" && typeof part.text === "string")
-        return [part.text];
-      if (
-        includeThinking &&
-        part.type === "thinking" &&
-        typeof part.thinking === "string"
-      )
-        return [part.thinking];
+        return [sanitize(part.text)];
       if (part.type === "image" && typeof part.mimeType === "string")
         return [`[image: ${part.mimeType}]`];
       return [];
     })
-    .map(sanitize)
-    .filter((text) => text.trim().length > 0)
     .join("\n");
-}
-
-function conciseArguments(name: string, value: unknown): unknown {
-  if ((name !== "write" && name !== "edit") || !isRecord(value)) return value;
-  return Object.fromEntries(
-    Object.entries(value).map(([key, item]) => {
-      if (key === "content" || key === "patch" || key === "newText")
-        return [key, "[payload omitted]"];
-      if (name === "edit" && key === "edits" && Array.isArray(item))
-        return [key, `[${item.length} edit payload(s) omitted]`];
-      return [key, item];
-    }),
-  );
 }
 
 function isRecallTool(name: string): boolean {
   return name === "recall" || name === "vcc_recall";
 }
 
-type TraceCoordinates = Pick<TraceBlock, "entryId" | "timestamp">;
-type Message = Extract<SessionEntry, { type: "message" }>["message"];
-
-function compileToolResult(
-  coordinates: TraceCoordinates,
-  message: Extract<Message, { role: "toolResult" }>,
+/** Compile original content once; projections never rewrite its coordinates. */
+export function compileTraceEntry(
+  entry: SessionEntry,
+  edit?: ContextEditEntry,
 ): TraceBlock[] {
-  if (isRecallTool(message.toolName)) return [];
-  const text = contentText(message.content, true);
-  return text
-    ? [
-        {
-          ...coordinates,
-          role: "tool_result",
-          text: `${message.toolName}${message.isError ? " error" : " result"}\n${text}`,
-        },
-      ]
-    : [];
-}
-
-function compileAssistant(
-  coordinates: TraceCoordinates,
-  message: Extract<Message, { role: "assistant" }>,
-): TraceBlock[] {
+  const source = edit ?? entry;
   const blocks: TraceBlock[] = [];
-  const text = contentText(message.content);
-  if (text) blocks.push({ ...coordinates, role: "assistant", text });
-  for (const part of message.content) {
-    if (part.type !== "toolCall" || isRecallTool(part.name)) continue;
+  let cursor = 0;
+  const add = (
+    role: TraceBlock["role"],
+    text: string,
+    options: Partial<
+      Pick<TraceBlock, "uiText" | "searchable" | "callId" | "isError">
+    > = {},
+  ) => {
+    text = sanitize(text);
+    if (!text) return;
+    const header = `[${role}${edit ? `; context replacement of ${entry.id}` : ""}]\n`;
+    const offset = cursor + header.length;
     blocks.push({
-      ...coordinates,
-      role: "tool_call",
-      text: `${part.name}(${JSON.stringify(conciseArguments(part.name, part.arguments))})`,
+      entryId: source.id,
+      timestamp: source.timestamp,
+      role,
+      text,
+      header,
+      offset,
+      end: offset + text.length,
+      searchable: true,
+      ...options,
+      uiText:
+        options.uiText === undefined
+          ? undefined
+          : `${edit ? `[context replacement of ${entry.id}]\n` : ""}${options.uiText}`,
     });
+    cursor = offset + text.length + 2;
+  };
+  if (entry.type === "context_edit") {
+    add(
+      "other",
+      `Context edit of ${entry.targetId}\n${JSON.stringify(entry.replacement)}`,
+    );
+    return blocks;
+  }
+  if (edit?.replacement === null) {
+    add("other", `Context omission of ${entry.id}`);
+    return blocks;
+  }
+  for (const original of sessionEntryToContextMessages(entry)) {
+    // Use the same content-only replacement semantics as Pi's projection.
+    let message = original;
+    if (
+      edit?.replacement &&
+      ["user", "assistant", "toolResult", "custom"].includes(original.role)
+    ) {
+      const replacement = edit.replacement.content;
+      const content =
+        (original.role === "assistant" || original.role === "toolResult") &&
+        typeof replacement === "string"
+          ? [{ type: "text" as const, text: replacement }]
+          : replacement;
+      message = { ...original, content } as ContextMessage;
+    }
+    switch (message.role) {
+      case "user": {
+        const text = contentText(message.content);
+        add("user", text, { uiText: text });
+        break;
+      }
+      case "assistant":
+        for (const part of message.content) {
+          if (part.type === "text")
+            add("assistant", part.text, { uiText: part.text });
+          if (part.type === "thinking") add("thinking", part.thinking);
+          if (part.type === "toolCall") {
+            const args = part.arguments;
+            const subject = [
+              "path",
+              "file_path",
+              "command",
+              "query",
+              "target",
+            ].flatMap((key) =>
+              typeof args?.[key] === "string"
+                ? [`${key}=${JSON.stringify(args[key])}`]
+                : [],
+            )[0];
+            add(
+              "tool_call",
+              `${part.name} (call ${part.id})\n${JSON.stringify(args)}`,
+              {
+                callId: part.id,
+                searchable: !isRecallTool(part.name),
+                uiText: isRecallTool(part.name)
+                  ? undefined
+                  : excerpt(
+                      `${part.name}${subject ? ` ${subject}` : ""}`,
+                      200,
+                      "…",
+                    ),
+              },
+            );
+          }
+        }
+        break;
+      case "toolResult":
+        add(
+          "tool_result",
+          `${message.toolName} ${message.isError ? "error" : "result"} (call ${message.toolCallId})\n${contentText(message.content)}`,
+          {
+            callId: message.toolCallId,
+            isError: message.isError,
+            searchable: !isRecallTool(message.toolName),
+          },
+        );
+        break;
+      case "bashExecution":
+        add("tool_result", `$ ${message.command}\n${message.output}`, {
+          uiText: message.excludeFromContext
+            ? undefined
+            : excerpt(
+                `$ ${JSON.stringify(message.command)} (exit ${message.exitCode ?? "unknown"})`,
+                200,
+                "…",
+              ),
+        });
+        break;
+      case "branchSummary":
+        add("other", `[branch handoff; fallible summary]\n${message.summary}`, {
+          uiText: `[branch handoff; fallible summary]\n${message.summary}`,
+        });
+        break;
+      case "compactionSummary":
+        add("other", `[compaction; navigation hint]\n${message.summary}`, {
+          searchable: false,
+        });
+        break;
+      case "custom":
+        add("other", `${message.customType}\n${contentText(message.content)}`, {
+          searchable: false,
+        });
+        break;
+      case "system":
+        add("other", JSON.stringify(message), { searchable: false });
+        break;
+    }
   }
   return blocks;
 }
 
-function compileMessageEntry(
-  entry: Extract<SessionEntry, { type: "message" }>,
+function sourceBlocks(
+  entry: SessionEntry,
+  entries: readonly SessionEntry[],
 ): TraceBlock[] {
-  const coordinates = { entryId: entry.id, timestamp: entry.timestamp };
-  const message = entry.message;
-  if (message.role === "bashExecution") {
-    return message.excludeFromContext
-      ? []
-      : [
-          {
-            ...coordinates,
-            role: "tool_result",
-            text: sanitize(`$ ${message.command}\n${message.output}`),
-          },
-        ];
+  if (entry.type === "context_edit") {
+    const target = entries.find((source) => source.id === entry.targetId);
+    if (target) return compileTraceEntry(target, entry);
   }
-  if (message.role === "compactionSummary" || message.role === "branchSummary")
-    return [
-      {
-        ...coordinates,
-        role: "other",
-        text: sanitize(message.summary),
-      },
-    ];
-  if (message.role === "toolResult")
-    return compileToolResult(coordinates, message);
-  if (message.role === "user") {
-    const text = contentText(message.content);
-    return text ? [{ ...coordinates, role: "user", text }] : [];
-  }
-  return message.role === "assistant"
-    ? compileAssistant(coordinates, message)
-    : [];
-}
-
-/** Lower one native entry into the shared, role-aware trace representation. */
-export function compileTraceEntry(entry: SessionEntry): TraceBlock[] {
-  if (entry.type === "branch_summary") {
-    return entry.summary
-      ? [
-          {
-            entryId: entry.id,
-            timestamp: entry.timestamp,
-            role: "other",
-            text: sanitize(entry.summary),
-          },
-        ]
-      : [];
-  }
-  return entry.type === "message" ? compileMessageEntry(entry) : [];
+  return compileTraceEntry(entry);
 }
 
 export function compileTrace(entries: readonly SessionEntry[]): TraceBlock[] {
-  return entries.flatMap(compileTraceEntry);
+  return entries.flatMap((entry) => sourceBlocks(entry, entries));
 }
 
-function renderBlock(block: TraceBlock): string {
-  return `[entry ${block.entryId}; ${block.role}; ${block.timestamp}]\n${block.text}`;
-}
-
-/** Reserve space for conversation before allocating tool-result excerpts. */
-export function renderObserverTrace(
-  entries: readonly SessionEntry[],
-  tokenBudget: number,
-): string {
-  const blocks = compileTrace(entries);
-  const compact = blocks.map((block) => {
-    if (block.role !== "tool_result") return block;
-    const omitted = `${block.text.split("\n", 1)[0]}\n[…tool result body omitted; read original entry ${block.entryId} with recall…]`;
-    return {
-      ...block,
-      text: block.text.length <= omitted.length ? block.text : omitted,
-    };
-  });
-  const limit = Math.floor(tokenBudget * 4);
-  const baseLength = compact.reduce(
-    (length, block, index) =>
-      length + renderBlock(block).length + (index ? 2 : 0),
-    0,
-  );
-  const resultCount = blocks.filter(
-    (block) => block.role === "tool_result",
-  ).length;
-  const excerptLimit = Math.min(
-    OBSERVER_TOOL_RESULT_CHARS,
-    Math.floor(Math.max(0, limit - baseLength) / Math.max(1, resultCount)),
-  );
-  if (excerptLimit > 0) {
-    for (let index = 0; index < blocks.length; index++) {
-      const block = blocks[index]!;
-      if (block.role !== "tool_result") continue;
-      const projected = compact[index]!;
-      const available = Math.min(
-        OBSERVER_TOOL_RESULT_CHARS,
-        projected.text.length + excerptLimit,
-      );
-      if (block.text.length <= available) {
-        projected.text = block.text;
-      } else {
-        const marker = `\n[…tool result excerpt; read original entry ${block.entryId} with recall…]\n`;
-        const visible = Math.max(0, available - marker.length);
-        const head = Math.ceil(visible / 2);
-        const tail = Math.floor(visible / 2);
-        projected.text = `${block.text.slice(0, head)}${marker}${tail ? block.text.slice(-tail) : ""}`;
-      }
-    }
-  }
-  return renderTrace(compact, tokenBudget);
-}
-
-/** Render chronological trace text, retaining deterministic head and tail regions. */
-export function renderTrace(
-  blocks: readonly TraceBlock[],
-  budgetTokens: number,
-): string {
-  const budgetChars = Math.max(1, Math.floor(budgetTokens)) * 4;
-  const rendered = blocks.map(renderBlock);
-  const complete = rendered.join("\n\n");
-  if (complete.length <= budgetChars) return complete || "(none)";
-
-  const markerFor = (first: number, last: number) =>
-    `[…entries ${blocks[first]?.entryId ?? "?"} through ${blocks[last]?.entryId ?? "?"} omitted to fit the observer input…]`;
-  const selectedHead: string[] = [];
-  const selectedTail: string[] = [];
-  let head = 0;
-  let tail = rendered.length - 1;
-  let used = 0;
-  const sideBudget = Math.floor((budgetChars - 200) / 2);
-  while (head <= tail && used + rendered[head].length + 2 <= sideBudget) {
-    selectedHead.push(rendered[head]);
-    used += rendered[head].length + 2;
-    head++;
-  }
-  used = 0;
-  while (tail >= head && used + rendered[tail].length + 2 <= sideBudget) {
-    selectedTail.unshift(rendered[tail]);
-    used += rendered[tail].length + 2;
-    tail--;
-  }
-  const marker = markerFor(head, tail);
-  return [...selectedHead, marker, ...selectedTail]
-    .join("\n\n")
-    .slice(0, budgetChars);
-}
-
-/** Full recallable text for one entry, produced by the shared compiler. */
-export function recallTraceEntry(entry: SessionEntry) {
-  const blocks = compileTraceEntry(entry);
+/** Sanitized full textual view. Raw JSONL remains authoritative for binary data. */
+export function recallTraceEntry(
+  entry: SessionEntry,
+  entries: readonly SessionEntry[] = [],
+) {
+  const blocks = sourceBlocks(entry, entries);
   if (!blocks.length) return undefined;
+  const text = blocks.map((block) => block.header + block.text).join("\n\n");
   return {
     id: entry.id,
     timestamp: entry.timestamp,
     role: [...new Set(blocks.map((block) => block.role))].join("+"),
-    text: blocks.map((block) => block.text).join("\n\n"),
+    text,
+    blocks,
   };
 }
 
-function toolResultKey(message: ContextMessage): string | undefined {
-  if (message.role !== "toolResult") return undefined;
-  return JSON.stringify([
-    message.timestamp,
-    message.toolCallId,
-    message.toolName,
-  ]);
+/** Clip with a visible middle omission; never join fragments as an intact quote. */
+export function excerpt(text: string, limit: number, marker: string): string {
+  if (text.length <= limit) return text;
+  if (limit < marker.length) return marker.slice(0, Math.max(0, limit));
+  const visible = limit - marker.length;
+  const head = Math.ceil(visible / 2);
+  const tail = Math.floor(visible / 2);
+  return text.slice(0, head) + marker + (tail ? text.slice(-tail) : "");
 }
 
-/** Mask exact, large, already-consumed results in a disposable provider view. */
+export function tracePointer(block: TraceBlock): string {
+  return `${block.entryId}:${block.offset}-${block.end}`;
+}
+
+/** UI projection: dialogue and folded calls, never tool bodies or inferred task state. */
+export function uiTrace(blocks: readonly TraceBlock[]): TraceBlock[] {
+  const results = new Map<string, TraceBlock[]>();
+  for (const block of blocks) {
+    if (block.role === "tool_result" && block.callId)
+      results.set(block.callId, [...(results.get(block.callId) ?? []), block]);
+  }
+  return blocks.flatMap((block) => {
+    if (block.uiText === undefined) return [];
+    const matches = block.callId ? results.get(block.callId) : undefined;
+    const result = matches?.length === 1 ? matches[0] : undefined;
+    const suffix =
+      block.role === "tool_call" && result
+        ? ` → ${result.isError ? "error" : "result"} ${tracePointer(result)}`
+        : "";
+    return [{ ...block, uiText: sanitize(block.uiText) + suffix }];
+  });
+}
+
+/** Bounded chronological UI. Reserve user space before selecting newest work. */
+export function renderTrace(
+  blocks: readonly TraceBlock[],
+  budgetChars: number,
+): string {
+  const ui = uiTrace(blocks);
+  if (!ui.length)
+    return "(no earlier dialogue)".slice(0, Math.max(0, budgetChars));
+  const render = (block: TraceBlock, text: string) =>
+    `[entry ${block.entryId}; ${block.role}; source ${tracePointer(block)}]\n${text}`;
+  const complete = ui.map((block) => render(block, block.uiText!));
+  if (
+    complete.reduce((length, row) => length + row.length + 2, -2) <= budgetChars
+  )
+    return complete.join("\n\n");
+
+  const gap = (first: number, last: number) =>
+    `[…${last - first + 1} UI blocks omitted: ${ui[first].entryId} through ${ui[last].entryId}; recall around/read…]`;
+  // Reserve a gap per retained row so interleaved omissions can never exceed the cap.
+  const gapReserve =
+    90 +
+    2 *
+      ui.reduce((maximum, block) => Math.max(maximum, block.entryId.length), 0);
+  const available = Math.max(0, budgetChars - gapReserve);
+  const users = ui.flatMap((block, index) =>
+    block.role === "user" ? [index] : [],
+  );
+  const userBudget = Math.floor(available * 0.8);
+  const userLimit = Math.max(
+    480,
+    Math.floor(userBudget / Math.max(1, users.length)) - gapReserve,
+  );
+  const selected = new Map<number, string>();
+  let used = 0;
+  const select = (index: number, limit: number, ceiling: number) => {
+    const block = ui[index];
+    const row = render(
+      block,
+      excerpt(block.uiText!, limit, "\n[…excerpt; read source…]\n"),
+    );
+    const cost = row.length + 2 + gapReserve;
+    if (used + cost > ceiling) return;
+    selected.set(index, row);
+    used += cost;
+  };
+  // Oldest intent and newest corrections survive even when user evidence alone overflows.
+  if (users.length) select(users[0], userLimit, userBudget);
+  for (const index of users.slice(1).reverse())
+    select(index, userLimit, userBudget);
+  for (let index = ui.length - 1; index >= 0; index--)
+    if (ui[index].role !== "user") select(index, 800, available);
+
+  const output: string[] = [];
+  let missing = -1;
+  for (let index = 0; index < ui.length; index++) {
+    const row = selected.get(index);
+    if (!row) {
+      if (missing < 0) missing = index;
+      continue;
+    }
+    if (missing >= 0) {
+      output.push(gap(missing, index - 1));
+      missing = -1;
+    }
+    output.push(row);
+  }
+  if (missing >= 0) output.push(gap(missing, ui.length - 1));
+  return output.join("\n\n");
+}
+
+function toolResultKey(message: ContextMessage): string | undefined {
+  return message.role === "toolResult"
+    ? JSON.stringify([message.timestamp, message.toolCallId, message.toolName])
+    : undefined;
+}
+
+/** Mask only old, exact source results, without mutating persisted or edited context. */
 export function maskConsumedToolResults(
   messages: readonly ContextMessage[],
   contextEntries: readonly SessionEntry[],
 ): ContextMessage[] {
-  let latestAssistantIndex = -1;
-  const sourcesByKey = new Map<string, { entryId: string; index: number }[]>();
-  contextEntries.forEach((entry, index) => {
-    if (entry.type !== "message") return;
-    if (entry.message.role === "assistant") latestAssistantIndex = index;
+  let protectedStart = messages.length;
+  let tokens = 0;
+  let assistants = 0;
+  while (
+    protectedStart > 0 &&
+    (tokens < PROTECTED_RECENT_TOKENS || assistants < PROTECTED_ASSISTANT_TURNS)
+  ) {
+    const message = messages[--protectedStart];
+    tokens += estimateTokens(message);
+    if (message.role === "assistant") assistants++;
+  }
+  const sources = new Map<string, SessionEntry[]>();
+  for (const entry of contextEntries) {
+    if (entry.type !== "message") continue;
     const key = toolResultKey(entry.message);
-    if (!key) return;
-    const sources = sourcesByKey.get(key) ?? [];
-    sources.push({ entryId: entry.id, index });
-    sourcesByKey.set(key, sources);
-  });
-
-  const occurrences = new Map<string, number>();
-  const projected = messages.map((message) => {
-    const key = toolResultKey(message);
-    if (!key || message.role !== "toolResult") return message;
-    const occurrence = occurrences.get(key) ?? 0;
-    occurrences.set(key, occurrence + 1);
-    const source = sourcesByKey.get(key)?.[occurrence];
-    if (!source || source.index >= latestAssistantIndex) return message;
-    const text = contentText(message.content, true);
-    if (text.length <= LARGE_TOOL_RESULT_CHARS) return message;
+    if (key) sources.set(key, [...(sources.get(key) ?? []), entry]);
+  }
+  return messages.map((message, index) => {
+    if (
+      index >= protectedStart ||
+      message.role !== "toolResult" ||
+      isRecallTool(message.toolName)
+    )
+      return message;
+    const matches = sources.get(toolResultKey(message)!);
+    if (matches?.length !== 1) return message;
+    const source = matches[0];
+    if (
+      source.type !== "message" ||
+      source.message.role !== "toolResult" ||
+      JSON.stringify(source.message.content) !== JSON.stringify(message.content)
+    )
+      return message;
+    if (contentText(message.content).length <= LARGE_TOOL_RESULT_CHARS)
+      return message;
     return {
       ...message,
       content: [
         {
           type: "text" as const,
-          text:
-            `[Consumed ${message.toolName} output omitted from active context. ` +
-            `Read original: recall({"action":"read","target":"${source.entryId}","offset":0,"scope":"lineage"})]`,
+          text: `[Older ${message.toolName} output omitted from active context. Read original: recall(${JSON.stringify({ action: "read", target: source.id, offset: 0, scope: "lineage" })})]`,
         },
       ],
     };
   });
-  return projected;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
