@@ -28,12 +28,23 @@ Build predictable embedded software with clear state ownership and visible execu
 - Preserve numeric precision, lengths, and null/empty distinctions at serialization boundaries. Check the target representation rather than assuming host behavior.
 - Measure resource-sensitive changes on equivalent target builds. Use map/size reports, stack headroom, and heap behavior under representative load; successful compilation does not establish runtime headroom.
 
-## Embedded C++
+## Embedded C++ subset
 
-- Prefer straightforward functions, structs, enums, and explicit control flow in application code. Preserve local C-style conventions without rewriting upstream SDK idioms into C.
-- Use RAII, `std::unique_ptr`, const correctness, and simple value types when they make ownership and invariants safer. Control copying and match allocation/release APIs; cleanup must occur in the required execution context.
-- Avoid deep inheritance, elaborate templates, shared ownership, and type-erased callbacks without a concrete benefit. Make consequential types, captures, allocation, and lifetime costs apparent without requiring an LSP.
-- Choose features by clarity and cost, not by language age. Do not assume an SDK resource wrapper has standard-library ownership or move semantics; inspect its contract before changing replacement or cleanup.
+Apply this conservative subset to application code; preserve vendor/generated SDK conventions and required interfaces rather than rewriting them into C.
+
+- Prefer explicit types, functions, structs, scoped enums, `constexpr` constants, and straightforward control flow. Use small classes only when they own resources or enforce a real invariant.
+- Allow deterministic RAII, `std::unique_ptr`, references, const correctness, and simple value types. Make copying intentional and match allocation/release APIs; destructors must run in a valid cleanup context. Inspect SDK wrappers rather than assuming standard ownership or move semantics.
+- Use bounded containers and established SDK types when their cost and failure contract fit. Avoid unbounded growth and implicit allocation in latency-sensitive paths. Spell consequential types explicitly; reserve `auto` for cases where the type is locally obvious or unwieldy SDK iterator syntax would obscure the operation.
+- Keep lambdas short with explicit captures and a visible lifetime. Do not use capture-all callbacks for queued or asynchronous work.
+- Keep deep inheritance, custom template frameworks/metaprogramming, overloaded operators, shared ownership, and type-erased callbacks outside the default subset. An exception needs a concrete SDK requirement or measurable benefit, with allocation, dispatch, and lifetime costs explained.
+- Do not introduce exceptions or RTTI into a build that disables them. Follow the project's configured error conventions and inspect the target/toolchain before relying on a library feature.
+
+## Macros, namespaces, and local readability
+
+- Prefer a function, `constexpr`, or scoped enum over a new application macro when it can express the same contract. Preserve SDK macros that implement logging, configuration, error propagation, or placement requirements.
+- Document non-obvious macro behavior near its definition or first consequential use: repeated argument evaluation, hidden return/goto, cleanup requirements, context restrictions, or target placement. Do not add comments that merely expand obvious names.
+- Keep namespace nesting shallow and avoid `using namespace` in headers. Close nontrivial namespace blocks with `}  // namespace name`, including `}  // namespace` for an anonymous namespace. Explain a namespace's responsibility only when its name and contents do not make it evident.
+- Keep preprocessor branches readable; label distant or nested `#endif` lines with the relevant condition. Comments should expose rationale and hidden control flow, not narrate each statement.
 
 ## SDK guidance and validation
 

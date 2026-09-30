@@ -6,30 +6,16 @@ urls:
 
 # Orchestration
 
-## Goals
+Keep complex sequencing readable while separating genuinely distinct capabilities.
 
-- Keep complex flows readable and testable.
-- Separate sequencing from implementation details.
+- Give each use case an identifiable entry point: a package function or method according to local style. Related use cases can have separate entry points; do not force unrelated flows through one executor.
+- Keep dependencies and lifecycle wiring discoverable, including background-worker startup, cancellation, and shutdown coordination.
+- Let orchestration own order, branching, and propagation of errors. Extract details when they name a durable responsibility, hide a separate mechanism, or support reuse or independent testing—not simply to shorten a function.
+- Keep implementation helpers unexported unless callers need a stable contract.
+- Add stage-intent comments where ordering or rationale is not evident from the calls. Do not annotate every obvious step.
+- Split packages along real domain seams when that reduces coupling, not by file size.
+- Convert errors to HTTP/gRPC responses at transport boundaries; do not teach core capabilities about wire status codes.
 
-## Guidance
+## Review
 
-- For a complex flow, expose one obvious executor entry point.
-- Use either a package-level function (`Run`/`Execute`) or an object method, based on package style.
-- Keep constructor-time wiring in one place (dependencies, background loops, shutdown callbacks).
-- In orchestration flows, add one short comment line for each stage to state intent and improve scanability.
-- Keep all helper methods unexported and focused on one operation each.
-- Keep orchestration thin: handle order, branching, and error mapping only.
-- Keep capability methods single-purpose and testable.
-- When a package mixes distinct responsibilities, split along domain seams rather than by file size.
-- Convert errors at HTTP/GRPC boundaries, not in core logic.
-
-## Review Bullets
-
-- Is there exactly one obvious entry point for this flow?
-- Are helper operations small enough to test independently?
-- Is constructor-time wiring explicit for background workers and shutdown paths?
-- Does each orchestration stage include a short intent comment?
-- Does the executor only coordinate, instead of doing all details itself?
-- Can you read the primary `Run`/`Execute` flow top-to-bottom as a story?
-- Is every package boundary justified by a distinct responsibility, not file size?
-- Is error conversion happening at request boundaries only?
+Can a reader follow the primary flow and its failure paths? Are extracted capabilities coherent rather than one-use wrappers? Are worker lifecycle and cleanup visible? Does each added boundary reduce more complexity than it creates?

@@ -1,39 +1,16 @@
 ---
 name: fast-rust
-description: Practical guidance for writing, refactoring, and reviewing fast, reliable, and maintainable Rust code.
+description: Write and review Rust APIs and error boundaries, diagnose build costs, and tune compilation or runtime performance with measurements.
+metadata:
+  source: "https://github.com/PsiACE/skills"
+  commit: "2265aed05caf199426a8062461e2c9901be996d8"
+  adaptation: "Task-specific reference routing; general engineering policy remains in AGENTS.md."
 ---
 
-# fast-rust
+# Fast Rust
 
-Concise guidance for high-quality Rust engineering, balancing correctness, maintainability, and performance.
+Follow the repository's toolchain, MSRV, and established ownership conventions. Keep error semantics and resource lifetimes visible; optimize measured costs rather than assuming a particular build profile or dispatch technique is faster.
 
-## Purpose and Triggers
-
-- Writing new code, refactoring, reviewing, or designing public APIs/CLIs.
-- Rust or files with `.rs`.
-- Prefer clear boundaries, error semantics, and evolvability.
-
-## Decision Order
-
-1. Correctness and clear boundaries
-2. Readability and maintainability
-3. Extensibility and evolution cost
-4. Performance and optimization
-
-## Workflow
-
-1. Locate the relevant topic below.
-2. Apply the guidance and examples.
-3. Read the reference if you need more detail.
-
-## Topics
-
-| Topic | Guidance | Reference |
-| --- | --- | --- |
-| Error Design | Design error boundaries and semantics before propagation | [references/error-design.md](references/error-design.md) |
-| Compilation | Optimize build time and release performance with measured changes | [references/compilation-optimization.md](references/compilation-optimization.md) |
-| Type Exercise | Type-level exercise for expression engines and dispatch | [references/type-exercise.md](references/type-exercise.md) |
-
-## References
-
-- Each topic file lists source URLs in frontmatter `urls`.
+- When designing error types, propagation, or API boundaries, read [Error design](references/error-design.md).
+- When diagnosing build time, release profiles, binary size, or measured performance, read [Compilation optimization](references/compilation-optimization.md). Compare equivalent workloads and preserve debugging and deployment requirements.
+- When explicitly exploring expression engines or type-level versus dynamic dispatch, read [Type exercise](references/type-exercise.md). It is a specialized exercise, not a default architecture for ordinary Rust code.

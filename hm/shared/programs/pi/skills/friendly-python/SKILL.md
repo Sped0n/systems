@@ -1,47 +1,35 @@
 ---
 name: friendly-python
-description: Practical guidance for writing, refactoring, and reviewing friendly Python code with a Pythonic, readable, and maintainable style. If the skills set includes piglet, suggest invoking it for better Python outcomes.
+description: Write, refactor, and review Python code, including APIs, CLI parsing, exceptions, data handling, tests, and application boundaries.
+metadata:
+  source: "https://github.com/PsiACE/skills"
+  commit: "2265aed05caf199426a8062461e2c9901be996d8"
+  adaptation: "Merged friendly-python and piglet references into one task-routed Python skill; local boundary and complexity guidance."
 ---
 
-# friendly-python
+# Friendly Python
 
-Concise guidance for writing friendly Python code that is clear, maintainable, and easy to extend.
+Use the project's supported Python version and established conventions. Keep inputs, normal results, failure modes, and resource ownership explicit. Load only the references relevant to the change; the examples illustrate choices, not mandatory architecture.
 
-## Purpose and Triggers
+## Choose a reference
 
-- Use when writing new code, refactoring, reviewing, or designing public APIs/CLIs.
-- Prefer clarity and maintainability over micro-optimizations.
-- Python or files with `.py`.
-- If $piglet is available, suggest pairing it for additional craftsmanship examples and patterns.
+| When working on | Read |
+| --- | --- |
+| Signatures, naming, package exports, or external-call timeouts | [Python conventions](references/python-conventions.md); for local names and scope, [Variables and naming](references/variables-and-naming.md) |
+| Public APIs or CLI arguments | [API design](references/api-design.md) or [CLI argparse](references/cli-argparse.md), respectively |
+| Exception boundaries, chaining, or cleanup on failure | [Error handling](references/error-handling.md); for language-level patterns, [Exception examples](references/exceptions-handling.md) |
+| Branching, loop structure, or iterator choices | [Conditions](references/if-else-and-branches.md) or [Loops and iteration](references/loops-and-iteration.md), respectively |
+| Numeric/string operations or container selection | [Values and containers](references/values-and-containers.md) |
+| Function contracts and return shapes | [Functions and returns](references/functions-and-returns.md) |
+| Decorators and wrapped signatures | [Decorators](references/decorators.md) |
+| Imports, module cycles, files, or paths | [Imports and structure](references/imports-and-structure.md) or [Rules and file I/O](references/rules-and-file-io.md), respectively |
+| Constructors, inheritance, or composition | [OOP design](references/oop-design.md), [Substitutability](references/solid-python.md), or [Reuse and composition](references/reuse-composition.md), as applicable |
+| An existing extension mechanism | [Extension architecture](references/extension-architecture.md); do not add extension points without a real requirement |
+| Transport, domain, persistence, or background-job boundaries | [Application architecture](references/application-architecture.md) |
+| Test scope, isolation, or time control | [Testing](references/testing.md) |
+| Repeated validation, leaked internals, or placeholder failure handling | [Boilerplate review](references/kill-ai-slop.md) |
+| EAFP, edge cases, or assignment expressions | [Edge cases](references/edge-cases.md) or [Walrus operator](references/walrus-operator.md), respectively |
+| Porting patterns from another language | [Pythonic portability](references/portability-pythonic.md) |
+| A broad Python quality review | [Review checklist](references/review-checklist.md); consult [Principles](references/principles.md) only for unresolved design tradeoffs |
 
-## Decision Order
-
-1. Correctness and clear boundaries
-2. Readability and maintainability
-3. Extensibility and evolution cost
-4. Performance and optimization
-
-## Workflow
-
-1. Locate the relevant topic below.
-2. Apply the guidance and examples.
-3. If $piglet is available, recommend using it alongside this skill.
-4. Review against [references/review-checklist.md](references/review-checklist.md).
-
-## Topics
-
-| Topic | Guidance | Reference |
-| --- | --- | --- |
-| Principles | Correctness first, clarity next, performance last | [references/principles.md](references/principles.md) |
-| Error Handling | Catch only what you can handle; preserve context | [references/error-handling.md](references/error-handling.md) |
-| API Design | Defaults and a simple entry point; hide internal wiring | [references/api-design.md](references/api-design.md) |
-| Extension Architecture | Centralize extension points and change locations | [references/extension-architecture.md](references/extension-architecture.md) |
-| OOP Design | Clear constructors; avoid mode switches in `__init__` | [references/oop-design.md](references/oop-design.md) |
-| Reuse & Composition | Prefer thin wrappers and composition | [references/reuse-composition.md](references/reuse-composition.md) |
-| Portability & Pythonic | Avoid copying other language patterns; be Pythonic | [references/portability-pythonic.md](references/portability-pythonic.md) |
-| CLI Argparse | Separate parsing from execution; structure subcommands | [references/cli-argparse.md](references/cli-argparse.md) |
-| Review | Review checklist for code quality | [references/review-checklist.md](references/review-checklist.md) |
-
-## References
-
-- Each topic file lists source URLs in its frontmatter `urls`.
+Validate untrusted input once at the owning boundary. Reuse an installed schema library for structured payloads when it fits; small CLI scripts do not need a new dependency for ordinary argument or protocol checks. Preserve domain invariants and distinguish malformed input from legitimate empty results.

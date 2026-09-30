@@ -5,39 +5,33 @@ urls:
 
 # Modular Go Review Checklist
 
-Use this checklist for a fast architecture sanity check before merge.
+Apply these questions to the affected behavior, not as a mandate to redesign unrelated code.
 
 ## API and Boundaries
 
-- Is package responsibility explainable in one sentence?
-- Is there one obvious primary entry point?
-- Are exported symbols limited to stable contracts?
-- If a wide interface exists, is it defined at the package entry and are all methods documented?
-- Are helper packages domain-explicit (for example, `sliceutil`) and stateless?
+- Are package responsibilities and supported operations clear?
+- Does each export or interface serve a stable caller contract?
+- Are ownership, concurrency, and error semantics documented where callers need them?
+- Are helpers local unless a concrete shared responsibility justifies extraction?
 
 ## State and Lifecycle
 
-- Can core logic be stateless functions instead of mutable objects?
-- If a manager exists (for example, `SessionManager`), are operations exposed by ID?
-- Are shared mutable registries synchronized with explicit, narrow lock scope?
-- Is every shared resource acquisition paired with a deterministic release path?
-- Is shutdown driven by `context.Context` instead of public `Close()` where possible?
+- Can transformations remain stateless?
+- Are mutation ownership and valid transitions explicit?
+- Does synchronization protect shared invariants with clear lock scope?
+- Is acquisition paired with release on failure, cancellation, and shutdown?
+- Does cancellation stop work, and does explicit cleanup release owned resources?
+- Can teardown coordinate all owned goroutines and late work safely?
 
-## Parameters and Construction
+## Construction and Orchestration
 
-- For simple optional parameters, are option functions sufficient and stable for call sites?
-- For complex or coupled parameter sets, is a dedicated `Builder` provided?
+- Is construction explicit without speculative options or builders?
+- Can the use-case sequence and its failure paths be followed directly?
+- Does each helper or package boundary own a distinct responsibility?
+- Do comments explain ordering or rationale rather than restating calls?
 
-## Orchestration and Shutdown
+## Transport Handlers
 
-- Is orchestration thin, with helper methods focused on one capability each?
-- Does each orchestration stage include a short intent comment?
-- Are dependencies, background loops, and shutdown callbacks wired in one constructor path?
-- Is every package boundary justified by a distinct responsibility, not file size?
-
-## Transport Handlers (gRPC/HTTP)
-
-- Do handlers follow unmarshal → delegate → marshal and nothing else?
-- Is business logic delegated to injected domain dependencies, not implemented in handlers?
-- Is error-to-status conversion centralized rather than scattered across handlers?
-- Are domain dependencies injected via constructor, not accessed through globals?
+- Is protocol mapping distinguishable from business behavior?
+- Are dependencies supplied explicitly rather than read from mutable globals?
+- Is error-to-status conversion consistent at the transport boundary?

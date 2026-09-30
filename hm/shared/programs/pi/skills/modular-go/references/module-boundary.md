@@ -6,44 +6,25 @@ urls:
 
 # Module Boundary
 
-## Goals
-
-- Keep each package easy to explain in one sentence.
-- Minimize change impact by shrinking the public surface.
+Keep package responsibilities and exported contracts understandable without adding boundaries for their own sake.
 
 ## Guidance
 
-- Expose one obvious primary entry point (exported type, interface, or function).
-- Keep non-entry helpers and assembly details unexported.
-- Export additional symbols only as stable domain contracts.
-- Prefer deep modules with narrow APIs over wide public surfaces.
-- Keep interfaces behavior-focused; hide concrete infrastructure behind constructors and internal wiring.
-- For wide interfaces, define them at the package entry surface (for example, `api.go`) and comment every method with behavior and caller expectations.
-- Extract reusable pure helpers into domain-named `xxxutil` packages; avoid generic names like `common`.
-- Keep `xxxutil` stateless.
-- Use a dedicated `Builder` when parameters are complex or need cross-field validation.
-- One package = one domain responsibility. Split monolithic packages along domain seams.
-- Inline adapters when they have a single consumer; indirection should earn its keep.
+- Expose the cohesive operations callers need. Keep helpers and assembly details unexported; several related entry points can form one clear API.
+- Prefer small, behavior-focused interfaces at the consumer that needs them. Keep concrete types when no substitution boundary is needed; do not hide every implementation behind an interface.
+- Document exported behavior and caller expectations, especially ownership, concurrency, and failure contracts. A wide adapter interface may be appropriate at an integration boundary, but breadth needs a real consumer.
+- Keep pure helpers local unless actual cross-package reuse justifies extraction. Use names that describe the domain or capability; avoid catch-all `common`, `utils`, or automatically created `xxxutil` packages.
+- Begin construction with a function and explicit parameters or a configuration struct. Use option functions or a builder only when they clarify actual optionality, staged construction, or cross-field validation.
+- Split along responsibility seams when it reduces coupling. A package's size or multiple exported functions alone do not establish a design problem.
+- Inline single-consumer adapters when a separate abstraction adds no useful contract.
 
-## Single Responsibility Examples
+## Responsibility Seams
 
-- **Initialization vs. serving**: Wiring dependencies and starting background loops belongs separate from request handling.
-- **Protocol translation vs. domain logic**: gRPC/HTTP handlers translate wire formats; business decisions live in injected domain services.
-- **State lifecycle vs. business operations**: A manager that tracks resources by ID is distinct from the logic that operates on those resources.
-- **Reusable utility vs. domain package**: Pure, stateless helpers shared across packages belong in a dedicated `xxxutil`; domain-aware logic stays in its owning package.
+- **Initialization vs. serving:** Keep dependency wiring distinguishable from request handling; neither requires its own package automatically.
+- **Protocol vs. domain:** Keep wire-format translation and business decisions separately understandable.
+- **State lifecycle vs. operations:** Give registries and resource ownership a clear owner without imposing an ID-based manager on all callers.
+- **Reusable helper vs. domain package:** Extract only when consumers share a stable responsibility, not merely similar-looking code.
 
-## Deep vs Wide Interfaces
+## Review
 
-- Deep interfaces: few operations, business semantics, stable over time.
-- Wide interfaces: many operations, adapter semantics, integration detail exposure.
-- Keep deep interfaces in core packages and wide interfaces at boundaries.
-
-## Review Bullets
-
-- Can a new reader identify package responsibility in one sentence?
-- Is there one obvious primary entry point?
-- Is every additional exported symbol a stable contract?
-- If a wide interface exists, is it defined at the package entry surface and does every method have a behavior comment?
-- Are helper packages domain-explicit (for example, `sliceutil`) instead of generic names like `common`?
-- If an `xxxutil` package exists, is it stateless?
-- If parameters are complex or coupled, would a `Builder` make construction clearer and safer?
+Can callers identify the supported operations and their contracts? Does each export, interface, constructor option, and package boundary serve a concrete need? Are helper names specific enough to reveal what they own?

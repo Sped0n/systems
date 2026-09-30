@@ -5,8 +5,7 @@ disable-model-invocation: true
 metadata:
   source: "https://github.com/cursor/plugins"
   commit: "e8d856f0273b42ebafe0ec3546bd645709e7c1b0"
-  adaptation: "Local router and code evaluation guidance; upstream prose body preserved without discovery frontmatter."
-  evaluation_source: "https://earendil.com/posts/measuring-code-sloppiness/"
+  adaptation: "Local router and Lizard code measurement guidance; upstream prose body preserved without discovery frontmatter."
 ---
 
 # Unslop
@@ -27,4 +26,4 @@ Remove unnecessary language or implementation complexity within the requested sc
 4. Validate meaning for prose and observable behavior for code. Compare the same deterministic code measurements before and after where supported; inspect the diff for costs those metrics miss.
 5. Report the substantive changes, validation, and material tradeoffs. Stop when the requested scope is clean, not when every metric or stylistic preference is optimized.
 
-The prose reference preserves the body of Cursor's `pstack/skills/unslop/SKILL.md` at the revision recorded above. The code workflow is a local SlopCodeBench-style adaptation of the Earendil article's formulas, not the official benchmark or its calibrated evaluator.
+The prose reference preserves the body of Cursor's `pstack/skills/unslop/SKILL.md` at the revision recorded above. Code measurements use Lizard; they do not measure prose quality, redundancy-based verbosity, or structural erosion.

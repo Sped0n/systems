@@ -1,4 +1,4 @@
 interface:
   display_name: "Friendly Python"
   short_description: "Pythonic, readable, maintainable coding guidance"
-  default_prompt: "Use $friendly-python to write and review clean, maintainable Python code; if $piglet is available, recommend using it together."
+  default_prompt: "Use $friendly-python and its task-specific references to write and review Python code with explicit contracts and readable control flow."

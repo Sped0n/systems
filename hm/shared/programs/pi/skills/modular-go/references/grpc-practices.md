@@ -13,15 +13,16 @@ urls:
 
 ## Guidance
 
-- GRPC service impls are translators: unmarshal request, call domain service, marshal response.
-- Keep all business decisions in injected `XXXManager` or domain `XXXHandler` dependencies, not in the GRPC service.go itself.
+- gRPC service implementations translate protocol requests into domain operations and map their results back to responses.
+- Keep business decisions in explicitly supplied domain functions or objects; do not introduce a manager or handler type solely to delegate a call.
 - Convert domain errors to gRPC status codes at the handler boundary in one centralized place.
 - Use `context.Context` from the incoming RPC for cancellation and deadline propagation; do not create detached contexts.
-- When handlers accumulate enough complexity, extract them into a dedicated package alongside the server definition.
-- Let server initialization & GRPC service impl to be different packages: server package focus on dependency injection & initialization, service package focus on request / response translation.
-- Register services through a constructor that accepts domain dependencies explicitly; avoid global state or init-time registration.
+- Keep server initialization and request handling separately understandable. Split packages only when distinct responsibilities or consumers justify that boundary.
+- Register services with explicit domain dependencies; avoid global state or init-time registration.
 
 ## Structuring a gRPC Package
+
+One possible layout, when it fits the project's existing structure:
 
 - `server.go`: Server constructor, listener setup, graceful shutdown.
 - `service.go`: Handler methods implementing the generated interface.

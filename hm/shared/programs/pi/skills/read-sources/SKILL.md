@@ -7,8 +7,8 @@ description: >-
 
 Choose the tool by task:
 
-- Search or read web pages: use `web.mjs` (Jina).
-- Convert local files or document URLs to Markdown: use `to-markdown.mjs`
+- Search or read web pages: use `web.py` (Jina).
+- Convert local files or document URLs to Markdown: use `to-markdown.py`
   (MarkItDown).
 
 Resolve script paths relative to this skill directory. Neither script invokes
@@ -17,11 +17,11 @@ a model; synthesize results in the current session.
 ## Search and read web pages
 
 ```bash
-node web.mjs search "OpenSCAD documentation" \
+python3 web.py search "OpenSCAD documentation" \
   --purpose "find authoritative API references"
-node web.mjs read https://openscad.org/documentation.html
-node web.mjs search "Nix flakes" --read --limit 3
-node web.mjs search "Nix flakes" --read --out ./nix-research.md
+python3 web.py read https://openscad.org/documentation.html
+python3 web.py search "Nix flakes" --read --limit 3
+python3 web.py search "Nix flakes" --read --out ./nix-research.md
 ```
 
 `search` returns Jina Search results with source URLs. `read` returns Jina
@@ -38,7 +38,7 @@ portions.
 ## Convert documents
 
 ```bash
-node to-markdown.mjs <url-or-path> [--out <file>|--tmp]
+python3 to-markdown.py <url-or-path> [--out <file>|--tmp]
 ```
 
 Conversion uses `uvx --from 'markitdown[pdf]' markitdown` for PDFs, Office
