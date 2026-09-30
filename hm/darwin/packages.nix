@@ -5,7 +5,7 @@
       bfg-repo-cleaner
       cdecl
       docker
-      minicom
+      tio
 
       ffmpeg
       imagemagick

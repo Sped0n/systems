@@ -4,7 +4,7 @@
     (with pkgs; [
       bfg-repo-cleaner
       cdecl
-      minicom
+      tio
 
       ffmpeg
       imagemagick
