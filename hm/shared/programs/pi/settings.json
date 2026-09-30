@@ -5,5 +5,7 @@
   "defaultProjectTrust": "ask",
   "fullscreenExitOutput": "resume-hint",
   "treeFilterMode": "user-only",
-  "theme": "kanagawa-dragon"
+  "steeringMode": "all",
+  "followUpMode": "all",
+  "theme": "system"
 }

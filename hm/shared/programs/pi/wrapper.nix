@@ -19,16 +19,7 @@ let
         derivationArgs.dontNpmRebuild = true;
       }
     }/node_modules"
-    export PATH="$PATH:${
-      lib.makeBinPath (
-        with pkgs;
-        [
-          nodejs
-          uv
-          python3
-        ]
-      )
-    }"
+    export PATH="$PATH:${lib.makeBinPath [ pkgs.python3 ]}"
   '';
 in
 [

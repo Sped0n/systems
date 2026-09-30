@@ -21,6 +21,8 @@ in
   options.programs.my-pi.enable = mkEnableOption "Pi coding agent";
 
   config = mkIf config.programs.my-pi.enable {
+    programs.uv.enable = true;
+
     age.secrets = {
       "circe-api-key" = {
         file = "${secrets}/ages/circe-api-key.age";
@@ -61,7 +63,6 @@ in
       (mkSymlink "interceptor.json")
       (mkSymlink "extensions")
       (mkSymlink "skills")
-      (mkSymlink "themes")
     ];
   };
 }

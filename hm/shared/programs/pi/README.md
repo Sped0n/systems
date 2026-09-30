@@ -1,7 +1,6 @@
 # Pi Configuration
 
-Home Manager configuration for Pi Coding Agent. Enable it with
-`programs.my-pi.enable`.
+Home Manager configuration for Pi Coding Agent.
 
 ## Structure
 
@@ -40,10 +39,6 @@ tests beside the extension as `test.ts`.
 Skills with an upstream source record its repository and pinned revision in
 `metadata.source` and `metadata.commit`. Preserve upstream frontmatter and body
 content when refreshing; provenance metadata should normally be the only diff.
-`write-discoverable-code` is an intentional Tiger Style fork and records both
-upstream revisions. `unslop` is a local adaptation: its prose reference preserves
-the upstream body without discovery frontmatter, while its entry point and code
-evaluation guidance are maintained locally.
 
 ## Testing
 
@@ -70,15 +65,3 @@ resulting exact versions into the root development manifest with:
 ```bash
 pnpm run update:runtime-deps
 ```
-
-A test rejects version drift between the two manifests.
-
-Run the Home Manager evaluations from the repository root:
-
-```bash
-nix eval --raw 'path:.#homeConfigurations."esp-0".activationPackage.drvPath'
-nix eval --raw 'path:.#darwinConfigurations."wks-0".system.drvPath'
-```
-
-Use the `path:` form while new files are untracked; normal Git-flake evaluation
-only sees files present in the Git index.
