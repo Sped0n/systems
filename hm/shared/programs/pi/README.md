@@ -9,10 +9,9 @@ pi/
 ├── default.nix         # Home Manager module, secret wiring, and mapped configuration
 ├── wrapper.nix         # Pi executable wrappers and isolated runtime dependencies
 ├── AGENTS.md           # Minimal coding and papercut guidance
-├── settings.json       # Non-model Pi global settings
+├── settings.json       # Pi global settings and default model
 ├── keybindings.json    # TUI keybindings
 ├── models.json         # Circe providers and model catalog
-├── tiers.json          # Named model selection
 ├── interceptor.json    # Ordered global file and Bash interception rules
 ├── extensions/         # Auto-discovered TypeScript extensions
 ├── skills/             # Auto-discovered Agent Skills
@@ -27,10 +26,9 @@ pi/
 └── tsconfig.json       # Extension typechecking
 ```
 
-Four JSON configuration files, `AGENTS.md`, and all resource directories are
-mapped with out-of-store symlinks. Home Manager generates `settings.json`,
-deriving Pi's primary defaults from the default tier; changing that tier
-requires a Home Manager rebuild.
+Three JSON configuration files, `AGENTS.md`, extensions, and skills are mapped
+with out-of-store symlinks. Home Manager generates `settings.json` from the
+checked-in settings; changing it requires a Home Manager rebuild.
 
 Every extension lives under `extensions/<name>/`, with `index.ts` as its entry
 point and a `README.md` describing its interface and behavior. Keep focused
@@ -59,9 +57,10 @@ pnpm run check
 The root pnpm development manifest and minimal npm runtime manifest intentionally
 remain separate so Nix does not fetch the full development graph for deployed
 extensions. `runtime/package.json` and `runtime/package-lock.json` own the
-runtime dependency set. Update it to the latest versions and synchronize the
-resulting exact versions into the root development manifest with:
+runtime dependency set. After updating the Nix Pi pin or runtime dependencies,
+synchronize the development dependencies and lockfiles without upgrading to
+latest versions:
 
 ```bash
-pnpm run update:runtime-deps
+pnpm run sync
 ```

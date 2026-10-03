@@ -4,14 +4,15 @@ Pi starts an owner-only local control server for persistent TUI and RPC
 sessions. Print, JSON, and `--autistic-mode` sessions do not participate. The
 server adds no model tools or system-prompt instructions.
 
-`pi-control` is a small asynchronous text bridge for Pi sessions, shells, and
-editors:
+`pcontrol` is a small asynchronous text bridge for Pi sessions, shells, and
+editors. `programs.my-pi.pcontrol.enable` defaults to `true`; disabling it removes
+the command and prevents the session-control extension from loading:
 
 ```text
-pi-control list [--cwd PATH] [--json]
-pi-control send TARGET [--message TEXT | --stdin] [--json]
-pi-control paste TARGET [--message TEXT | --stdin] [--json]
-pi-control last TARGET [--json]
+pcontrol list [--cwd PATH] [--json]
+pcontrol send TARGET [--message TEXT | --stdin] [--json]
+pcontrol paste TARGET [--message TEXT | --stdin] [--json]
+pcontrol last TARGET [--json]
 ```
 
 Targets are exact session IDs or unique session names. Duplicate names fail

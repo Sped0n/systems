@@ -50,7 +50,7 @@ export function pasteEditorDraft(
 ): void {
   ui.pasteToEditor(text);
   // pasteToEditor mutates the editor but does not request a render itself.
-  ui.setStatus("pi-control-paste-refresh", undefined);
+  ui.setStatus("pcontrol-paste-refresh", undefined);
 }
 
 function installControlFooter(

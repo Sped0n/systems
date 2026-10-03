@@ -196,7 +196,7 @@ test("external draft paste requests an immediate TUI render", () => {
   );
   assert.deepEqual(calls, [
     "paste:draft context",
-    "status:pi-control-paste-refresh:undefined",
+    "status:pcontrol-paste-refresh:undefined",
   ]);
 });
 
@@ -346,7 +346,7 @@ async function runControlCli(
   return await new Promise<CliResult>((resolve, reject) => {
     const child = spawn(
       process.execPath,
-      ["--import", "tsx", "scripts/pi-control.ts", ...args],
+      ["--import", "tsx", "scripts/pcontrol.ts", ...args],
       {
         cwd: process.cwd(),
         env: {
@@ -375,7 +375,7 @@ test("CLI exposes only asynchronous text bridge commands", async () => {
   await withControlServer(async (_client, session, rootDirectory) => {
     const help = await runControlCli(rootDirectory, ["--help"]);
     assert.equal(help.code, 0);
-    assert.match(help.stdout, /pi-control paste TARGET/u);
+    assert.match(help.stdout, /pcontrol paste TARGET/u);
     assert.doesNotMatch(help.stdout, /watch|wait|summary|abort|clear/u);
 
     const listed = await runControlCli(rootDirectory, ["list", "--json"]);

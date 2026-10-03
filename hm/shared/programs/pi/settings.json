@@ -1,4 +1,7 @@
 {
+  "defaultProvider": "circe-responses",
+  "defaultModel": "gpt-6.1-sol",
+  "defaultThinkingLevel": "medium",
   "tuiMode": "fullscreen",
   "editorPaddingX": 1.5,
   "outputPad": 1,

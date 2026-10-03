@@ -7,8 +7,6 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { matchesKey, type EditorComponent } from "@earendil-works/pi-tui";
 
-import { getModelTier, readModelTiers } from "../tier/model-tiers.ts";
-
 const MAX_CONVERSATION_BYTES = 120_000;
 const MAX_TITLE_LENGTH = 100;
 const TITLE_SYSTEM_PROMPT = [
@@ -90,16 +88,16 @@ export function cleanGeneratedTitle(text: string): string {
     : title;
 }
 
-async function generateSessionTitle(ctx: ExtensionContext): Promise<string> {
+async function generateSessionTitle(
+  pi: ExtensionAPI,
+  ctx: ExtensionContext,
+): Promise<string> {
   const conversation = buildConversationText(ctx.sessionManager.getBranch());
   if (!conversation) throw new Error("No conversation text found");
 
-  const tier = getModelTier(await readModelTiers(), "economy");
-  const model = ctx.modelRegistry.find(tier.provider, tier.model);
-  if (!model)
-    throw new Error(
-      `Session naming model not found: ${tier.provider}/${tier.model}`,
-    );
+  const model = ctx.model;
+  if (!model) throw new Error("No model selected for session naming");
+  const thinkingLevel = pi.getThinkingLevel();
   const auth = await ctx.modelRegistry.getApiKeyAndHeaders(model);
   if (auth.ok === false) throw new Error(auth.error);
 
@@ -113,16 +111,14 @@ async function generateSessionTitle(ctx: ExtensionContext): Promise<string> {
     ],
     timestamp: Date.now(),
   };
-  const request = tier.thinkingLevel === "off" ? complete : completeSimple;
+  const request = thinkingLevel === "off" ? complete : completeSimple;
   const response = await request(
     model,
     { systemPrompt: TITLE_SYSTEM_PROMPT, messages: [message] },
     {
       apiKey: auth.apiKey,
       headers: auth.headers,
-      ...(tier.thinkingLevel === "off"
-        ? {}
-        : { reasoning: tier.thinkingLevel }),
+      ...(thinkingLevel === "off" ? {} : { reasoning: thinkingLevel }),
     },
   );
   if (response.stopReason === "error" || response.stopReason === "aborted") {
@@ -209,7 +205,7 @@ async function nameSession(
   }
   ctx.ui.notify("Generating session name...", "info");
   try {
-    const generatedName = await generateSessionTitle(ctx);
+    const generatedName = await generateSessionTitle(pi, ctx);
     pi.setSessionName(generatedName);
     ctx.ui.notify(
       `Session named: ${pi.getSessionName() ?? generatedName}`,

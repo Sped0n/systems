@@ -24,7 +24,7 @@ import {
   SettingsManager,
   sessionEntryToContextMessages,
   type ExtensionAPI,
-  type ExtensionContext,
+  type ExtensionToolContext,
   type SessionBeforeCompactEvent,
   type ToolDefinition,
 } from "@earendil-works/pi-coding-agent";
@@ -134,7 +134,9 @@ function recallHarness(manager = SessionManager.inMemory()) {
       sent.push(args);
     },
   } as unknown as ExtensionAPI);
-  const context = { sessionManager: manager } as unknown as ExtensionContext;
+  const context = {
+    sessionManager: manager,
+  } as unknown as ExtensionToolContext;
   return {
     manager,
     sent,

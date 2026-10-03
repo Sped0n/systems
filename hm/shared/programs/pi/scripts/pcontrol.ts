@@ -25,10 +25,10 @@ const EXIT_PROTOCOL = 5;
 const EXIT_TIMEOUT = 124;
 
 const HELP = `Usage:
-  pi-control list [--cwd PATH] [--json]
-  pi-control send TARGET [--message TEXT | --stdin] [--json]
-  pi-control paste TARGET [--message TEXT | --stdin] [--json]
-  pi-control last TARGET [--json]
+  pcontrol list [--cwd PATH] [--json]
+  pcontrol send TARGET [--message TEXT | --stdin] [--json]
+  pcontrol paste TARGET [--message TEXT | --stdin] [--json]
+  pcontrol last TARGET [--json]
 `;
 
 class UsageError extends Error {}
@@ -54,7 +54,7 @@ function parseCommandLine() {
         `${JSON.stringify({ success: false, error: { code: "usage", message } })}\n`,
       );
     } else {
-      process.stderr.write(`pi-control: ${message}\n`);
+      process.stderr.write(`pcontrol: ${message}\n`);
     }
     process.exit(EXIT_USAGE);
   }
@@ -181,7 +181,7 @@ async function run(): Promise<void> {
   switch (command) {
     case "list": {
       assertOptions(["cwd"]);
-      requirePositionals(1, "Usage: pi-control list [--cwd PATH] [--json]");
+      requirePositionals(1, "Usage: pcontrol list [--cwd PATH] [--json]");
       const endpoints = await client.list({ cwd: parsed.values.cwd });
       if (json) printJson(endpoints);
       else printEndpoints(endpoints);
@@ -191,7 +191,7 @@ async function run(): Promise<void> {
       assertOptions(["message", "stdin"]);
       const [, target] = requirePositionals(
         2,
-        "Usage: pi-control send TARGET [--message TEXT | --stdin]",
+        "Usage: pcontrol send TARGET [--message TEXT | --stdin]",
       );
       const result = await client.send(target, {
         message: await messageArgument("send"),
@@ -205,7 +205,7 @@ async function run(): Promise<void> {
       assertOptions(["message", "stdin"]);
       const [, target] = requirePositionals(
         2,
-        "Usage: pi-control paste TARGET [--message TEXT | --stdin]",
+        "Usage: pcontrol paste TARGET [--message TEXT | --stdin]",
       );
       const result = await client.paste(target, await messageArgument("paste"));
       if (json) printJson(result);
@@ -216,7 +216,7 @@ async function run(): Promise<void> {
       assertOptions([]);
       const [, target] = requirePositionals(
         2,
-        "Usage: pi-control last TARGET [--json]",
+        "Usage: pcontrol last TARGET [--json]",
       );
       const result = await client.getLastMessage(target);
       if (json) printJson(result);
@@ -265,7 +265,7 @@ try {
       `${JSON.stringify({ success: false, error: { code, message } })}\n`,
     );
   } else {
-    process.stderr.write(`pi-control: ${message}\n`);
+    process.stderr.write(`pcontrol: ${message}\n`);
   }
   process.exitCode = exitFor(error);
 }

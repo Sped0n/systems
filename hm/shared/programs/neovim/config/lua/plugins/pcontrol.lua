@@ -1,5 +1,5 @@
 local function notify(message, level)
-  vim.notify(message, level or vim.log.levels.INFO, { title = "pi-control" })
+  vim.notify(message, level or vim.log.levels.INFO, { title = "pcontrol" })
 end
 
 local function current_target()
@@ -101,12 +101,12 @@ end
 
 local function paste(target, text)
   vim.system(
-    { "pi-control", "paste", target.sessionId, "--stdin", "--json" },
+    { "pcontrol", "paste", target.sessionId, "--stdin", "--json" },
     { stdin = text, text = true },
     function(result)
       vim.schedule(function()
         if result.code ~= 0 then
-          notify(vim.trim(result.stderr or "pi-control paste failed"), vim.log.levels.ERROR)
+          notify(vim.trim(result.stderr or "pcontrol paste failed"), vim.log.levels.ERROR)
           return
         end
         notify("pasted context into " .. (target.sessionName or target.sessionId))
@@ -117,17 +117,17 @@ end
 
 local function select_target(callback)
   vim.system(
-    { "pi-control", "list", "--cwd", vim.fn.getcwd(), "--json" },
+    { "pcontrol", "list", "--cwd", vim.fn.getcwd(), "--json" },
     { text = true },
     function(result)
       vim.schedule(function()
         if result.code ~= 0 then
-          notify(vim.trim(result.stderr or "pi-control list failed"), vim.log.levels.ERROR)
+          notify(vim.trim(result.stderr or "pcontrol list failed"), vim.log.levels.ERROR)
           return
         end
         local ok, sessions = pcall(vim.json.decode, result.stdout)
         if not ok or type(sessions) ~= "table" then
-          notify("invalid pi-control session list", vim.log.levels.ERROR)
+          notify("invalid pcontrol session list", vim.log.levels.ERROR)
           return
         end
         if #sessions == 0 then

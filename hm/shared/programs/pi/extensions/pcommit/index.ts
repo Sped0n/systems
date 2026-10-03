@@ -7,8 +7,6 @@ import {
   appendInterceptorRules,
   GIT_INSPECTION_BASH_POLICY,
 } from "../interceptor/index.ts";
-import { applyModelTier } from "../tier/index.ts";
-import { getModelTier, readModelTiers } from "../tier/model-tiers.ts";
 
 const PCOMMIT_ACTIVITY_CHARACTERS_MAX = 120;
 
@@ -138,8 +136,6 @@ export default function pcommit(pi: ExtensionAPI): void {
         );
       }
 
-      const tiers = await readModelTiers();
-      await applyModelTier(pi, ctx, "economy", getModelTier(tiers, "economy"));
       releaseInspectionRules = appendInterceptorRules(
         GIT_INSPECTION_BASH_POLICY,
         ctx.cwd,

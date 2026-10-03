@@ -1,8 +1,9 @@
 # Pcommit
 
 Implements the `--pcommit` and `--pcommit-hint` flags used by the Home Manager
-`pcommit` wrapper. Pi runs headlessly with `--print --no-session`, switches that
-single session to the `economy` tier, and activates only `read` and `bash`. A
+`pcommit` wrapper. Pi runs headlessly with `--print --no-session` using the
+wrapper's configured provider, model, and thinking level, and activates only
+`read` and `bash`. A
 scoped interceptor policy denies Bash by default and permits `git status`, `git
 diff`, `git log`, `git show`, and `rg --no-config` while rejecting output
 redirection and execution-capable flags.
@@ -18,6 +19,11 @@ git commit --signoff --edit --file <message-file>
 The wrapper prints the generated message to stdout before invoking Git, so it
 remains visible even if a commit hook fails. Git opens the user's normal editor
 before creating the commit. The wrapper removes the temporary file on every exit.
+
+The wrapper and extension are enabled by default with
+`programs.my-pi.pcommit.enable`. Configure `programs.my-pi.pcommit.provider`,
+`model`, and `thinking` to select the generation model; defaults are
+`circe-responses`, `gpt-6.1-sol`, and `low`.
 
 Usage:
 
