@@ -56,9 +56,8 @@ and identify gaps—for example, `/recall What requirements still apply?`.
 The model can also call the tool directly:
 
 - `search`: case-insensitive literal OR matching; five role-tagged snippets.
+- `files`: five recorded native `read`/`write`/`edit` operations, ordered by
+  path then chronology. `target` is a case-insensitive literal path substring;
+  empty lists all operations. `offset` skips operations, not files.
 - `read`: up to 12,000 UTF-16 characters, including complete mutation payloads.
 - `around`: five chronological entry excerpts surrounding an anchor.
-
-Copy returned read and continuation arguments. Scope is `lineage` for the active
-branch or `all` for every branch in this session; all-branch neighborhoods can
-interleave branches. Recall does not inspect other sessions or current files.

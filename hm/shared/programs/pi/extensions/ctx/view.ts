@@ -32,7 +32,9 @@ export interface TraceBlock {
   uiText?: string;
   searchable: boolean;
   callId?: string;
+  toolName?: string;
   isError?: boolean;
+  file?: { path: string; operation: "read" | "write" | "edit" };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -54,7 +56,7 @@ function contentText(content: string | readonly unknown[]): string {
 }
 
 function isRecallTool(name: string): boolean {
-  return name === "recall" || name === "vcc_recall";
+  return name === "recall";
 }
 
 /** Compile original content once; projections never rewrite its coordinates. */
@@ -69,7 +71,10 @@ export function compileTraceEntry(
     role: TraceBlock["role"],
     text: string,
     options: Partial<
-      Pick<TraceBlock, "uiText" | "searchable" | "callId" | "isError">
+      Pick<
+        TraceBlock,
+        "uiText" | "searchable" | "callId" | "toolName" | "isError" | "file"
+      >
     > = {},
   ) => {
     text = sanitize(text);
@@ -132,6 +137,16 @@ export function compileTraceEntry(
           if (part.type === "thinking") add("thinking", part.thinking);
           if (part.type === "toolCall") {
             const args = part.arguments;
+            const path =
+              typeof args?.path === "string" ? args.path : args?.file_path;
+            const file: TraceBlock["file"] =
+              (part.name === "read" ||
+                part.name === "write" ||
+                part.name === "edit") &&
+              typeof path === "string" &&
+              path.length > 0
+                ? { path, operation: part.name }
+                : undefined;
             const subject = [
               "path",
               "file_path",
@@ -148,6 +163,8 @@ export function compileTraceEntry(
               `${part.name} (call ${part.id})\n${JSON.stringify(args)}`,
               {
                 callId: part.id,
+                toolName: part.name,
+                file,
                 searchable: !isRecallTool(part.name),
                 uiText: isRecallTool(part.name)
                   ? undefined
@@ -167,6 +184,7 @@ export function compileTraceEntry(
           `${message.toolName} ${message.isError ? "error" : "result"} (call ${message.toolCallId})\n${contentText(message.content)}`,
           {
             callId: message.toolCallId,
+            toolName: message.toolName,
             isError: message.isError,
             searchable: !isRecallTool(message.toolName),
           },

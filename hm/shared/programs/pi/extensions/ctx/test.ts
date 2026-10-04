@@ -15,8 +15,11 @@ import {
   validateToolArguments,
   type JsonObject,
 } from "@earendil-works/pi-ai";
+import { Type } from "typebox";
+
 import {
   createAgentSession,
+  createCodemodeExtension,
   estimateTokens,
   DefaultResourceLoader,
   ModelRuntime,
@@ -166,6 +169,7 @@ async function runtime(
     empty?: boolean;
     contextWindow?: number;
     manager?: SessionManager;
+    codemode?: "on" | "only";
   } = {},
 ) {
   const faux = fauxProvider({
@@ -188,6 +192,9 @@ async function runtime(
   const settings = SettingsManager.create(directory, directory, {
     projectTrusted: false,
   });
+  if (options.codemode) {
+    settings.applyOverrides({ codemode: { mode: options.codemode } });
+  }
   const manager = options.manager ?? SessionManager.inMemory(directory);
   const oldId = options.empty ? undefined : seed(manager);
   const loader = new DefaultResourceLoader({
@@ -201,6 +208,9 @@ async function runtime(
     agentsFilesOverride: () => ({ agentsFiles: [] }),
     extensionFactories: [
       ctxExtension,
+      ...(options.codemode
+        ? [createCodemodeExtension({ mode: options.codemode, models: false })]
+        : []),
       ...(options.extraFactory ? [options.extraFactory] : []),
     ],
   });
@@ -213,7 +223,9 @@ async function runtime(
     sessionManager: manager,
     settingsManager: settings,
     resourceLoader: loader,
-    tools: ["recall"],
+    tools: options.codemode
+      ? ["recall", "codemode", "nested_probe"]
+      : ["recall"],
   });
   const errors: string[] = [];
   await session.bindExtensions({
@@ -282,7 +294,6 @@ test("brief rebuilds original evidence across checkpoints and respects lineage a
   const directive = user(manager, "Never modify vendor sources.");
   user(manager, "Abandoned branch: vendor modifications permitted.");
   manager.branch(directive);
-  const omitted = user(manager, "Do not reintroduce this canonical omission.");
   const replaced = user(manager, "Old provider wording.");
   const kept = user(manager, "Current work.");
   manager.appendCompaction(
@@ -290,7 +301,6 @@ test("brief rebuilds original evidence across checkpoints and respects lineage a
     kept,
     40000,
   );
-  manager.appendContextEdit(omitted, null);
   manager.appendContextEdit(replaced, {
     content: "Replacement provider wording.",
   });
@@ -307,11 +317,7 @@ test("brief rebuilds original evidence across checkpoints and respects lineage a
   assert.match(brief, /Use an external patch/);
   assert.doesNotMatch(
     brief,
-    /Abandoned branch|Invented checkpoint|Synthetic user mandate|Old provider wording|Do not reintroduce/,
-  );
-  assert.match(
-    recallTraceEntry(manager.getEntry(omitted)!)!.text,
-    /canonical omission/,
+    /Abandoned branch|Invented checkpoint|Synthetic user mandate|Old provider wording/,
   );
 });
 
@@ -432,8 +438,7 @@ test("UI keeps call chronology and source coordinates across canonical replaceme
   manager.appendMessage(
     fauxAssistantMessage("Propose creating planned.ts, but wait for approval."),
   );
-  const hidden = call("write", "hidden.ts", "hidden");
-  manager.appendContextEdit(hidden, null);
+
   const replacement = call("read", "original.ts", "replaced");
   manager.appendContextEdit(replacement, {
     content: [
@@ -462,7 +467,7 @@ test("UI keeps call chronology and source coordinates across canonical replaceme
   assert.ok(brief.includes(`context replacement of ${replacement}`));
   assert.doesNotMatch(
     brief,
-    /original.ts|hidden.ts|Modified:|Created:|permission denied/,
+    /original.ts|Modified:|Created:|permission denied/,
   );
   assert.match(brief, /Propose creating planned.ts, but wait for approval/);
   assert.match(brief, /→ error/);
@@ -590,24 +595,9 @@ test("masking leaves ambiguous and edited results alone", () => {
   assert.deepEqual(maskConsumedToolResults(edited, entries), edited);
 });
 
-test("recall recovers full write/edit payloads, recall echoes and paged original text after compaction", async () => {
+test("recall recovers paged original text and readable but unsearchable recall echoes after compaction", async () => {
   const h = recallHarness();
   const original = user(h.manager, `needle ${"x".repeat(24000)} end-marker`);
-  const mutation = h.manager.appendMessage(
-    fauxAssistantMessage(
-      [
-        fauxToolCall("write", {
-          path: "file.ts",
-          content: "complete-write-payload",
-        }),
-        fauxToolCall("edit", {
-          path: "file.ts",
-          edits: [{ oldText: "exact-old", newText: "exact-new" }],
-        }),
-      ],
-      { stopReason: "toolUse" },
-    ),
-  );
   const echo = toolResult(
     h.manager,
     "recall-echo",
@@ -647,11 +637,17 @@ test("recall recovers full write/edit payloads, recall echoes and paged original
     recovered,
     recallTraceEntry(h.manager.getEntry(original)!)!.text,
   );
-  const read = (target: string) =>
-    h.read({ action: "read", target, offset: 0, scope: "lineage" });
-  assert.match(resultText(await read(mutation)), /complete-write-payload/);
-  assert.match(resultText(await read(mutation)), /exact-old.*exact-new/);
-  assert.match(resultText(await read(echo)), /previous recall evidence/);
+  assert.match(
+    resultText(
+      await h.read({
+        action: "read",
+        target: echo,
+        offset: 0,
+        scope: "lineage",
+      }),
+    ),
+    /previous recall evidence/,
+  );
   assert.match(
     resultText(
       await h.read({
@@ -806,38 +802,326 @@ test("recall neighborhoods reconstruct proposal, acceptance, action and result i
   );
 });
 
-test("recall neighborhoods and search are bounded and pageable, and invalid requests fail explicitly", async () => {
+test("file navigation recovers multi-call payloads and failed results across compaction and system entries", async () => {
   const h = recallHarness();
-  const ids = Array.from({ length: 12 }, (_, i) =>
-    user(h.manager, `match-${i} ${"x".repeat(2000)}`),
+  h.manager.appendMessage({
+    role: "system",
+    content: "",
+    sections: { preamble: "system-loadout-marker" },
+    timestamp: 1,
+  });
+  user(h.manager, "Inspect configuration before editing.");
+  const call = h.manager.appendMessage(
+    fauxAssistantMessage(
+      [
+        {
+          type: "thinking",
+          thinking: "Check the existing configuration first.",
+        },
+        { type: "text", text: "Proposed operations, not proof of completion." },
+        fauxToolCall(
+          "write",
+          {
+            path: "src/config[1].ts",
+            content: `${"padding ".repeat(2000)}complete-write-é`,
+          },
+          { id: "file-write" },
+        ),
+        fauxToolCall(
+          "edit",
+          {
+            file_path: "src/config[1].ts",
+            edits: [{ oldText: "exact-old", newText: "exact-new" }],
+          },
+          { id: "file-edit" },
+        ),
+        fauxToolCall("read", { path: "src/other.ts" }, { id: "file-read" }),
+        fauxToolCall("bash", { command: "echo 'write fabricated.ts'" }),
+        fauxToolCall("custom", { path: "not-indexed.ts" }),
+      ],
+      { stopReason: "toolUse" },
+    ),
   );
+  h.manager.appendMessage({
+    role: "system",
+    content: "",
+    toolsRemoved: [],
+    timestamp: 2,
+  });
+  const written = toolResult(
+    h.manager,
+    "file-write",
+    "write",
+    "Tool reported a completed write.",
+  );
+  const failed = toolResult(
+    h.manager,
+    "file-edit",
+    "edit",
+    "Permission denied; no file changed.",
+    true,
+  );
+  const tail = user(h.manager, "Report the error; do not retry.");
   const params = {
-    action: "around",
-    target: ids[2],
+    action: "files",
+    target: "CONFIG[1].TS",
     offset: 0,
     scope: "lineage",
   };
-  const first = await h.read(params);
-  assert.ok(resultText(first).length < 8000);
-  const second = await h.read((first.details as { next: JsonObject }).next);
-  assert.match(resultText(second), /match-5/);
-  assert.doesNotMatch(resultText(second), /match-4 /);
-  const search = await h.read({ ...params, action: "search", target: "match" });
-  assert.ok(resultText(search).length < 8000);
-  assert.match(resultText(search), /match-11/);
-  await assert.rejects(h.read({ ...params, offset: 1000 }), /offset/);
-  await assert.rejects(
-    h.read({ ...params, action: "read", offset: 100000 }),
-    /offset/,
+  const before = await h.read(params);
+  h.manager.appendCompaction("Prior summary", tail, 40000);
+  const after = await h.read(params);
+  assert.deepEqual(after, before);
+  const text = resultText(after);
+  assert.match(text, /write call .*→ result /);
+  assert.match(text, /edit call .*→ error /);
+  assert.doesNotMatch(text, /Modified:|Created:|system-loadout-marker/);
+  const details = after.details as { total: number; reads: JsonObject[] };
+  assert.equal(details.total, 2);
+  assert.deepEqual(
+    details.reads.map((read) => read.target),
+    [call, written, call, failed],
   );
-  await assert.rejects(
-    h.read({ ...params, target: "missing" }),
-    /no recallable text/,
+  assert.ok(Number(details.reads[0].offset) > 0);
+  const edit = resultText(await h.read(details.reads[2]));
+  assert.match(edit, /exact-old.*exact-new/);
+  assert.match(resultText(await h.read(details.reads[3])), /Permission denied/);
+  let request: JsonObject | null = details.reads[0];
+  let payload = "";
+  while (request) {
+    const read = await h.read(request);
+    payload += resultText(read);
+    request = (read.details as { next: JsonObject | null }).next;
+  }
+  assert.match(payload, /complete-write-é/);
+  const all = resultText(await h.read({ ...params, target: "" }));
+  assert.match(all, /read call .*→ no recorded result/);
+  assert.doesNotMatch(all, /fabricated.ts|not-indexed.ts/);
+});
+
+test("file navigation keeps branch evidence and canonical replacements distinct from recorded results", async () => {
+  const h = recallHarness();
+  const root = user(h.manager, "Inspect only.");
+  const abandoned = h.manager.appendMessage(
+    fauxAssistantMessage(
+      fauxToolCall(
+        "write",
+        { path: "abandoned.ts", content: "abandoned-payload" },
+        { id: "branch-call" },
+      ),
+    ),
   );
-  await assert.rejects(h.read({ ...params, offset: -1 }));
-  const controller = new AbortController();
-  controller.abort();
-  await assert.rejects(h.read(params, controller.signal), /abort/i);
+  h.manager.branch(root);
+  // This orphan result is on another branch, despite its matching tool and ID.
+  toolResult(h.manager, "branch-call", "write", "Unrelated branch result.");
+  const original = h.manager.appendMessage(
+    fauxAssistantMessage(
+      fauxToolCall(
+        "edit",
+        { path: "original.ts", oldText: "old", newText: "new" },
+        { id: "original-edit" },
+      ),
+    ),
+  );
+  const result = toolResult(
+    h.manager,
+    "original-edit",
+    "edit",
+    "Recorded edit result.",
+  );
+  const replacement = h.manager.appendContextEdit(original, {
+    content: [
+      fauxToolCall(
+        "edit",
+        { path: "replacement.ts", oldText: "other-old", newText: "other-new" },
+        { id: "original-edit" },
+      ),
+    ],
+  });
+  const params = { action: "files", target: "", offset: 0, scope: "lineage" };
+  const active = resultText(await h.read(params));
+  assert.doesNotMatch(active, /abandoned.ts|Unrelated branch result/);
+  assert.match(active, /original.ts[\s\S]*edit call .*→ result /);
+  assert.match(
+    active,
+    /replacement.ts[\s\S]*context replacement .*not a recorded call/,
+  );
+  const edited = await h.read({ ...params, target: "replacement.ts" });
+  const reads = (edited.details as { reads: JsonObject[] }).reads;
+  assert.equal(reads.length, 1);
+  assert.equal(reads[0].target, replacement);
+  assert.match(resultText(await h.read(reads[0])), /other-old.*other-new/);
+  const history = await h.read({
+    ...params,
+    target: "abandoned.ts",
+    scope: "all",
+  });
+  assert.match(resultText(history), /no recorded result/);
+  assert.deepEqual(
+    (history.details as { reads: JsonObject[] }).reads.map(
+      (read) => read.target,
+    ),
+    [abandoned],
+  );
+  const observed = await h.read({ ...params, target: "original.ts" });
+  assert.deepEqual(
+    (observed.details as { reads: JsonObject[] }).reads.map(
+      (read) => read.target,
+    ),
+    [original, result],
+  );
+});
+
+test("file navigation is pageable and does not guess through duplicate call IDs or mismatched tools", async () => {
+  const h = recallHarness();
+  for (let index = 0; index < 12; index++) {
+    h.manager.appendMessage(
+      fauxAssistantMessage(
+        fauxToolCall(
+          "read",
+          { path: `src/file-${String(index).padStart(2, "0")}.ts` },
+          { id: `read-${index}` },
+        ),
+      ),
+    );
+    toolResult(h.manager, `read-${index}`, "read", `Observed ${index}`);
+  }
+  const params = {
+    action: "files",
+    target: "src/",
+    offset: 0,
+    scope: "lineage",
+  };
+  let next: JsonObject | null = params;
+  const calls: string[] = [];
+  let pages = 0;
+  while (next) {
+    const page = await h.read(next);
+    const details = page.details as {
+      total: number;
+      reads: JsonObject[];
+      next: JsonObject | null;
+    };
+    assert.equal(details.total, 12);
+    assert.ok(details.reads.length <= 10);
+    assert.ok(resultText(page).length < 4000);
+    for (const read of details.reads) {
+      const text = resultText(await h.read(read));
+      if (text.includes("] tool_call")) calls.push(String(read.target));
+    }
+    next = details.next;
+    pages++;
+  }
+  assert.equal(pages, 3);
+  assert.equal(new Set(calls).size, 12);
+  await assert.rejects(h.read({ ...params, offset: 12 }), /offset/);
+  const missing = await h.read({ ...params, target: "does-not-exist" });
+  assert.equal((missing.details as { total: number }).total, 0);
+  for (const path of ["duplicate-a.ts", "duplicate-b.ts"])
+    h.manager.appendMessage(
+      fauxAssistantMessage(
+        fauxToolCall(
+          "write",
+          { path, content: "payload" },
+          { id: "duplicate" },
+        ),
+      ),
+    );
+  toolResult(h.manager, "duplicate", "write", "Cannot attribute this result.");
+  const ambiguous = await h.read({ ...params, target: "duplicate" });
+  assert.match(resultText(ambiguous), /ambiguous result pairing/);
+  assert.equal((ambiguous.details as { reads: JsonObject[] }).reads.length, 2);
+  h.manager.appendMessage(
+    fauxAssistantMessage(
+      fauxToolCall(
+        "write",
+        { path: "mismatched.ts", content: "payload" },
+        { id: "mismatched" },
+      ),
+    ),
+  );
+  toolResult(
+    h.manager,
+    "mismatched",
+    "read",
+    "Read is not evidence of a write.",
+  );
+  const mismatched = await h.read({ ...params, target: "mismatched" });
+  assert.match(resultText(mismatched), /no recorded result/);
+  assert.equal((mismatched.details as { reads: JsonObject[] }).reads.length, 1);
+});
+
+test("recall navigation is bounded and pageable with executable scoped pointers and explicit errors", async () => {
+  for (const scope of ["all", "lineage"]) {
+    const h = recallHarness();
+    const ids = Array.from({ length: scope === "all" ? 8 : 12 }, (_, index) =>
+      user(
+        h.manager,
+        scope === "all"
+          ? `${"İ".repeat(300)} compact-marker-${index}`
+          : `compact-marker-${index} ${"x".repeat(2000)}`,
+      ),
+    );
+    for (const action of ["search", "around"]) {
+      const page = await h.read({
+        action,
+        target: action === "search" ? "compact-marker" : ids[2],
+        offset: 0,
+        scope,
+      });
+      const text = resultText(page);
+      assert.ok(text.length < 8000);
+      if (action === "search" && scope === "lineage")
+        assert.match(text, /compact-marker-11/);
+      const pointers = [...text.matchAll(/source ([^:;\s]+):(\d+)-(\d+)/g)];
+      assert.equal(pointers.length, 5);
+      for (const [, target, start, end] of pointers) {
+        const full = recallTraceEntry(
+          h.manager.getEntry(target)!,
+          h.manager.getEntries(),
+        )!.text;
+        assert.ok(Number(start) < Number(end));
+        assert.ok(Number(end) <= full.length);
+        const read = resultText(
+          await h.read({
+            action: "read",
+            target,
+            offset: Number(start),
+            scope,
+          }),
+        );
+        assert.match(read, /compact-marker/);
+      }
+      const next = (page.details as { next: JsonObject }).next;
+      assert.equal(next.scope, scope);
+      const second = resultText(await h.read(next));
+      assert.match(second, /compact-marker/);
+      if (action === "around") {
+        assert.match(second, /compact-marker-5/);
+        assert.doesNotMatch(second, /compact-marker-4 /);
+      }
+      assert.match(text, new RegExp(`scope:"${scope}"`));
+    }
+    const params = {
+      action: "around",
+      target: ids[2],
+      offset: 0,
+      scope,
+    };
+    await assert.rejects(h.read({ ...params, offset: 1000 }), /offset/);
+    await assert.rejects(
+      h.read({ ...params, action: "read", offset: 100000 }),
+      /offset/,
+    );
+    await assert.rejects(
+      h.read({ ...params, target: "missing" }),
+      /no recallable text/,
+    );
+    await assert.rejects(h.read({ ...params, offset: -1 }));
+    const controller = new AbortController();
+    controller.abort();
+    await assert.rejects(h.read(params, controller.signal), /abort/i);
+  }
 });
 
 test("manual compaction calls no model, preserves native tail boundaries and persists only session JSONL", async (t) => {
@@ -879,8 +1163,22 @@ test("native threshold scheduling uses the selected 272k capacity, not a guessed
   const h = await runtime(t);
   const response = fauxAssistantMessage("Continue normally");
   response.usage = { ...response.usage, input: 40000, totalTokens: 40000 };
-  h.faux.setResponses([response]);
+  let prompt = "";
+  let tools: string[] = [];
+  h.faux.setResponses([
+    (context) => {
+      prompt = getCurrentSystemPrompt(context.messages);
+      tools = getCurrentTools(context.messages)?.map((tool) => tool.name) ?? [];
+      return response;
+    },
+  ]);
   await h.session.prompt("Continue investigating.");
+  assert.deepEqual(tools, ["recall"]);
+  assert.match(prompt, /recall the original user message/);
+  assert.doesNotMatch(
+    prompt,
+    /Use compact at|Call compact alone|context-pressure/,
+  );
   assert.equal(
     h.manager.getBranch().filter((entry) => entry.type === "compaction").length,
     0,
@@ -985,9 +1283,7 @@ test("compaction cannot replace evidence with pointers while recall is restricte
 
 test("canonical provider edits survive masking while recall retains original history", async (t) => {
   const h = await runtime(t, { empty: true });
-  const omitted = user(h.manager, "Omit this from provider context.");
   const replaced = user(h.manager, "Original wording retained in history.");
-  h.manager.appendContextEdit(omitted, null);
   h.manager.appendContextEdit(replaced, {
     content: [{ type: "text", text: "Replacement provider wording." }],
   });
@@ -1000,10 +1296,7 @@ test("canonical provider edits survive masking while recall retains original his
     },
   ]);
   await h.session.prompt("Continue with edited context.");
-  assert.doesNotMatch(
-    request,
-    /Omit this from provider context|Original wording retained in history/,
-  );
+  assert.doesNotMatch(request, /Original wording retained in history/);
   assert.match(request, /Replacement provider wording/);
   assert.match(
     JSON.stringify(compileTrace(h.manager.getBranch())),
@@ -1012,25 +1305,114 @@ test("canonical provider edits survive masking while recall retains original his
   assert.deepEqual(h.errors, []);
 });
 
-test("Pi's prompt exposes evidence-backed recall without actor compaction instructions", async (t) => {
-  const h = await runtime(t);
-  let prompt = "";
-  let tools: string[] = [];
-  h.faux.setResponses([
-    (context) => {
-      prompt = getCurrentSystemPrompt(context.messages);
-      tools = getCurrentTools(context.messages)?.map((tool) => tool.name) ?? [];
-      return fauxAssistantMessage("Done.");
-    },
-  ]);
-  await h.session.prompt("Inspect current context tools.");
-  assert.deepEqual(tools, ["recall"]);
-  assert.match(prompt, /recall the original user message/);
-  assert.doesNotMatch(
-    prompt,
-    /Use compact at|Call compact alone|context-pressure/,
-  );
-});
+for (const mode of ["on", "only"] as const) {
+  test(`model-only recall stays native and rejects nested execution in codemode ${mode}`, async (t) => {
+    const params = {
+      action: "search",
+      target: "refresh-key-4829",
+      offset: 0,
+      scope: "lineage",
+    };
+    let recallExecutions = 0;
+    let probeExecutions = 0;
+    const h = await runtime(t, {
+      codemode: mode,
+      extraFactory: (pi) => {
+        pi.on("tool_execution_end", (event) => {
+          if (event.toolName === "recall" && !event.isError) recallExecutions++;
+        });
+        pi.registerTool({
+          name: "nested_probe",
+          label: "Nested boundary probe",
+          description: "Verify that nested recall is unavailable.",
+          parameters: Type.Object({}),
+          async execute(_id, _args, _signal, _update, ctx) {
+            probeExecutions++;
+            assert.ok(!ctx.tools.some((tool) => tool.name === "recall"));
+            const outcome = await ctx.executeTool("recall", params);
+            assert.equal(outcome.isError, true);
+            return {
+              content: [{ type: "text", text: "nested-recall-blocked" }],
+              details: {},
+            };
+          },
+        });
+      },
+    });
+    const results: string[] = [];
+    h.session.subscribe((event) => {
+      if (event.type === "tool_execution_end") {
+        results.push(resultText(event.result));
+      }
+    });
+    h.faux.setResponses([
+      (context) => {
+        const names =
+          getCurrentTools(context.messages)?.map((tool) => tool.name) ?? [];
+        assert.ok(names.includes("recall"));
+        assert.ok(names.includes("codemode"));
+        return fauxAssistantMessage(fauxToolCall("recall", params), {
+          stopReason: "toolUse",
+        });
+      },
+      () => {
+        assert.match(results.at(-1)!, /refresh-key-4829/);
+        const pointer = results.at(-1)!.match(/source ([^:;\s]+):(\d+)-(\d+)/);
+        assert.ok(pointer, "search must expose a native read source pointer");
+        return fauxAssistantMessage(
+          fauxToolCall("recall", {
+            action: "read",
+            target: pointer[1],
+            offset: Number(pointer[2]),
+            scope: "lineage",
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      () => {
+        assert.match(results.at(-1)!, /Original decision: refresh-key-4829/);
+        return fauxAssistantMessage(
+          fauxToolCall("recall", {
+            action: "around",
+            target: h.oldId!,
+            offset: 0,
+            scope: "lineage",
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      () => {
+        assert.match(results.at(-1)!, /Original decision: refresh-key-4829/);
+        return fauxAssistantMessage(
+          fauxToolCall("codemode", {
+            code: `try { await tools.recall(${JSON.stringify(params)}); text("unexpected-recall-success"); } catch (error) { text("codemode-recall-blocked"); } text(await tools.nested_probe({}));`,
+          }),
+          { stopReason: "toolUse" },
+        );
+      },
+      () => {
+        assert.match(results.at(-1)!, /codemode-recall-blocked/);
+        assert.match(results.at(-1)!, /nested-recall-blocked/);
+        assert.doesNotMatch(
+          results.at(-1)!,
+          /unexpected-recall-success|Script failed/,
+        );
+        return fauxAssistantMessage("Boundary verified.");
+      },
+    ]);
+    await h.session.prompt(
+      "Recover the original requirement and check the nested boundary.",
+    );
+    assert.equal(h.session.agent.state.messages.at(-1)?.role, "assistant");
+    assert.match(
+      JSON.stringify(h.session.agent.state.messages.at(-1)),
+      /Boundary verified/,
+    );
+    assert.equal(recallExecutions, 3);
+    assert.equal(probeExecutions, 1);
+    assert.deepEqual(h.errors, []);
+  });
+}
 
 test("tool restrictions leave original results visible when recall is unavailable", async (t) => {
   const h = await runtime(t, { empty: true });
