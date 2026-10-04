@@ -11,7 +11,6 @@
     ./solaar.nix
     ./ssh.nix
     ./uv.nix
-    ./vivaldi.nix
     ./zsh.nix
   ];
 }

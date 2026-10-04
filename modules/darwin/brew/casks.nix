@@ -20,6 +20,6 @@
     "obsidian"
 
     # browsers
-    "vivaldi"
+    "brave-browser"
   ];
 }

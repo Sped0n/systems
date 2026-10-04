@@ -13,7 +13,7 @@
         ];
         favorite-apps = lib.mkDefault [
           "org.gnome.Nautilus.desktop"
-          "vivaldi-stable.desktop"
+          "brave-browser.desktop"
           "com.mitchellh.ghostty.desktop"
         ];
 
