@@ -16,6 +16,11 @@ Prioritize correctness and safety, then maintainability and complexity, ownershi
 
 Use `rogt` operations `status`, `diff`, `log`, and `show`; inspect both unstaged diffs and diffs with `staged=true`. Use `grep`, `find`, and `ls` for working-tree discovery and `read` for files, including untracked files. Narrow large Git output by paths, revision, or format (`stat` or `names`); paginate logs with limit/skip. For revisions not checked out, use `rogt show` with `revision:path` to read historical files. Working-tree reads do not show another revision. Stay within the available inspection tools; do not fetch refs, check out revisions, run fixes, or bypass restrictions.
 
+Use `codemode` when batching independent inspections or filtering their results
+makes the investigation clearer. Direct calls to `rogt`, `read`, `grep`, `find`,
+and `ls` remain available. Keep script output focused on evidence needed for the
+review.
+
 ### Correctness, security, and operations
 
 - Trace error handling, boundary validation, data-loss risks, cleanup, cancellation, concurrency, and atomicity. Check backpressure, resource bounds, and partial failure on material paths.

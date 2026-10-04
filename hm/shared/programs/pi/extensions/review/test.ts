@@ -131,7 +131,14 @@ test("review preserves the selected model, restricts tools, and restores the pre
         string,
         (_event: unknown, ctx: ExtensionCommandContext) => void
     >();
-    const previousTools = ["read", "bash", "edit", "custom_tool"];
+    const previousTools = [
+        "read",
+        "bash",
+        "edit",
+        "write",
+        "recall",
+        "custom_tool",
+    ];
     let activeTools = previousTools;
     const pi = {
         registerCommand: (name: string, command: Command) =>
@@ -173,9 +180,15 @@ test("review preserves the selected model, restricts tools, and restores the pre
     reviewExtension(pi);
     try {
         await commands.get("review")!.handler("Review main...HEAD", ctx);
-        assert.deepEqual(activeTools, ["read", "grep", "find", "ls", "rogt"]);
+        const reviewTools = ["codemode", "rogt", "read", "grep", "find", "ls"];
+        assert.deepEqual(activeTools, reviewTools);
+        // A fresh extension instance must recover the same tools from review state.
+        reviewExtension(pi);
+        activeTools = previousTools;
         hooks.get("session_start")!({}, ctx);
-        assert.deepEqual(activeTools, ["read", "grep", "find", "ls", "rogt"]);
+        assert.deepEqual(activeTools, reviewTools);
+        hooks.get("session_tree")!({}, ctx);
+        assert.deepEqual(activeTools, reviewTools);
         assert.equal(ctx.model!.id, "chosen-model");
         manager.appendMessage(
             textMessage("assistant", "No actionable findings."),
