@@ -2,13 +2,15 @@
   "defaultProvider": "circe-responses",
   "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "medium",
-  "tuiMode": "fullscreen",
-  "editorPaddingX": 1.5,
-  "outputPad": 1,
-  "defaultProjectTrust": "ask",
-  "fullscreenExitOutput": "resume-hint",
+  "defaultTools": ["+codemode"],
   "treeFilterMode": "user-only",
+  "defaultProjectTrust": "ask",
   "steeringMode": "all",
   "followUpMode": "all",
-  "theme": "system"
+  "fullscreenExitOutput": "resume-hint",
+  "collapseChangelog": true,
+  "theme": "system",
+  "tuiMode": "fullscreen",
+  "editorPaddingX": 1.5,
+  "outputPad": 1
 }
