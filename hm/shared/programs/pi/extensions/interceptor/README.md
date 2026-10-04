@@ -52,18 +52,13 @@ ordinary pip installs but do not match `uv pip install ...`. Bare commands need
 separate `pip` rules. Alternative forms such as `python -m pip` also
 need their own explicit rules.
 
-Policy files are loaded when a session starts, including after `/reload`; they
-are not read for each tool call. A successful load becomes the process-local,
+Edit global `interceptor.json` or trusted-project `.pi/interceptor.json`, then
+run `/reload` in Pi to apply the changes. There is no rule-management CLI or
+in-session rule-editing command. Policy files are loaded when a session starts,
+including after `/reload`; they are not read for each tool call. A successful load becomes the process-local,
 last-valid policy for that working directory and trust state. If a later load
 fails, the interceptor warns and keeps the matching last-valid policy. Without
 a matching policy, it warns and uses an empty policy. Restarting Pi clears this
 fallback cache.
-
-Extensions can append a scoped ordered rule group with
-`appendInterceptorRules(policy, cwd)`. It returns an idempotent disposer that
-removes only that group. Runtime groups are evaluated after the loaded file
-policy and remain dynamic between reloads. Later runtime groups win over earlier
-ones. Reusable runtime policies live in `policies.ts`; review and pcommit share
-its Git/rg inspection policy.
 
 This is a tool-call interceptor, not an OS sandbox.

@@ -14,10 +14,8 @@ import test, { type TestContext } from "node:test";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 import interceptorExtension, {
-    appendInterceptorRules,
     canonicalizePath,
     commandDecision,
-    GIT_INSPECTION_BASH_POLICY,
     loadPolicies,
     parseBashCommands,
     parsePolicy,
@@ -99,81 +97,6 @@ function interceptorLifecycleHarness() {
     interceptorExtension(pi);
     return { handlers, notifications };
 }
-
-test("runtime rules append after file policy and dispose independently", async (t) => {
-    const handlers = new Map<string, (...args: unknown[]) => unknown>();
-    const pi = {
-        on(name: string, handler: (...args: unknown[]) => unknown) {
-            handlers.set(name, handler);
-        },
-    } as unknown as ExtensionAPI;
-    interceptorExtension(pi);
-    const sessionStart = handlers.get("session_start");
-    const toolCall = handlers.get("tool_call");
-    assert.ok(sessionStart);
-    assert.ok(toolCall);
-
-    const root = await tempRoot(t);
-    const config = path.join(root, "config");
-    await mkdir(config);
-    await writeFile(
-        path.join(config, "interceptor.json"),
-        JSON.stringify({ rules: [{ bash: "*", action: "allow" }] }),
-    );
-    const previousConfig = process.env.PI_CODING_AGENT_DIR;
-    process.env.PI_CODING_AGENT_DIR = config;
-    const release = appendInterceptorRules(
-        {
-            rules: [
-                { bash: "*", action: "deny" },
-                { bash: "git status*", action: "allow" },
-            ],
-        },
-        root,
-    );
-    const notifications: string[] = [];
-    const ctx = {
-        cwd: root,
-        hasUI: true,
-        ui: { notify: (message: string) => notifications.push(message) },
-        isProjectTrusted: () => false,
-    };
-    try {
-        await sessionStart({}, ctx);
-        assert.equal(
-            await toolCall(
-                { toolName: "bash", input: { command: "git status" } },
-                ctx,
-            ),
-            undefined,
-        );
-        assert.equal(
-            (
-                (await toolCall(
-                    { toolName: "bash", input: { command: "npm test" } },
-                    ctx,
-                )) as {
-                    block: boolean;
-                }
-            ).block,
-            true,
-        );
-        release();
-        release();
-        assert.equal(
-            await toolCall(
-                { toolName: "bash", input: { command: "npm test" } },
-                ctx,
-            ),
-            undefined,
-        );
-    } finally {
-        release();
-        if (previousConfig === undefined)
-            delete process.env.PI_CODING_AGENT_DIR;
-        else process.env.PI_CODING_AGENT_DIR = previousConfig;
-    }
-});
 
 test("file policy changes take effect only after session start or reload", async (t) => {
     const root = await tempRoot(t);
@@ -309,50 +232,6 @@ test("invalid initial policy warns and falls back to an empty policy", async (t)
     }
 });
 
-test("Git inspection policy allows Git and rg reads but denies hazardous forms", async () => {
-    for (const bash of [
-        "git status --short",
-        "git diff --cached --no-ext-diff --no-textconv",
-        "git log --oneline -10",
-        "git show HEAD:src/main.ts",
-        "rg --no-config -n pattern src",
-        "git show HEAD | rg --no-config pattern",
-    ]) {
-        assert.equal(
-            (
-                await commandDecision(
-                    GIT_INSPECTION_BASH_POLICY,
-                    bash,
-                    process.cwd(),
-                )
-            ).action,
-            "allow",
-            bash,
-        );
-    }
-    for (const bash of [
-        "grep pattern src/main.ts",
-        "rg pattern src",
-        "rg --no-config --pre processor pattern",
-        "git diff --ext-diff",
-        "git show --textconv HEAD:file",
-        "git log --output=/tmp/log",
-        "git status > /tmp/status",
-        "npm test",
-    ]) {
-        assert.equal(
-            (
-                await commandDecision(
-                    GIT_INSPECTION_BASH_POLICY,
-                    bash,
-                    process.cwd(),
-                )
-            ).action,
-            "deny",
-            bash,
-        );
-    }
-});
 test("Bash rules use wildcards and last match wins", async () => {
     const policy = parsePolicy({
         rules: [

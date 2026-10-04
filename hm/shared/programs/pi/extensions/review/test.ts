@@ -96,7 +96,7 @@ test("buildReviewPrompt defaults to uncommitted changes", () => {
     assert.match(prompt, /No actionable findings\./u);
     assert.match(prompt, /canonical owner/u);
     assert.match(prompt, /caller's perspective/u);
-    assert.match(prompt, /rg --no-config/u);
+    assert.match(prompt, /`rogt` operations/u);
     assert.doesNotMatch(
         prompt,
         /\{\{(?:CURRENT_SESSION_CONTEXT|REVIEW_INSTRUCTIONS)\}\}/u,
@@ -173,9 +173,9 @@ test("review preserves the selected model, restricts tools, and restores the pre
     reviewExtension(pi);
     try {
         await commands.get("review")!.handler("Review main...HEAD", ctx);
-        assert.deepEqual(activeTools, ["read", "bash"]);
+        assert.deepEqual(activeTools, ["read", "grep", "find", "ls", "rogt"]);
         hooks.get("session_start")!({}, ctx);
-        assert.deepEqual(activeTools, ["read", "bash"]);
+        assert.deepEqual(activeTools, ["read", "grep", "find", "ls", "rogt"]);
         assert.equal(ctx.model!.id, "chosen-model");
         manager.appendMessage(
             textMessage("assistant", "No actionable findings."),

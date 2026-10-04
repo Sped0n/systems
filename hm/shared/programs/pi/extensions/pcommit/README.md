@@ -3,10 +3,8 @@
 Implements the `--pcommit` and `--pcommit-hint` flags used by the Home Manager
 `pcommit` wrapper. Pi runs headlessly with `--print --no-session` using the
 wrapper's configured provider, model, and thinking level, and activates only
-`read` and `bash`. A
-scoped interceptor policy denies Bash by default and permits `git status`, `git
-diff`, `git log`, `git show`, and `rg --no-config` while rejecting output
-redirection and execution-capable flags.
+`read`, `grep`, `find`, `ls`, and [`rogt`](../rogt/README.md). Git inspection uses
+structured read-only operations; Bash is not active.
 
 The agent inspects staged changes, may read surrounding working-tree code, and
 prints only a commit message describing staged changes. The wrapper captures
@@ -33,8 +31,7 @@ pcommit "focus on permission changes"
 ```
 
 Pcommit requires staged changes, never stages files, and never pushes. While Pi
-works, pcommit streams the current `read` or `bash` activity and the transition
+works, pcommit streams the current inspection-tool activity and the transition
 to commit-message writing on stderr. The headless agent's stdout contains only
 the generated message; the wrapper also allows Git's normal console output.
-Model, policy, or editor failures exit without committing. Runtime interceptor
-rules are removed when the headless Pi session ends.
+Model, inspection, or editor failures exit without committing.

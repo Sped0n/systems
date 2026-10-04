@@ -3,11 +3,6 @@ import type {
     ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 
-import {
-    appendInterceptorRules,
-    GIT_INSPECTION_BASH_POLICY,
-} from "../interceptor/index.ts";
-
 const PCOMMIT_ACTIVITY_CHARACTERS_MAX = 120;
 
 function formatPcommitActivityValue(value: unknown): string {
@@ -24,17 +19,21 @@ export function formatPcommitToolActivity(
 ): string {
     if (toolName === "read")
         return `→ read ${formatPcommitActivityValue(args.path)}`;
-    if (toolName === "bash")
-        return `→ bash $ ${formatPcommitActivityValue(args.command)}`;
+    if (toolName === "rogt")
+        return `→ rogt ${formatPcommitActivityValue(args.operation)}`;
+    if (toolName === "grep")
+        return `→ grep ${formatPcommitActivityValue(args.pattern)}`;
+    if (toolName === "find" || toolName === "ls")
+        return `→ ${toolName} ${formatPcommitActivityValue(args.path ?? args.pattern)}`;
     return `→ ${formatPcommitActivityValue(toolName)}`;
 }
 
 export function buildPcommitSystemPrompt(hint: string): string {
     return [
         "You write accurate Git commit messages for staged changes.",
-        "Use Bash to inspect Git status, recent commit style, and staged diffs before answering.",
-        "Start with git status, git log, and git diff --cached --no-ext-diff --no-textconv.",
-        "Narrow large diffs by path and use rg --no-config for repository search as needed.",
+        "Use rogt to inspect Git status, recent commit style, and staged diffs before answering.",
+        "Start with rogt status, log, and diff with staged=true.",
+        "Narrow large diffs by paths and use grep, find, and ls for repository discovery as needed.",
         "Use read when surrounding working-tree code helps explain the staged behavior.",
         "The final message must describe staged changes only, even when surrounding files contain other changes.",
         "Return only the commit message: an imperative subject of at most 72 characters, with no trailing period.",
@@ -83,15 +82,7 @@ export default function pcommit(pi: ExtensionAPI): void {
 
     let active = false;
     let writingMessageAnnounced = false;
-    let releaseInspectionRules: (() => void) | undefined;
-
-    const releaseRuntimeRules = () => {
-        releaseInspectionRules?.();
-        releaseInspectionRules = undefined;
-    };
-
     const fail = (ctx: ExtensionContext, error: unknown) => {
-        releaseRuntimeRules();
         printAfterShutdown(
             error instanceof Error ? error.message : String(error),
         );
@@ -142,19 +133,11 @@ export default function pcommit(pi: ExtensionAPI): void {
                 );
             }
 
-            releaseInspectionRules = appendInterceptorRules(
-                GIT_INSPECTION_BASH_POLICY,
-                ctx.cwd,
-            );
-            pi.setActiveTools(["read", "bash"]);
+            pi.setActiveTools(["read", "grep", "find", "ls", "rogt"]);
             writingMessageAnnounced = false;
             active = true;
         } catch (error) {
             fail(ctx, error);
         }
-    });
-
-    pi.on("session_shutdown", async () => {
-        releaseRuntimeRules();
     });
 }

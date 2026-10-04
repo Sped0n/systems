@@ -5,8 +5,6 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import type { Parser as TreeSitterParser } from "web-tree-sitter";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-export { GIT_INSPECTION_BASH_POLICY } from "./policies.ts";
-
 export type Operation = "read" | "write";
 export type PermissionAction = "allow" | "deny";
 export type PathPermissionRule = {
@@ -38,8 +36,6 @@ const FILE_POLICY_CACHE_ENTRIES_MAX = 32;
 const FILE_POLICY_CACHE_SYMBOL = Symbol.for(
     "pi.interceptor.last-valid-file-policies",
 );
-
-const runtimeRuleGroups = new Map<symbol, ScopedPermissionRule[]>();
 
 function isObject(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -169,25 +165,6 @@ function scopedRules(
     scope: string,
 ): ScopedPermissionRule[] {
     return policy.rules.map((rule) => ({ ...rule, scope }));
-}
-
-/** Appends a validated last-match-wins rule group until its disposer is called. */
-export function appendInterceptorRules(
-    value: unknown,
-    scope: string,
-): () => void {
-    const id = Symbol("interceptor-runtime-rules");
-    runtimeRuleGroups.set(id, scopedRules(parsePolicy(value), scope));
-    let active = true;
-    return () => {
-        if (!active) return;
-        active = false;
-        runtimeRuleGroups.delete(id);
-    };
-}
-
-function appendedRuntimeRules(): ScopedPermissionRule[] {
-    return [...runtimeRuleGroups.values()].flat();
 }
 
 async function loadPolicyFile(
@@ -596,7 +573,7 @@ export default function interceptor(pi: ExtensionAPI): void {
         const tool = DIRECT_FILE_TOOLS[event.toolName];
         if (!tool && event.toolName !== "bash") return;
 
-        const rules = [...fileRules, ...appendedRuntimeRules()];
+        const rules = fileRules;
 
         if (event.toolName === "bash") {
             const input = isObject(event.input) ? event.input : undefined;

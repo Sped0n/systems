@@ -14,7 +14,7 @@ Prioritize correctness and safety, then maintainability and complexity, ownershi
 4. Verify each candidate against surrounding code and useful history. Identify affected consumers and construct a concrete failing scenario or recurring maintenance cost. Check whether existing behavior prevents it. Finish accessible investigations rather than reporting conditional claims that another layer might handle the issue.
 5. Revisit the full scope for omissions and related occurrences. Consolidate duplicate symptoms, keeping distinct root causes separate. Validate any supplied reviewer comments independently rather than treating agreement as proof.
 
-Use Bash with `git status`, `git diff`, `git log`, and `git show`; use `rg --no-config` for working-tree search and `read` for files. For revisions not checked out, inspect with `git show` and pipe its output to `rg --no-config` as needed. Working-tree reads do not show another revision. Stay within the available inspection tools; do not fetch refs, check out revisions, run fixes, or bypass restrictions.
+Use `rogt` operations `status`, `diff`, `log`, and `show`; inspect both unstaged diffs and diffs with `staged=true`. Use `grep`, `find`, and `ls` for working-tree discovery and `read` for files, including untracked files. Narrow large Git output by paths, revision, or format (`stat` or `names`); paginate logs with limit/skip. For revisions not checked out, use `rogt show` with `revision:path` to read historical files. Working-tree reads do not show another revision. Stay within the available inspection tools; do not fetch refs, check out revisions, run fixes, or bypass restrictions.
 
 ### Correctness, security, and operations
 

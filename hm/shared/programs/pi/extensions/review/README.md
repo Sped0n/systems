@@ -60,21 +60,19 @@ available. Pi does not support unregistering commands, so manually typing
 
 ## Tools and Git Scope
 
-Only `read` and `bash` are active on the review branch. A scoped interceptor
-rule group denies Bash by default and permits only `git status`, `git diff`,
-`git log`, `git show`, and `rg --no-config`; later rules reject output
-redirection and execution-capable flags. The previous tool set is restored and
-the runtime rules are removed on return.
+Only `read`, `grep`, `find`, `ls`, and [`rogt`](../rogt/README.md) are active on
+the review branch. Git inspection uses structured read-only operations without
+Bash or workflow-specific interceptor rules. The previous tool set is restored
+on return.
 
-Pi's Bash tool bounds command output. The reviewer can narrow a large diff by
+`rogt` bounds command output. The reviewer can narrow a large diff by
 revision or path and can inspect files in locally available commits and branches
 without checking them out. It does not fetch remote refs. Branch instructions
 should name their comparison base when it is not obvious, for example `branch
 feature/auth against main`.
 
 The conversation branch shares the working tree with the implementation branch;
-it is not a filesystem snapshot. Mutation tools are disabled, and Bash is
-restricted by the scoped interceptor rules described above.
+it is not a filesystem snapshot. Mutation tools and Bash are not active.
 
 ## Rubric sources
 

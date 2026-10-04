@@ -3,7 +3,6 @@ import { readFileSync } from "node:fs";
 import { type Message } from "@earendil-works/pi-ai";
 import {
     buildSessionContext,
-    defineTool,
     getMarkdownTheme,
     type ExtensionAPI,
     type ExtensionCommandContext,
@@ -11,16 +10,11 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { Box, Markdown, Text } from "@earendil-works/pi-tui";
 
-import {
-    appendInterceptorRules,
-    GIT_INSPECTION_BASH_POLICY,
-} from "../interceptor/index.ts";
-
 const REVIEW_RESULT_TYPE = "review-result";
 const REVIEW_STATE_TYPE = "review-session";
 const REVIEW_ANCHOR_TYPE = "review-anchor";
 const REVIEW_WIDGET_KEY = "review";
-const REVIEW_TOOLS = ["read", "bash"];
+const REVIEW_TOOLS = ["read", "grep", "find", "ls", "rogt"];
 const REVIEW_BRIEF_CHARACTERS_MAX = 30_000;
 const REVIEW_BRIEF_HEAD_CHARACTERS = 10_000;
 const REVIEW_BRIEF_OMISSION =
@@ -261,20 +255,9 @@ export default function reviewExtension(pi: ExtensionAPI): void {
     let previousTools: string[] | undefined;
     let navigationInProgress = false;
     let autocompleteInstalled = false;
-    let releaseInspectionRules: (() => void) | undefined;
     const markdownTheme = getMarkdownTheme();
 
-    const enableInspectionRules = (ctx: ExtensionContext) => {
-        releaseInspectionRules?.();
-        releaseInspectionRules = appendInterceptorRules(
-            GIT_INSPECTION_BASH_POLICY,
-            ctx.cwd,
-        );
-    };
-
     const leaveReviewMode = (ctx: ExtensionContext) => {
-        releaseInspectionRules?.();
-        releaseInspectionRules = undefined;
         if (previousTools) {
             pi.setActiveTools(previousTools);
         }
@@ -289,7 +272,6 @@ export default function reviewExtension(pi: ExtensionAPI): void {
         if (state?.active && state.originId) {
             reviewOriginId = state.originId;
             previousTools = state.previousTools;
-            enableInspectionRules(ctx);
             pi.setActiveTools(REVIEW_TOOLS);
             setReviewWidget(ctx, true);
             return;
@@ -423,7 +405,6 @@ export default function reviewExtension(pi: ExtensionAPI): void {
 
             reviewOriginId = originId;
             previousTools = savedTools;
-            enableInspectionRules(ctx);
             pi.setActiveTools(REVIEW_TOOLS);
             setReviewWidget(ctx, true);
             pi.appendEntry(REVIEW_STATE_TYPE, {

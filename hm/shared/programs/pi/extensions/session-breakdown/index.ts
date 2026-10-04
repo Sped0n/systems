@@ -601,7 +601,7 @@ async function walkSessionFiles(
     return out;
 }
 
-async function parseSessionFile(
+export async function parseSessionFile(
     filePath: string,
     signal?: AbortSignal,
 ): Promise<ParsedSession | null> {
@@ -662,12 +662,11 @@ async function parseSessionFile(
                     continue;
                 }
 
-                const mk = modelKeyFromParts(obj.provider, obj.modelId);
-                currentModel = mk;
+                // A model change alone does not mean the model was used: sessions often
+                // start on a default model and switch before sending anything. Only
+                // count a model once it actually produced a message.
+                currentModel = modelKeyFromParts(obj.provider, obj.modelId);
                 currentModelIsFaux = false;
-                if (mk) {
-                    modelsUsed.add(mk);
-                }
                 continue;
             }
 
@@ -690,7 +689,9 @@ async function parseSessionFile(
                 currentModel = explicitMk;
                 currentModelIsFaux = false;
             }
-            modelsUsed.add(mk);
+            const message = isRecord(obj.message) ? obj.message : {};
+            const role = message.role ?? obj.role;
+            if (explicitMk || role === "assistant") modelsUsed.add(mk);
 
             messages += 1;
             messagesByModel.set(mk, (messagesByModel.get(mk) ?? 0) + 1);
@@ -712,14 +713,8 @@ async function parseSessionFile(
         stream.destroy();
     }
 
-    if (
-        !startedAt ||
-        (messages === 0 &&
-            modelsUsed.size === 0 &&
-            tokens === 0 &&
-            totalCost === 0)
-    )
-        return null;
+    // Skip dead sessions: nothing was ever answered by a model.
+    if (!startedAt || modelsUsed.size === 0) return null;
     const dayKeyLocal = toLocalDayKey(startedAt);
     const dow = DOW_NAMES[mondayIndex(startedAt)];
     const tod = todBucketForHour(startedAt.getHours());
