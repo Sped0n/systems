@@ -1,6 +1,8 @@
 { ... }:
 {
   system.defaults = {
+    universalaccess.reduceMotion = true;
+
     trackpad = {
       Clicking = true;
       TrackpadRightClick = true;

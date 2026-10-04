@@ -19,6 +19,7 @@
     ./hid.nix
     ./dock.nix
     ./security.nix
+    ./timemachine.nix
   ];
 
   system = rec {
