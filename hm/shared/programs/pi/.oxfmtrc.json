@@ -1,4 +1,13 @@
 {
   "printWidth": 80,
-  "sortPackageJson": false
+  "sortPackageJson": false,
+  "overrides": [
+    {
+      "files": ["**/*.{js,jsx,mjs,cjs,ts,tsx,mts,cts}"],
+      "options": {
+        "tabWidth": 4,
+        "useTabs": false
+      }
+    }
+  ]
 }
