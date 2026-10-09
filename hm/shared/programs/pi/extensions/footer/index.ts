@@ -22,7 +22,9 @@ export default function footerExtension(pi: ExtensionAPI): void {
                             model && fast
                                 ? {
                                       ...model,
-                                      id: `${model.id} ${theme.fg("accent", fast)}`,
+                                      // The badge resets foreground color; restore the
+                                      // native footer's dim color for the thinking label.
+                                      id: `${model.id} ${theme.fg("accent", fast)}${theme.getFgAnsi("dim")}`,
                                   }
                                 : model,
                         thinkingLevel: ctx.thinkingLevel,

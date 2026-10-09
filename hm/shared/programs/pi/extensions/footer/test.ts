@@ -69,7 +69,8 @@ async function harness(footerFirst: boolean) {
     const theme = {
         fg: (color: string, text: string) =>
             `\x1b[${color === "accent" ? "35" : "90"}m${text}\x1b[0m`,
-    } as Theme;
+        getFgAnsi: () => "\x1b[90m",
+    } as unknown as Theme;
     const footer = factory(
         { requestRender: () => {} } as Parameters<Factory>[0],
         theme,
@@ -95,7 +96,7 @@ test("footer preserves the control marker, highlights fast, and keeps other stat
         const plain = lines.map(stripVTControlCharacters);
         assert.match(plain[0]!, /\[autistic\]$/u);
         assert.match(plain[1]!, /gpt-6\.1-sol \(fast\) • medium$/u);
-        assert.ok(lines[1]!.includes("\x1b[35m(fast)\x1b[0m"));
+        assert.ok(lines[1]!.includes("\x1b[35m(fast)\x1b[0m\x1b[90m • medium"));
         assert.deepEqual(plain.slice(2), ["Other status"]);
         assert.equal(h.ctx.model?.id, "gpt-6.1-sol");
 
