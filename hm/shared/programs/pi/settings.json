@@ -2,6 +2,7 @@
   "defaultProvider": "circe-responses",
   "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "medium",
+  "cacheWarming": "idle",
   "defaultTools": ["+codemode"],
   "treeFilterMode": "user-only",
   "defaultProjectTrust": "ask",
