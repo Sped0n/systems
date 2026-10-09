@@ -167,7 +167,7 @@ test("invalid revisions, unsupported operations, failed Git commands, and cancel
     );
 });
 
-test("registered tool accepts provider-filled fields and nullable defaults", async (t) => {
+test("registered tool requires activation and accepts provider-filled fields and nullable defaults", async (t) => {
     const { cwd, git } = await repository(t);
     await writeFile(path.join(cwd, "tracked.txt"), "staged\n");
     await git("add", "tracked.txt");
@@ -181,6 +181,9 @@ test("registered tool accepts provider-filled fields and nullable defaults", asy
     } as ExtensionAPI);
     assert.ok(tool);
     const registered = tool;
+    assert.equal(registered.defaultActive, false);
+    // Codemode must not reach this tool while inactive.
+    assert.equal(registered.exposure ?? "direct", "direct");
     const call = async (args: JsonObject) => {
         const validated = validateToolArguments(registered, {
             type: "toolCall",

@@ -187,6 +187,9 @@ export default function rogt(pi: ExtensionAPI): void {
     pi.registerTool({
         name: "rogt",
         label: "Read-only Git",
+        // Review and pcommit opt in through setActiveTools; ordinary sessions
+        // must not expose this tool directly or through codemode.
+        defaultActive: false,
         description:
             "Inspect Git status, diffs, logs, and objects. Paths are literal repository paths. Diff defaults to unstaged changes; staged=true inspects the index. Log defaults to 10 commits; show defaults to HEAD and accepts revision:path for historical files. Output is capped at 2000 lines/50KB; commands exceeding 1MB fail, so narrow queries. No arbitrary Git flags or shell commands. Optional fields accept null for defaults; fields unrelated to the selected operation are ignored.",
         parameters,
