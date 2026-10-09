@@ -28,7 +28,14 @@ let
         derivationArgs.dontNpmRebuild = true;
       }
     }/node_modules"
-    export PATH="$PATH:${lib.makeBinPath [ pkgs.python3 ]}"
+    export NO_COLOR=1
+    export PATH="$PATH:${
+      lib.makeBinPath [
+        pkgs.python3
+        pkgs.fd
+        pkgs.ripgrep
+      ]
+    }"
   '';
 in
 [
