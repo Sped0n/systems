@@ -14,7 +14,6 @@ return {
         "regex",
         "sql",
         "ssh_config",
-        "tmux",
         "vim",
       },
     },
