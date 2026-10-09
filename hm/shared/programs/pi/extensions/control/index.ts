@@ -3,21 +3,11 @@ import type {
     ExtensionContext,
     MessageRenderer,
 } from "@earendil-works/pi-coding-agent";
-import {
-    FooterComponent,
-    getAgentDir,
-    getMarkdownTheme,
-} from "@earendil-works/pi-coding-agent";
+import { getAgentDir, getMarkdownTheme } from "@earendil-works/pi-coding-agent";
 import type { TextContent } from "@earendil-works/pi-ai";
-import {
-    Box,
-    Markdown,
-    Spacer,
-    Text,
-    truncateToWidth,
-    visibleWidth,
-} from "@earendil-works/pi-tui";
+import { Box, Markdown, Spacer, Text } from "@earendil-works/pi-tui";
 import * as path from "node:path";
+import { SESSION_MARKER_STATUS } from "../footer/index.ts";
 
 import {
     ensureSessionControlDirectory,
@@ -51,53 +41,6 @@ export function pasteEditorDraft(
     ui.pasteToEditor(text);
     // pasteToEditor mutates the editor but does not request a render itself.
     ui.setStatus("pcontrol-paste-refresh", undefined);
-}
-
-function installControlFooter(
-    ctx: ExtensionContext,
-    state: RuntimeState,
-    marker: string,
-): void {
-    if (ctx.mode !== "tui") return;
-    ctx.ui.setFooter((tui, theme, footerData) => {
-        const session = {
-            get state() {
-                const current = state.context ?? ctx;
-                return {
-                    model: current.model,
-                    thinkingLevel: current.thinkingLevel,
-                };
-            },
-            sessionManager: ctx.sessionManager,
-            getContextUsage: () => (state.context ?? ctx).getContextUsage(),
-            modelRuntime: { isUsingSubscription: () => false },
-        } as unknown as ConstructorParameters<typeof FooterComponent>[0];
-        const footer = new FooterComponent(session, footerData);
-        const unsubscribe = footerData.onBranchChange(() =>
-            tui.requestRender(),
-        );
-        return {
-            render(width: number): string[] {
-                const lines = footer.render(width);
-                const right = theme.fg("dim", marker);
-                const rightWidth = visibleWidth(right);
-                const left = truncateToWidth(
-                    lines[0] ?? "",
-                    Math.max(0, width - rightWidth - 1),
-                    "",
-                );
-                const padding = " ".repeat(
-                    Math.max(1, width - visibleWidth(left) - rightWidth),
-                );
-                return [`${left}${padding}${right}`, ...lines.slice(1)];
-            },
-            invalidate: () => footer.invalidate(),
-            dispose() {
-                unsubscribe();
-                footer.dispose();
-            },
-        };
-    });
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -274,8 +217,9 @@ export default function controlExtension(pi: ExtensionAPI): void {
     pi.on("session_start", async (_event, ctx) => {
         await stopRuntime(state);
         state.context = ctx;
+        ctx.ui.setStatus(SESSION_MARKER_STATUS, undefined);
         if (pi.getFlag(AUTISTIC_MODE_FLAG) === true) {
-            installControlFooter(ctx, state, "[autistic]");
+            ctx.ui.setStatus(SESSION_MARKER_STATUS, "[autistic]");
             return;
         }
         if (
@@ -300,9 +244,8 @@ export default function controlExtension(pi: ExtensionAPI): void {
         await state.server.start();
         await publishSessionEndpoint(controlDirectory, endpoint);
         process.env.PI_SESSION_ID = endpoint.sessionId;
-        installControlFooter(
-            ctx,
-            state,
+        ctx.ui.setStatus(
+            SESSION_MARKER_STATUS,
             `[${shortSessionId(endpoint.sessionId)}]`,
         );
     });
@@ -326,7 +269,7 @@ export default function controlExtension(pi: ExtensionAPI): void {
         state.context = ctx;
     });
     pi.on("session_shutdown", async (_event, ctx) => {
-        if (ctx.mode === "tui") ctx.ui.setFooter(undefined);
+        ctx.ui.setStatus(SESSION_MARKER_STATUS, undefined);
         await stopRuntime(state);
     });
 }
