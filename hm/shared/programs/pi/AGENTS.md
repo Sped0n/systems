@@ -30,10 +30,11 @@ Add guards at real boundaries: user input, external systems, persistence, hardwa
 
 ## Tests and Documentation
 
-- Add tests for realistic observable regressions, non-trivial invariants or boundaries, and concrete bugs. Code changing or coverage increasing is not sufficient justification by itself.
-- Prefer existing coverage at the behavior boundary. Avoid tests that mirror literals, mappings, obvious control flow, implementation details, or removed features unless absence is itself a contract. For concurrency, prefer deterministic coordination or controlled scheduling over sleeps when practical.
-- Validate at the narrowest real seam. Inspect simple Markdown and configuration edits with read or diff; use executable checks when parser or runtime behavior warrants them.
-- Comments should explain non-obvious rationale, invariants, safety constraints, or external quirks rather than restating code. Public API documentation should describe observable contracts, not incidental implementation details.
+- Inspect existing coverage before adding tests. Add or extend a behavior test only for a concrete regression, non-trivial invariant, or boundary that existing checks would miss. Changed code and increased coverage are not sufficient justification.
+- Test observable behavior at the real contract boundary. Do not mock away the contract being verified or duplicate implementation assumptions in the harness. Avoid tests that merely restate literals, mappings, obvious control flow, or internal call counts.
+- Delete tests made obsolete by removed features. Do not add tombstone tests that only assert deleted symbols, options, or mechanisms remain absent. Retain rejection tests when rejection is a maintained compatibility or safety contract.
+- Match verification to scope and risk. Prefer diff inspection for prose and parser/schema checks for declarative configuration. Run relevant tests and required project checks; broaden or repeat verification only for new changes, failures, or unresolved concerns. Stop when the requested behavior is demonstrated and required checks pass.
+- Keep documentation concise and limited to relevant behavior, configuration, failure modes, and operational constraints. Comments should explain non-obvious rationale, invariants, safety constraints, or external quirks rather than restate code.
 
 ## Output
 
