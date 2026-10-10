@@ -76,7 +76,7 @@ async function harness(footerFirst: boolean) {
         theme,
         {
             getGitBranch: () => "main",
-            getAvailableProviderCount: () => 1,
+            getAvailableProviderCount: () => 2,
             getExtensionStatuses: () => statuses,
             onBranchChange: () => () => {},
         },
@@ -96,15 +96,16 @@ test("footer preserves the control marker, highlights fast, and keeps other stat
         const plain = lines.map(stripVTControlCharacters);
         assert.match(plain[0]!, /\[autistic\]$/u);
         assert.match(plain[1]!, /gpt-6\.1-sol \(fast\) • medium$/u);
+        assert.doesNotMatch(plain[1]!, /\(circe-responses\)/u);
         assert.ok(lines[1]!.includes("\x1b[35m(fast)\x1b[0m\x1b[90m • medium"));
         assert.deepEqual(plain.slice(2), ["Other status"]);
         assert.equal(h.ctx.model?.id, "gpt-6.1-sol");
 
         h.statuses.delete(FAST_MODE_STATUS);
-        assert.doesNotMatch(
-            stripVTControlCharacters(h.footer.render(120)[1]!),
-            /\(fast\)/u,
-        );
+        const withoutFast = stripVTControlCharacters(h.footer.render(120)[1]!);
+        assert.match(withoutFast, /gpt-6\.1-sol • medium$/u);
+        assert.doesNotMatch(withoutFast, /\(fast\)|\(circe-responses\)/u);
+        assert.equal(h.ctx.model?.provider, "circe-responses");
         h.footer.dispose?.();
         await h.emit("session_shutdown");
     }

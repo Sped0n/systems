@@ -36,8 +36,8 @@ export default function footerExtension(pi: ExtensionAPI): void {
             } as unknown as ConstructorParameters<typeof FooterComponent>[0];
             const data = {
                 getGitBranch: () => footerData.getGitBranch(),
-                getAvailableProviderCount: () =>
-                    footerData.getAvailableProviderCount(),
+                // Keep the model label compact even when multiple providers exist.
+                getAvailableProviderCount: () => 1,
                 onBranchChange: (callback: () => void) =>
                     footerData.onBranchChange(callback),
                 getExtensionStatuses: () =>
