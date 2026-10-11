@@ -8,11 +8,11 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "apple-container";
-  version = "1.4.1";
+  version = "1.5.0";
 
   src = fetchurl {
     url = "https://github.com/apple/container/releases/download/${finalAttrs.version}/container-${finalAttrs.version}-installer-signed.pkg";
-    hash = "sha256-wNJxav77sZTJP65mLpyufMGGvLz3RoFmCOxnPdZIpqQ=";
+    hash = "sha256-okgIyyAjGPocO77gxsaIf+EiX+iZ17aHoN3ZOb1lc/g=";
   };
 
   nativeBuildInputs = [
