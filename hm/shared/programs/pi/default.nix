@@ -16,7 +16,6 @@ let
 
   cfg = config.programs.my-pi;
   configDir = "${config.xdg.configHome}/pi";
-  settings = builtins.fromJSON (builtins.readFile ./settings.json);
 
   mkSymlink = path: {
     "${configDir}/${path}".source =
@@ -83,19 +82,7 @@ in
     };
 
     home.file = lib.mkMerge [
-      {
-        "${configDir}/settings.json".text = builtins.toJSON (
-          settings
-          // {
-            extensions =
-              (settings.extensions or [ ])
-              ++ lib.optional (!cfg.pcommit.enable) "-extensions/pcommit/index.ts"
-              ++ lib.optional (!cfg.pcontrol.enable) "-extensions/control/index.ts";
-            # Pi treats this as the last viewed release, suppressing the startup changelog.
-            lastChangelogVersion = pkgs.llm-agents.pi.version;
-          }
-        );
-      }
+      (mkSymlink "settings.json")
       (mkSymlink "AGENTS.md")
       (mkSymlink "keybindings.json")
       (mkSymlink "models.json")

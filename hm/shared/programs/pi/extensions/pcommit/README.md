@@ -18,11 +18,6 @@ The wrapper prints the generated message to stdout before invoking Git, so it
 remains visible even if a commit hook fails. Git opens the user's normal editor
 before creating the commit. The wrapper removes the temporary file on every exit.
 
-The wrapper and extension are enabled by default with
-`programs.my-pi.pcommit.enable`. Configure `programs.my-pi.pcommit.provider`,
-`model`, and `thinking` to select the generation model; defaults are
-`circe-responses`, `gpt-6.1-sol`, and `low`.
-
 Usage:
 
 ```bash

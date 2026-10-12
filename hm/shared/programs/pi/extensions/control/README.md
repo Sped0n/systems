@@ -5,8 +5,7 @@ sessions. Print, JSON, and `--autistic-mode` sessions do not participate. The
 server adds no model tools or system-prompt instructions.
 
 `pcontrol` is a small asynchronous text bridge for Pi sessions, shells, and
-editors. `programs.my-pi.pcontrol.enable` defaults to `true`; disabling it removes
-the command and prevents the session-control extension from loading:
+editors.
 
 ```text
 pcontrol list [--cwd PATH] [--json]

@@ -2,6 +2,11 @@
   "defaultProvider": "circe-responses",
   "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "medium",
+  "retry": {
+    "enabled": true,
+    "maxRetries": 3,
+    "baseDelayMs": 7000
+  },
   "cacheWarming": "idle",
   "defaultTools": ["+codemode"],
   "treeFilterMode": "user-only",
@@ -13,5 +18,6 @@
   "theme": "system",
   "tuiMode": "fullscreen",
   "editorPaddingX": 1.5,
-  "outputPad": 1
+  "outputPad": 1,
+  "lastChangelogVersion": "1.1.0"
 }

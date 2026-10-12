@@ -26,10 +26,6 @@ pi/
 └── tsconfig.json       # Extension typechecking
 ```
 
-Three JSON configuration files, `AGENTS.md`, extensions, and skills are mapped
-with out-of-store symlinks. Home Manager generates `settings.json` from the
-checked-in settings; changing it requires a Home Manager rebuild.
-
 Every extension lives under `extensions/<name>/`, with `index.ts` as its entry
 point and a `README.md` describing its interface and behavior. Keep focused
 tests beside the extension as `test.ts`.
