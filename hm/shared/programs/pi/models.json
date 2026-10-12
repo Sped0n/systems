@@ -20,12 +20,35 @@
             "max": "max"
           },
           "input": ["text"],
-          "contextWindow": 400000,
+          "contextWindow": 200000,
           "maxTokens": 262144,
           "cost": {
             "input": 1.4,
             "output": 4.4,
-            "cacheRead": 0.14,
+            "cacheRead": 0.26,
+            "cacheWrite": 0
+          }
+        },
+        {
+          "id": "deepseek-v4.1-flash",
+          "name": "DeepSeek V4.1 Flash",
+          "reasoning": true,
+          "thinkingLevelMap": {
+            "off": null,
+            "minimal": null,
+            "low": "low",
+            "medium": null,
+            "high": "high",
+            "xhigh": null,
+            "max": "max"
+          },
+          "input": ["text", "image"],
+          "contextWindow": 300000,
+          "maxTokens": 262144,
+          "cost": {
+            "input": 0.3,
+            "output": 1.2,
+            "cacheRead": 0.006,
             "cacheWrite": 0
           }
         }
