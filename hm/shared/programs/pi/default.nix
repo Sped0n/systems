@@ -84,7 +84,6 @@ in
     home.file = lib.mkMerge [
       (mkSymlink "settings.json")
       (mkSymlink "AGENTS.md")
-      (mkSymlink "keybindings.json")
       (mkSymlink "models.json")
       (mkSymlink "interceptor.json")
       (mkSymlink "extensions")
