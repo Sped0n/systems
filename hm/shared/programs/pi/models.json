@@ -1,4 +1,5 @@
 {
+  "$schema": "https://pi.dev/schemas/models.schema.json",
   "providers": {
     "circe-completion": {
       "baseUrl": "https://circe.sped0n.com/v1",

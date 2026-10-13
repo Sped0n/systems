@@ -1,4 +1,5 @@
 {
+  "$schema": "https://pi.dev/schemas/settings.schema.json",
   "defaultProvider": "circe-responses",
   "defaultModel": "gpt-6.1-sol",
   "defaultThinkingLevel": "medium",
