@@ -353,21 +353,59 @@ export function renderTrace(
     );
     const selected = new Map<number, string>();
     let used = 0;
-    const select = (index: number, limit: number, ceiling: number) => {
-        const block = ui[index];
-        const row = render(
-            block,
-            excerpt(block.uiText!, limit, "\n[…excerpt; read source…]\n"),
+    const renderExcerpt = (index: number, limit: number) =>
+        render(
+            ui[index],
+            excerpt(ui[index].uiText!, limit, "\n[…excerpt; read source…]\n"),
         );
+    const select = (index: number, limit: number, ceiling: number) => {
+        const row = renderExcerpt(index, limit);
         const cost = row.length + 2 + gapReserve;
         if (used + cost > ceiling) return;
         selected.set(index, row);
         used += cost;
     };
+    const userLimits = new Map(
+        users.map((index) => [
+            index,
+            Math.min(ui[index].uiText!.length, userLimit),
+        ]),
+    );
+    const userCost = users.reduce(
+        (cost, index) =>
+            cost +
+            renderExcerpt(index, userLimits.get(index)!).length +
+            2 +
+            gapReserve,
+        0,
+    );
+    // Short requests donate unused space to clipped wording before older work.
+    // Keep the existing overflow policy when the baseline itself cannot fit.
+    if (userCost <= userBudget) {
+        let remaining = userBudget - userCost;
+        const clipped = users
+            .filter(
+                (index) => ui[index].uiText!.length > userLimits.get(index)!,
+            )
+            .sort(
+                (a, b) =>
+                    ui[a].uiText!.length -
+                        userLimits.get(a)! -
+                        (ui[b].uiText!.length - userLimits.get(b)!) || a - b,
+            );
+        for (const index of clipped) {
+            const increase = Math.min(
+                remaining,
+                ui[index].uiText!.length - userLimits.get(index)!,
+            );
+            userLimits.set(index, userLimits.get(index)! + increase);
+            remaining -= increase;
+        }
+    }
     // Oldest intent and newest corrections survive even when user evidence alone overflows.
-    if (users.length) select(users[0], userLimit, userBudget);
+    if (users.length) select(users[0], userLimits.get(users[0])!, userBudget);
     for (const index of users.slice(1).reverse())
-        select(index, userLimit, userBudget);
+        select(index, userLimits.get(index)!, userBudget);
     for (let index = ui.length - 1; index >= 0; index--)
         if (ui[index].role !== "user") select(index, 800, available);
 
@@ -446,7 +484,7 @@ export function maskConsumedToolResults(
             content: [
                 {
                     type: "text" as const,
-                    text: `[Older ${message.toolName} output omitted from active context. Read original: recall(${JSON.stringify({ action: "read", target: source.id, offset: 0, scope: "lineage" })})]`,
+                    text: `[Older ${message.toolName} output omitted from active context. Read original: recall(${JSON.stringify({ action: "read", target: source.id, offset: 0 })})]`,
                 },
             ],
         };
