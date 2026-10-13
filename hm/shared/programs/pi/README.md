@@ -55,7 +55,7 @@ remain separate so Nix does not fetch the full development graph for deployed
 extensions. `runtime/package.json` and `runtime/package-lock.json` own the
 runtime dependency set. After updating the Nix Pi pin or runtime dependencies,
 synchronize the development dependencies and lockfiles without upgrading to
-latest versions:
+latest versions with:
 
 ```bash
 pnpm run sync

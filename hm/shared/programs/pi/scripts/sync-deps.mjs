@@ -9,6 +9,12 @@ const repositoryDirectory = path.resolve(piDirectory, "../../../..");
 const runtimeDirectory = path.join(piDirectory, "runtime");
 const packagePath = path.join(piDirectory, "package.json");
 
+const flakeLock = JSON.parse(
+    await readFile(path.join(repositoryDirectory, "flake.lock"), "utf8"),
+);
+const llmAgentsNode = flakeLock.nodes[flakeLock.root].inputs["llm-agents"];
+const llmAgentsSource = flakeLock.nodes[llmAgentsNode].locked;
+
 const piVersion = execFileSync(
     "nix",
     [
@@ -17,11 +23,11 @@ const piVersion = execFileSync(
         "--impure",
         "--no-write-lock-file",
         "--expr",
-        '(builtins.getFlake ("path:" + builtins.getEnv "PI_SYNC_FLAKE")).inputs.llm-agents.packages.${builtins.currentSystem}.pi.version',
+        '(builtins.getFlake (builtins.unsafeDiscardStringContext (builtins.fetchTree (builtins.fromJSON (builtins.getEnv "PI_SYNC_INPUT"))).outPath)).packages.${builtins.currentSystem}.pi.version',
     ],
     {
         cwd: repositoryDirectory,
-        env: { ...process.env, PI_SYNC_FLAKE: repositoryDirectory },
+        env: { ...process.env, PI_SYNC_INPUT: JSON.stringify(llmAgentsSource) },
         encoding: "utf8",
         stdio: ["ignore", "pipe", "inherit"],
     },
