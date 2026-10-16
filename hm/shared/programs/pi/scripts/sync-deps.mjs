@@ -69,3 +69,19 @@ execFileSync("pnpm", ["install", "--no-frozen-lockfile"], {
     cwd: piDirectory,
     stdio: "inherit",
 });
+
+const settingsPath = path.join(piDirectory, "settings.json");
+const settingsText = await readFile(settingsPath, "utf8");
+const settings = JSON.parse(settingsText);
+if (settings.lastChangelogVersion !== piVersion) {
+    const updatedSettingsText = settingsText.replace(
+        /("lastChangelogVersion"\s*:\s*)"(?:\\.|[^"\\])*"/u,
+        (_, prefix) => `${prefix}${JSON.stringify(piVersion)}`,
+    );
+    if (JSON.parse(updatedSettingsText).lastChangelogVersion !== piVersion) {
+        throw new Error(
+            "Could not update lastChangelogVersion in settings.json",
+        );
+    }
+    await writeFile(settingsPath, updatedSettingsText);
+}
