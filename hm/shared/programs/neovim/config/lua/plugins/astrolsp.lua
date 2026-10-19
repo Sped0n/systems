@@ -42,7 +42,7 @@ return {
       -- json
       "jsonls",
       -- markdown
-      "marksman",
+      "rumdl",
     })
   end,
 }

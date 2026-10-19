@@ -33,7 +33,7 @@
         taplo
         yaml-language-server
         vscode-langservers-extracted
-        marksman
+        rumdl
         prettierd
       ]);
     defaultEditor = true;
