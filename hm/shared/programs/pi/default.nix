@@ -31,7 +31,7 @@ in
       };
       provider = mkOption {
         type = types.str;
-        default = "circe-responses";
+        default = "circe";
         description = "Provider used to generate commit messages.";
       };
       model = mkOption {
