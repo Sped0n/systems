@@ -24,7 +24,7 @@ return {
       -- lua
       "lua_ls",
       -- python
-      "basedpyright",
+      "pyrefly",
       -- golang
       "gopls",
       -- c/cpp

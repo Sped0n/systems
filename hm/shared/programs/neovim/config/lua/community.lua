@@ -14,7 +14,7 @@ return {
   -- languages
   { import = "astrocommunity.pack.lua" },
   { import = "astrocommunity.pack.python.base" },
-  { import = "astrocommunity.pack.python.basedpyright" },
+  { import = "astrocommunity.pack.python.pyrefly" },
   { import = "astrocommunity.pack.python.ruff" },
   { import = "astrocommunity.pack.cpp" },
   { import = "astrocommunity.pack.cmake" },

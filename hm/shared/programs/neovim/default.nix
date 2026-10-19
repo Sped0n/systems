@@ -22,7 +22,7 @@
         stylua
         selene
 
-        basedpyright
+        pyrefly
         ruff
         python313Packages.debugpy
 
