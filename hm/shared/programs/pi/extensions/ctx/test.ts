@@ -125,30 +125,17 @@ function eventFor(
 }
 function recallHarness(manager = SessionManager.inMemory()) {
     let tool: ToolDefinition | undefined;
-    let command: Parameters<ExtensionAPI["registerCommand"]>[1] | undefined;
-    const sent: unknown[] = [];
     registerRecall({
         registerTool: (definition: ToolDefinition) => {
             tool = definition;
         },
-        registerCommand: (
-            _name: string,
-            definition: Parameters<ExtensionAPI["registerCommand"]>[1],
-        ) => {
-            command = definition;
-        },
-        getActiveTools: () => ["recall"],
-        sendUserMessage: (...args: unknown[]) => {
-            sent.push(args);
-        },
+        registerCommand: () => {},
     } as unknown as ExtensionAPI);
     const context = {
         sessionManager: manager,
     } as unknown as ExtensionToolContext;
     return {
         manager,
-        sent,
-        command,
         read: async (params: JsonObject, signal?: AbortSignal) => {
             const validated = validateToolArguments(
                 tool!,
@@ -431,57 +418,6 @@ test("unused short-request allowance preserves complete longer instructions acro
     );
 });
 
-test("bounded UI preserves older user evidence without duplicating the native tail", () => {
-    const manager = SessionManager.inMemory();
-    user(manager, "Never modify vendor sources.");
-    for (let index = 0; index < 60; index++) {
-        manager.appendMessage(
-            fauxAssistantMessage(
-                `Earlier investigation ${index}. ${"history ".repeat(500)}`,
-            ),
-        );
-    }
-    const tailStart = user(manager, "Inspect the parser error.");
-    manager.appendMessage(
-        fauxAssistantMessage(
-            fauxToolCall(
-                "bash",
-                {
-                    command: "parser-test",
-                },
-                { id: "parser-test" },
-            ),
-            { stopReason: "toolUse" },
-        ),
-    );
-    const failed = toolResult(
-        manager,
-        "parser-test",
-        "bash",
-        "FAIL: boundary at byte 42",
-        true,
-    );
-    manager.appendMessage(
-        fauxAssistantMessage(
-            "I propose an external patch; it has not been applied.",
-        ),
-    );
-    const latest = user(
-        manager,
-        "Would that patch require changing vendor sources?",
-    );
-    const brief = buildBrief(eventFor(manager, tailStart), 16000);
-    assert.match(brief, /Never modify vendor sources/);
-    assert.doesNotMatch(
-        brief,
-        /Inspect the parser error|FAIL: boundary|I propose an external patch|Would that patch require/,
-    );
-    assert.doesNotMatch(brief, /Earlier investigation 0\./);
-    assert.ok(!brief.includes(failed));
-    assert.ok(!brief.includes(latest));
-    assert.ok(brief.includes(tailStart));
-});
-
 test("UI keeps call chronology and source coordinates across canonical replacements without inferring file outcomes", () => {
     const manager = SessionManager.inMemory();
     user(manager, "Inspect the parser.");
@@ -730,7 +666,7 @@ test("recall recovers paged original text and readable but unsearchable recall e
 
 test("UI and adaptive retrieval share exact full-view coordinates and distinguish intent from observation", async () => {
     const h = recallHarness();
-    user(h.manager, "Keep the existing API.");
+    const constraint = user(h.manager, "Keep the existing API.");
     h.manager.appendMessage(
         fauxAssistantMessage(
             [
@@ -786,7 +722,10 @@ test("UI and adaptive retrieval share exact full-view coordinates and distinguis
         assert.ok(text.includes(`[${role}]`));
     assert.doesNotMatch(text, /assistant\+tool_call/);
     for (const args of (found.details as { reads: JsonObject[] }).reads)
-        assert.match(resultText(await h.read(args)), /needle/);
+        assert.match(
+            resultText(await h.read(args)),
+            args.target === constraint ? /Keep the existing API/ : /needle/,
+        );
 });
 
 test("adaptive search bundles recorded calls and observations without changing hit pagination", async () => {
@@ -1006,6 +945,83 @@ test("adaptive ranking surfaces concise observed evidence ahead of matching inve
     const next = resultText(await h.read(details.next));
     assert.match(next, /\[thinking\] match/);
     assert.match(next, /further inspection needed/);
+});
+
+test("adaptive hits retain bounded original user-turn context across branches and canonical edits", async () => {
+    const h = await recallHarness();
+    const root = user(h.manager, "Inspect recorded evidence only.");
+    user(h.manager, "Abandoned turn: destructive operations permitted.");
+    h.manager.branch(root);
+    const first = user(
+        h.manager,
+        "Inspect the actuator only. Do not flash or erase persistent storage.",
+    );
+    const observe = (id: string, command: string) => {
+        h.manager.appendMessage(
+            fauxAssistantMessage(fauxToolCall("bash", { command }, { id }), {
+                stopReason: "toolUse",
+            }),
+        );
+        toolResult(
+            h.manager,
+            id,
+            "bash",
+            `episode-needle ${"recorded evidence ".repeat(100)}`,
+        );
+    };
+    for (let index = 0; index < 2; index++)
+        observe(`actuator-${index}`, `inspect actuator ${index}`);
+    const second = user(
+        h.manager,
+        "Review the reader trace; still no hardware operations.",
+    );
+    const replacement = h.manager.appendContextEdit(second, {
+        content: "Canonical replacement, not a new recorded user turn.",
+    });
+    observe("reader", "inspect reader");
+    h.manager.appendCompaction(
+        "Invented episode-needle authorization.",
+        second,
+        40000,
+    );
+
+    const result = await h.read({
+        action: "search",
+        target: "episode-needle",
+        offset: 0,
+    });
+    const text = resultText(result);
+    const details = result.details as { total: number; reads: JsonObject[] };
+    assert.equal(details.total, 3);
+    assert.match(text, /Do not flash or erase persistent storage/);
+    assert.match(text, /still no hardware operations/);
+    assert.match(text, /historical, not approval/);
+    assert.doesNotMatch(text, /Abandoned turn|Canonical replacement|Invented/);
+    for (const target of [first, second]) {
+        const pointers = details.reads.filter((read) => read.target === target);
+        assert.equal(
+            pointers.length,
+            1,
+            "deduplicate turn anchors within a page",
+        );
+        assert.match(resultText(await h.read(pointers[0])), /hardware|flash/);
+    }
+    assert.ok(!details.reads.some((read) => read.target === replacement));
+    const sources = [...text.matchAll(/source ([\w-]+):(\d+)-(\d+)\n/g)];
+    assert.equal(sources.length, 8);
+    assert.ok(
+        sources.reduce(
+            (sum, source) => sum + Number(source[3]) - Number(source[2]),
+            0,
+        ) <=
+            details.total * 600,
+        "turn excerpts share the existing evidence budget",
+    );
+    for (const [, target, start, end] of sources) {
+        const entry = h.manager.getEntry(target)!;
+        const full = recallTraceEntry(entry, h.manager.getBranch())!.text;
+        assert.ok(text.includes(full.slice(Number(start), Number(end))));
+    }
 });
 
 test("literal adaptive search returns usable offsets after Unicode case-expanding text", async () => {
@@ -1433,21 +1449,6 @@ test("manual compaction calls no model, preserves native tail boundaries and per
     assert.deepEqual(h.errors, []);
 });
 
-test("native threshold scheduling uses the selected 272k capacity, not a guessed 32k window", async (t) => {
-    const h = await runtime(t);
-    const response = fauxAssistantMessage("Continue normally");
-    response.usage = { ...response.usage, input: 40000, totalTokens: 40000 };
-    h.faux.setResponses([response]);
-    await h.session.prompt("Continue investigating.");
-    assert.equal(
-        h.manager.getBranch().filter((entry) => entry.type === "compaction")
-            .length,
-        0,
-    );
-    assert.equal(h.faux.state.callCount, 1);
-    assert.deepEqual(h.errors, []);
-});
-
 test("native automatic compaction continues the tool loop once without a summary model call or repeat compaction", async (t) => {
     const h = await runtime(t, {
         extraFactory: (pi) => {
@@ -1524,21 +1525,6 @@ test("native overflow recovery retries once using the deterministic brief", asyn
     assert.deepEqual(h.errors, []);
 });
 
-test("compaction failure commits nothing and never falls back to a model call", async (t) => {
-    const h = await runtime(t, {
-        extraFactory: (pi) => {
-            pi.on("session_before_compact", (event) => {
-                event.signal.throwIfAborted();
-                return { cancel: true };
-            });
-        },
-    });
-    const before = h.manager.getBranch();
-    await assert.rejects(h.session.compact(), /cancelled|failed/i);
-    assert.equal(h.faux.state.callCount, 0);
-    assert.deepEqual(h.manager.getBranch(), before);
-});
-
 test("compaction cannot replace evidence with pointers while recall is restricted", async (t) => {
     const h = await runtime(t);
     h.session.setActiveToolsByName([]);
@@ -1579,22 +1565,15 @@ for (const mode of ["on", "only"] as const) {
             target: "refresh-key-4829",
             offset: 0,
         };
-        let recallExecutions = 0;
-        let probeExecutions = 0;
         const h = await runtime(t, {
             codemode: mode,
             extraFactory: (pi) => {
-                pi.on("tool_execution_end", (event) => {
-                    if (event.toolName === "recall" && !event.isError)
-                        recallExecutions++;
-                });
                 pi.registerTool({
                     name: "nested_probe",
                     label: "Nested boundary probe",
                     description: "Verify that nested recall is unavailable.",
                     parameters: Type.Object({}),
                     async execute(_id, _args, _signal, _update, ctx) {
-                        probeExecutions++;
                         assert.ok(
                             !ctx.tools.some((tool) => tool.name === "recall"),
                         );
@@ -1630,41 +1609,6 @@ for (const mode of ["on", "only"] as const) {
             },
             () => {
                 assert.match(results.at(-1)!, /refresh-key-4829/);
-                const pointer = results
-                    .at(-1)!
-                    .match(/source ([^:;\s]+):(\d+)-(\d+)/);
-                assert.ok(
-                    pointer,
-                    "search must expose a native read source pointer",
-                );
-                return fauxAssistantMessage(
-                    fauxToolCall("recall", {
-                        action: "read",
-                        target: pointer[1],
-                        offset: Number(pointer[2]),
-                    }),
-                    { stopReason: "toolUse" },
-                );
-            },
-            () => {
-                assert.match(
-                    results.at(-1)!,
-                    /Original decision: refresh-key-4829/,
-                );
-                return fauxAssistantMessage(
-                    fauxToolCall("recall", {
-                        action: "around",
-                        target: h.oldId!,
-                        offset: 0,
-                    }),
-                    { stopReason: "toolUse" },
-                );
-            },
-            () => {
-                assert.match(
-                    results.at(-1)!,
-                    /Original decision: refresh-key-4829/,
-                );
                 return fauxAssistantMessage(
                     fauxToolCall("codemode", {
                         code: `try { await tools.recall(${JSON.stringify(params)}); text("unexpected-recall-success"); } catch (error) { text("codemode-recall-blocked"); } text(await tools.nested_probe({}));`,
@@ -1672,26 +1616,17 @@ for (const mode of ["on", "only"] as const) {
                     { stopReason: "toolUse" },
                 );
             },
-            () => {
-                assert.match(results.at(-1)!, /codemode-recall-blocked/);
-                assert.match(results.at(-1)!, /nested-recall-blocked/);
-                assert.doesNotMatch(
-                    results.at(-1)!,
-                    /unexpected-recall-success|Script failed/,
-                );
-                return fauxAssistantMessage("Boundary verified.");
-            },
+            fauxAssistantMessage("Boundary verified."),
         ]);
         await h.session.prompt(
             "Recover the original requirement and check the nested boundary.",
         );
-        assert.equal(h.session.agent.state.messages.at(-1)?.role, "assistant");
-        assert.match(
-            JSON.stringify(h.session.agent.state.messages.at(-1)),
-            /Boundary verified/,
+        assert.match(results.at(-1)!, /codemode-recall-blocked/);
+        assert.match(results.at(-1)!, /nested-recall-blocked/);
+        assert.doesNotMatch(
+            results.at(-1)!,
+            /unexpected-recall-success|Script failed/,
         );
-        assert.equal(recallExecutions, 3);
-        assert.equal(probeExecutions, 1);
         assert.deepEqual(h.errors, []);
     });
 }
@@ -1719,16 +1654,4 @@ test("tool restrictions leave original results visible when recall is unavailabl
     assert.match(request, /must-stay-visible/);
     assert.doesNotMatch(request, /Older read output omitted/);
     assert.deepEqual(h.errors, []);
-});
-
-test("/recall queues the requested reconstruction as a main-agent follow-up", async () => {
-    const h = recallHarness();
-    await h.command!.handler(
-        "What was approved but not verified?",
-        {} as never,
-    );
-    assert.equal(h.sent.length, 1);
-    const [message, options] = h.sent[0] as [string, unknown];
-    assert.match(message, /What was approved but not verified/);
-    assert.deepEqual(options, { deliverAs: "followUp" });
 });

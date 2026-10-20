@@ -62,9 +62,10 @@ function surroundingEntries(
     offset: number,
     signal?: AbortSignal,
 ) {
+    const entriesById = new Map(entries.map((entry) => [entry.id, entry]));
     const trace = entries.flatMap((entry) => {
         signal?.throwIfAborted();
-        const text = recallTraceEntry(entry, entries);
+        const text = recallTraceEntry(entry, entriesById);
         return text ? [text] : [];
     });
     const anchor = trace.findIndex((entry) => entry.id === target);
@@ -106,12 +107,18 @@ function surroundingEntries(
 function recordedToolPairs(
     entriesById: ReadonlyMap<string, SessionEntry>,
     trace: readonly TraceBlock[],
+    selected: readonly TraceBlock[],
     signal?: AbortSignal,
 ): Map<TraceBlock, TraceBlock | null> {
     const calls = new Map<string, TraceBlock[]>();
     const results = new Map<string, TraceBlock[]>();
     const callKey = (block: TraceBlock) =>
         JSON.stringify([block.toolName, block.callId]);
+    // Off-page duplicates must still make a selected key ambiguous.
+    const selectedKeys = new Set(
+        selected.filter((block) => block.callId).map(callKey),
+    );
+    if (!selectedKeys.size) return new Map();
     for (const block of trace) {
         signal?.throwIfAborted();
         if (!block.callId || entriesById.get(block.entryId)?.type !== "message")
@@ -124,6 +131,7 @@ function recordedToolPairs(
                   : undefined;
         if (!collection) continue;
         const key = callKey(block);
+        if (!selectedKeys.has(key)) continue;
         const matches = collection.get(key);
         if (matches) matches.push(block);
         else collection.set(key, [block]);
@@ -199,25 +207,28 @@ function searchEntries(
             new RegExp(term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "giu"),
     );
     const frequencies = terms.map(() => 0);
-    const trace = compileTrace(entries);
+    const entriesById = new Map(entries.map((entry) => [entry.id, entry]));
+    const trace = compileTrace(entries, entriesById);
+    const words = /\S+/g;
     let documentCount = 0;
     let totalLength = 0;
     const matchedBlocks = trace.flatMap((block, index) => {
         signal?.throwIfAborted();
         if (!block.searchable) return [];
         documentCount++;
-        const length = block.text.match(/\S+/g)?.length ?? 0;
+        words.lastIndex = 0;
+        let length = 0;
+        while (words.test(block.text)) length++;
         totalLength += length;
         const matches = patterns.flatMap((pattern, termIndex) => {
-            let position = -1;
-            let count = 0;
-            for (const match of block.text.matchAll(pattern)) {
-                if (!count) position = match.index;
-                count++;
-            }
-            if (!count) return [];
+            pattern.lastIndex = 0;
+            const first = pattern.exec(block.text);
+            if (!first) return [];
+            // Keep exact frequencies without allocating an array per occurrence.
+            let count = 1;
+            while (pattern.test(block.text)) count++;
             frequencies[termIndex]++;
-            return [{ termIndex, position, count }];
+            return [{ termIndex, position: first.index, count }];
         });
         if (terms.length && !matches.length) return [];
         return [{ block, matches, index, length }];
@@ -271,8 +282,12 @@ function searchEntries(
         end < hits.length
             ? { action: "search" as const, target, offset: end }
             : null;
-    const entriesById = new Map(entries.map((entry) => [entry.id, entry]));
-    const pairs = recordedToolPairs(entriesById, trace, signal);
+    const pairs = recordedToolPairs(
+        entriesById,
+        trace,
+        selected.map((hit) => hit.block),
+        signal,
+    );
     const reads: {
         action: "read";
         target: string;
@@ -297,9 +312,27 @@ function searchEntries(
         const error = block.isError ? "; tool reported error" : "";
         return `[${block.timestamp}] [${block.role}] ${kind}${replacement}${error} source ${block.entryId}:${snippet.offset}-${snippet.end}\n${snippet.text}`;
     };
+    const selectedBlocks = new Set(selected.map((hit) => hit.block));
+    const turns = new Map<TraceBlock, TraceBlock>();
+    let turn: TraceBlock | undefined;
+    for (const block of trace) {
+        signal?.throwIfAborted();
+        if (entriesById.get(block.entryId)?.type !== "message") continue;
+        if (block.role === "user") turn = block;
+        else if (turn && selectedBlocks.has(block)) turns.set(block, turn);
+    }
+    const renderedTurns = new Set(
+        selected
+            .filter((hit) => hit.block.role === "user")
+            .map((hit) => hit.block.entryId),
+    );
     const rows = selected.map((hit) => {
         signal?.throwIfAborted();
         const partner = pairs.get(hit.block);
+        const user = turns.get(hit.block);
+        const turn =
+            user && !renderedTurns.has(user.entryId) ? user : undefined;
+        if (turn) renderedTurns.add(turn.entryId);
         const matched = excerpt(
             JSON.stringify(hit.matches.map((match) => terms[match.termIndex])),
             160,
@@ -308,33 +341,30 @@ function searchEntries(
         const row = render(
             hit.block,
             hit.position,
-            partner ? 420 : 600,
+            (partner ? 420 : 600) - (turn ? 120 : 0),
             "match",
         );
-        if (!partner)
-            return (
-                row +
-                "\nMatched terms: " +
-                matched +
-                (partner === null
-                    ? "\nRecorded counterpart is ambiguous; inspect around."
-                    : "")
-            );
-        const matchingPartner = hits.find(
-            (candidate) => candidate.block === partner,
-        );
-        return (
-            row +
-            "\nMatched terms: " +
-            matched +
-            "\n" +
-            render(
-                partner,
-                matchingPartner?.position,
-                180,
-                "related recorded evidence",
-            )
-        );
+        const related = partner
+            ? "\n" +
+              render(
+                  partner,
+                  hits.find((candidate) => candidate.block === partner)
+                      ?.position,
+                  180,
+                  "related recorded evidence",
+              )
+            : partner === null
+              ? "\nRecorded counterpart is ambiguous; inspect around."
+              : "";
+        const context = turn
+            ? render(
+                  turn,
+                  0,
+                  120,
+                  "recorded turn start (historical, not approval)",
+              ) + "\n"
+            : "";
+        return context + row + "\nMatched terms: " + matched + related;
     });
     return recallResult(
         `Active lineage; matching blocks ${offset + 1}-${end}/${hits.length}.\n` +
@@ -353,8 +383,7 @@ function fileEntries(
     signal?: AbortSignal,
 ) {
     const entriesById = new Map(entries.map((entry) => [entry.id, entry]));
-    const trace = compileTrace(entries);
-    const pairs = recordedToolPairs(entriesById, trace, signal);
+    const trace = compileTrace(entries, entriesById);
     const query = target.toLowerCase();
     const operations = trace
         .filter((block) => block.file?.path.toLowerCase().includes(query))
@@ -378,6 +407,7 @@ function fileEntries(
             `offset must be less than ${operations.length} file operations.`,
         );
     const selected = operations.slice(offset, offset + 5);
+    const pairs = recordedToolPairs(entriesById, trace, selected, signal);
     const end = offset + selected.length;
     const next =
         end < operations.length
@@ -466,7 +496,7 @@ export function registerRecall(pi: ExtensionAPI) {
             "Call recall directly, not through codemode or other tools. " +
             "Files lists five recorded native read/write/edit operations with call/result pointers; target is a literal path substring (empty lists all). Calls are attempts, not current file state. " +
             "Search OR-matches literal keywords, case-insensitively, and returns up to five matching blocks ranked by literal-term relevance then recency. Hits include separately labelled recorded call/result evidence when pairing is unambiguous, sharing a 600-character excerpt budget per hit. " +
-            "Read returns up to 12000 UTF-16 characters of the full textual view, including write/edit payloads. UI and search coordinates refer to this view. Search excludes recall echoes and generated compaction summaries. " +
+            "Read returns up to 12000 UTF-16 characters of the full textual view, including write/edit payloads. UI and search coordinates refer to this view. Search excludes recall echoes and generated compaction summaries; hits may include historical user-turn anchors within the same excerpt budget, not renewed approval. " +
             "Around returns five chronological excerpts starting two recallable entries before an entry ID; continue to follow later events. " +
             "Use source pointers with the shared navigation instructions and copy continuation arguments; changing query restarts offset at zero. " +
             "Images are metadata only. No filesystem or cross-session search.",

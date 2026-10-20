@@ -23,7 +23,8 @@ Typed trace + source coordinates
   images are metadata only.
 - **UI:** chronological dialogue and folded tool calls with source pointers.
 - **Adaptive:** matching source blocks, ranked and labeled by role, with bounded
-  recorded call/result evidence when the association is unambiguous.
+  recorded call/result evidence when the association is unambiguous and original
+  user-turn anchors for context, not renewed approval.
 
 Pointers use `entryId:start-end`: zero-based, end-exclusive UTF-16 offsets in
 the full textual view. Use `recall` with `target=entryId, offset=start` to read
@@ -60,9 +61,10 @@ other branches and sessions are not searchable.
 The model can also call the tool directly:
 
 - `search`: case-insensitive literal OR matching, ranked by BM25-style relevance,
-  then recency. Each page has up to five matches. A hit and any uniquely associated
-  recorded call/result share a 600-character excerpt budget, with explicit roles,
-  matched terms, and source pointers. Context replacements are labeled but never
+  then recency. Each page has up to five matches. A hit, any uniquely associated
+  recorded call/result, and its optional historical user-turn anchor share a
+  600-character excerpt budget. Turn anchors appear at most once per page. Excerpts
+  retain explicit roles, matched terms, and source pointers. Context replacements are labeled but never
   paired as recorded execution. `offset` counts matches, not related evidence;
   restart at zero when the query changes.
 - `files`: five recorded native `read`/`write`/`edit` operations, ordered by

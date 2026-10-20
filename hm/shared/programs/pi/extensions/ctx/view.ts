@@ -249,23 +249,31 @@ export function compileTraceEntry(
 
 function sourceBlocks(
     entry: SessionEntry,
-    entries: readonly SessionEntry[],
+    entries: readonly SessionEntry[] | ReadonlyMap<string, SessionEntry>,
 ): TraceBlock[] {
     if (entry.type === "context_edit") {
-        const target = entries.find((source) => source.id === entry.targetId);
+        const target =
+            "get" in entries
+                ? entries.get(entry.targetId)
+                : entries.find((source) => source.id === entry.targetId);
         if (target) return compileTraceEntry(target, entry);
     }
     return compileTraceEntry(entry);
 }
 
-export function compileTrace(entries: readonly SessionEntry[]): TraceBlock[] {
-    return entries.flatMap((entry) => sourceBlocks(entry, entries));
+export function compileTrace(
+    entries: readonly SessionEntry[],
+    entriesById: ReadonlyMap<string, SessionEntry> = new Map(
+        entries.map((entry) => [entry.id, entry]),
+    ),
+): TraceBlock[] {
+    return entries.flatMap((entry) => sourceBlocks(entry, entriesById));
 }
 
 /** Sanitized full textual view. Raw JSONL remains authoritative for binary data. */
 export function recallTraceEntry(
     entry: SessionEntry,
-    entries: readonly SessionEntry[] = [],
+    entries: readonly SessionEntry[] | ReadonlyMap<string, SessionEntry> = [],
 ) {
     const blocks = sourceBlocks(entry, entries);
     if (!blocks.length) return undefined;
