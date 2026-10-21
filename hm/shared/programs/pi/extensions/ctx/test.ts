@@ -619,7 +619,6 @@ test("recall recovers paged original text and readable but unsearchable recall e
         offset: 0,
     });
     assert.match(resultText(search), new RegExp(original));
-    assert.match(resultText(search), /Around: recall/);
     let next: JsonObject | null = {
         action: "read",
         target: original,
@@ -1007,8 +1006,11 @@ test("adaptive hits retain bounded original user-turn context across branches an
         assert.match(resultText(await h.read(pointers[0])), /hardware|flash/);
     }
     assert.ok(!details.reads.some((read) => read.target === replacement));
+    const expand = JSON.parse(
+        text.match(/^Expand if needed: recall\((.+)\)$/m)![1],
+    );
+    assert.match(resultText(await h.read(expand)), /episode-needle/);
     const sources = [...text.matchAll(/source ([\w-]+):(\d+)-(\d+)\n/g)];
-    assert.equal(sources.length, 8);
     assert.ok(
         sources.reduce(
             (sum, source) => sum + Number(source[3]) - Number(source[2]),

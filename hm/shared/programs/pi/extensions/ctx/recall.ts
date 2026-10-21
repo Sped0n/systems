@@ -368,7 +368,7 @@ function searchEntries(
     });
     return recallResult(
         `Active lineage; matching blocks ${offset + 1}-${end}/${hits.length}.\n` +
-            sourceNavigation() +
+            `Expand if needed: recall(${JSON.stringify(reads[0])})` +
             "\nRelated blocks are recorded evidence, not completion verdicts. Changing query restarts offset at 0.\n\n" +
             rows.join("\n\n") +
             (next ? `\n\nContinue: recall(${JSON.stringify(next)})` : ""),
@@ -496,9 +496,9 @@ export function registerRecall(pi: ExtensionAPI) {
             "Call recall directly, not through codemode or other tools. " +
             "Files lists five recorded native read/write/edit operations with call/result pointers; target is a literal path substring (empty lists all). Calls are attempts, not current file state. " +
             "Search OR-matches literal keywords, case-insensitively, and returns up to five matching blocks ranked by literal-term relevance then recency. Hits include separately labelled recorded call/result evidence when pairing is unambiguous, sharing a 600-character excerpt budget per hit. " +
-            "Read returns up to 12000 UTF-16 characters of the full textual view, including write/edit payloads. UI and search coordinates refer to this view. Search excludes recall echoes and generated compaction summaries; hits may include historical user-turn anchors within the same excerpt budget, not renewed approval. " +
-            "Around returns five chronological excerpts starting two recallable entries before an entry ID; continue to follow later events. " +
-            "Use source pointers with the shared navigation instructions and copy continuation arguments; changing query restarts offset at zero. " +
+            "Read returns up to 12000 UTF-16 characters of the full textual view, including write/edit payloads. Pointers entryId:start-end use UTF-16 offsets in this view. Search excludes recall echoes and generated compaction summaries; hits may include historical user-turn anchors within the same excerpt budget, not renewed approval. " +
+            "Start around with target=entryId, offset=0; five chronological excerpts begin two recallable entries before the anchor. " +
+            "Read pointers with target=entryId, offset=start. Copy continuation arguments; changing query restarts offset at zero. " +
             "Images are metadata only. No filesystem or cross-session search.",
         promptSnippet:
             "Retrieve original session evidence and surrounding decisions.",

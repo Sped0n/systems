@@ -66,7 +66,8 @@ The model can also call the tool directly:
   600-character excerpt budget. Turn anchors appear at most once per page. Excerpts
   retain explicit roles, matched terms, and source pointers. Context replacements are labeled but never
   paired as recorded execution. `offset` counts matches, not related evidence;
-  restart at zero when the query changes.
+  restart at zero when the query changes. “Expand if needed” supplies a ready-to-run
+  read of the first match, not its contextual user anchor.
 - `files`: five recorded native `read`/`write`/`edit` operations, ordered by
   path then chronology. `target` is a case-insensitive literal path substring;
   empty lists all operations. `offset` skips operations, not files.
