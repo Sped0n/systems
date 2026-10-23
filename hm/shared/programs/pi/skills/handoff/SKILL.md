@@ -1,19 +1,23 @@
 ---
 name: handoff
-description: Compact the current conversation into a handoff document for another agent to pick up.
-argument-hint: "What will the next session be used for?"
+description: Summarize the current conversation in a handoff document so another agent can continue the work.
 disable-model-invocation: true
 metadata:
   source: "https://github.com/mattpocock/skills"
-  commit: "9c9f36ccd3995266cd675468af71639c8dde1ec5"
+  commit: "5beb35b040e3de97e54fa9e386d7e42d15c295c2"
+  adaptation: "Pi-native skill references and temporary-file workflow."
 ---
 
-Write a handoff document summarising the current conversation so a fresh agent can continue the work. Save to the temporary directory of the user's OS - not the current workspace.
+# Handoff
 
-Include a "suggested skills" section in the document, naming which skills the next agent should call the Skill tool for.
+Write a concise handoff document so a fresh agent can continue the work. If the user supplied arguments, use them to focus the handoff on the next session.
 
-Do not duplicate content already captured in other artifacts (specs, plans, ADRs, issues, commits, diffs). Reference them by path or URL instead.
+Include the goal, active constraints and authorization boundaries, decisions, current state, validation results, and next steps. Distinguish verified facts from assumptions and unresolved questions.
 
-Redact any sensitive information, such as API keys, passwords, or personally identifiable information.
+Reference existing specs, plans, ADRs, issues, commits, and diffs by path or URL instead of duplicating their contents. Use absolute paths for local files so they can be found from another working directory.
 
-If the user passed arguments, treat them as a description of what the next session will focus on and tailor the doc accordingly.
+Include a suggested skills section with each relevant skill's name, `SKILL.md` path, and when to read it. The next agent loads skills with `read`; the user can explicitly load one with `/skill:name`.
+
+Redact secrets and sensitive personal information.
+
+Save to a uniquely named Markdown file in the OS temporary directory (`$TMPDIR`, else `/tmp`; `%TEMP%` on Windows), not the workspace. Report the saved path.

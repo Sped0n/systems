@@ -3,7 +3,8 @@ name: writing-for-agents
 description: Write or revise agent instructions, including skills, AGENTS.md, and CLAUDE.md.
 metadata:
   source: "https://github.com/mattpocock/skills"
-  commit: "9c9f36ccd3995266cd675468af71639c8dde1ec5"
+  commit: "5beb35b040e3de97e54fa9e386d7e42d15c295c2"
+  adaptation: "Concise instruction-writing guidance with Pi-native skill mechanics."
 ---
 
 # Writing for agents

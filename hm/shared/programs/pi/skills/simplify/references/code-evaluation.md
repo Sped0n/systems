@@ -9,11 +9,11 @@ uvx lizard --version
 
 # Baseline: choose the source scope and exclusions deliberately.
 uvx lizard --csv -i -1 /path/to/project/src \
-  -x '*/generated/*' > /tmp/unslop-before.csv
+  -x '*/generated/*' > /tmp/simplify-before.csv
 
 # After the scoped change: use the same tool version, scope, and settings.
 uvx lizard --csv -i -1 /path/to/project/src \
-  -x '*/generated/*' > /tmp/unslop-after.csv
+  -x '*/generated/*' > /tmp/simplify-after.csv
 
 # Focused review of C/C++ complexity warnings.
 uvx lizard -l cpp -C 10 -w /path/to/project/src

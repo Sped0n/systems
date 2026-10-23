@@ -3,7 +3,7 @@ name: show-me
 description: Help the user understand the current topic visually with concise diagrams, code-shape sketches, and focused HTML artifacts.
 metadata:
   source: "https://github.com/humanlayer/skills"
-  commit: "3c2629142c5d437428269b1b722b08c0b87f574d"
+  commit: "653b6411c1f70c275a18e37673b042ff99f67ceb"
 ---
 
 # Show me
