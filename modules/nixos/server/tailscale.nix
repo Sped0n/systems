@@ -21,6 +21,8 @@ in
     openFirewall = true;
   };
 
+  systemd.services.tailscaled.environment.TS_SSH_DISABLE_FORWARDING = "1";
+
   services.my-telegraf.extraConfig = lib.mkIf my-telegraf.enable {
     inputs.prometheus = [
       {
