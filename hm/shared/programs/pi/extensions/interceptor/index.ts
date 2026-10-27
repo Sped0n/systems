@@ -350,6 +350,13 @@ async function ruleMatches(
     };
 }
 
+function denyReason(rule: ScopedPermissionRule, fallback: string): string {
+    const { scope, reason, ...matchedRule } = rule;
+    const message = reason ?? fallback;
+    const separator = /[.!?]$/u.test(message) ? " " : ". ";
+    return `${message}${separator}Matched rule: ${JSON.stringify(matchedRule)}`;
+}
+
 export type PathDecision = { action: PermissionAction; reason?: string };
 
 function isPermissionPolicy(
@@ -386,8 +393,8 @@ export async function pathDecision(
             decision = {
                 action: rule.action,
                 reason:
-                    rule.action === "deny" && rule.reason
-                        ? rule.reason
+                    rule.action === "deny"
+                        ? denyReason(rule, `${target} matches ${rule.path}`)
                         : `${target} matches ${rule.path}`,
             };
         }
@@ -524,8 +531,8 @@ export async function commandDecision(
                 decision = {
                     action: rule.action,
                     reason:
-                        rule.action === "deny" && rule.reason
-                            ? rule.reason
+                        rule.action === "deny"
+                            ? denyReason(rule, `${parsed} matches ${rule.bash}`)
                             : `${parsed} matches ${rule.bash}`,
                 };
             }

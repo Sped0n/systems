@@ -269,20 +269,20 @@ test("deny rules return custom reasons without matching prefixed commands", asyn
     });
     assert.deepEqual(await commandDecision(policy, "pip", process.cwd()), {
         action: "deny",
-        reason: "Use `uv pip` instead.",
+        reason: 'Use `uv pip` instead. Matched rule: {"bash":"pip","action":"deny"}',
     });
     assert.deepEqual(
         await commandDecision(policy, "pip install requests", process.cwd()),
         {
             action: "deny",
-            reason: "Use `uv pip` instead.",
+            reason: 'Use `uv pip` instead. Matched rule: {"bash":"pip *","action":"deny"}',
         },
     );
     assert.deepEqual(
         await commandDecision(policy, "pip3 install requests", process.cwd()),
         {
             action: "deny",
-            reason: "Use `uv pip` instead.",
+            reason: 'Use `uv pip` instead. Matched rule: {"bash":"pip3 *","action":"deny"}',
         },
     );
     assert.equal(
@@ -295,6 +295,72 @@ test("deny rules return custom reasons without matching prefixed commands", asyn
         ).action,
         "allow",
     );
+});
+
+test("tool blocks identify winning rules while unmatched and invalid inputs keep their reasons", async (t) => {
+    const root = await tempRoot(t);
+    await mkdir(path.join(root, ".pi"));
+    await writeFile(
+        path.join(root, ".pi", "interceptor.json"),
+        JSON.stringify({
+            rules: [
+                { bash: "pip *", action: "allow" },
+                {
+                    bash: "pip *",
+                    action: "deny",
+                    reason: "Use `uv pip` instead.",
+                },
+                { path: "secret", operations: ["read"], action: "allow" },
+                { path: "secret", operations: ["read"], action: "deny" },
+            ],
+        }),
+    );
+    const previousConfig = process.env.PI_CODING_AGENT_DIR;
+    process.env.PI_CODING_AGENT_DIR = path.join(root, "global");
+    try {
+        const harness = interceptorLifecycleHarness();
+        const ctx = { cwd: root, hasUI: false, isProjectTrusted: () => true };
+        await harness.handlers.get("session_start")!({}, ctx);
+        for (const [toolName, input, reason] of [
+            [
+                "bash",
+                { command: "pip install requests" },
+                'Use `uv pip` instead. Matched rule: {"bash":"pip *","action":"deny"}',
+            ],
+            [
+                "read",
+                { path: "secret" },
+                'secret matches secret. Matched rule: {"path":"secret","operations":["read"],"action":"deny"}',
+            ],
+            [
+                "bash",
+                { command: "npm test" },
+                "npm test does not match a Bash rule",
+            ],
+            [
+                "read",
+                { path: "other" },
+                "other does not match a permission rule",
+            ],
+            ["bash", { command: "if then" }, "invalid Bash syntax"],
+            ["read", {}, "read did not provide a path argument"],
+        ] as const) {
+            assert.deepEqual(
+                await harness.handlers.get("tool_call")!(
+                    { toolName, input },
+                    ctx,
+                ),
+                {
+                    block: true,
+                    reason: `Interceptor denied the tool call: ${reason}`,
+                },
+            );
+        }
+    } finally {
+        if (previousConfig === undefined)
+            delete process.env.PI_CODING_AGENT_DIR;
+        else process.env.PI_CODING_AGENT_DIR = previousConfig;
+    }
 });
 
 test("every command in a shell chain must be allowed", async () => {
@@ -473,7 +539,7 @@ test("last matching path rule wins and no match denies", async (t) => {
     });
     assert.deepEqual(await pathDecision(policy, "read", "secret/key", root), {
         action: "deny",
-        reason: "Secrets must not be sent to the model provider.",
+        reason: 'Secrets must not be sent to the model provider. Matched rule: {"path":"$CWD/secret/**","operations":["read"],"action":"deny"}',
     });
     assert.equal(
         (await pathDecision(policy, "read", "secret/approved", root)).action,

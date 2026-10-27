@@ -1,64 +1,42 @@
 # Interceptor
 
-Guards `read`, `edit`, `write`, and `bash` tool calls with deterministic ordered
-rules from global `interceptor.json` and, for trusted projects,
-`.pi/interceptor.json`. Global rules run first, project rules are appended, and
-the last matching rule wins. Actions are `allow` and `deny`; unmatched inputs
-default to `deny`. The extension never opens a dialog or creates an in-memory
-approval, so behavior is identical in TUI, RPC, JSON, and print modes.
+Tool-call guard for `read`, `edit`, `write`, and `bash`; not an OS sandbox.
 
-File rules use `path` and `operations`. Bash rules use `bash`; Bash patterns
-support `*` and `?`, matching OpenCode's permission wildcards. Every rule may include a non-empty `reason` of at most 500 characters. A matching deny
-returns that reason to the agent; allow rules ignore it. Bash is parsed with
-tree-sitter, so chains, substitutions, process substitutions, and heredocs are
-evaluated as syntax rather than split as text. Every executable command in a
-compound input must be allowed.
+## Policy
 
-An effective `{ "bash": "*", "action": "allow" }` rule with no later
-restrictive rule bypasses parsing because it explicitly allows every command.
-With narrower policies, invalid syntax and parser failures are denied so the
-agent can correct the command.
-
-```json
-{
-  "rules": [
-    { "bash": "*", "action": "deny" },
-    { "bash": "git *", "action": "allow" },
-    { "bash": "git push*", "action": "deny" }
-  ]
-}
-```
+- Sources: global `interceptor.json`, then trusted-project `.pi/interceptor.json`.
+- Last matching rule wins. Actions: `allow`, `deny`. No match: deny.
+- No approval dialogs or in-memory approvals; identical behavior in TUI, RPC, JSON, and print modes.
+- File rules: `path`, `operations` (`read`, `write`), `action`.
+- Bash rules: `bash`, `action`. Wildcards: `*`, `?`.
+- Optional `reason`: non-empty string, at most 500 characters; ignored on allow rules.
 
 ```json
 {
   "rules": [
     { "bash": "*", "action": "allow" },
-    {
-      "bash": "pip",
-      "action": "deny",
-      "reason": "Use `uv pip` instead."
-    },
-    {
-      "bash": "pip *",
-      "action": "deny",
-      "reason": "Use `uv pip` instead."
-    }
+    { "bash": "pip", "action": "deny", "reason": "Use `uv pip` instead." },
+    { "bash": "pip *", "action": "deny", "reason": "Use `uv pip` instead." }
   ]
 }
 ```
 
-Patterns match the complete parsed Bash command. `pip *` therefore denies
-ordinary pip installs but do not match `uv pip install ...`. Bare commands need
-separate `pip` rules. Alternative forms such as `python -m pip` also
-need their own explicit rules.
+## Bash matching
 
-Edit global `interceptor.json` or trusted-project `.pi/interceptor.json`, then
-run `/reload` in Pi to apply the changes. There is no rule-management CLI or
-in-session rule-editing command. Policy files are loaded when a session starts,
-including after `/reload`; they are not read for each tool call. A successful load becomes the process-local,
-last-valid policy for that working directory and trust state. If a later load
-fails, the interceptor warns and keeps the matching last-valid policy. Without
-a matching policy, it warns and uses an empty policy. Restarting Pi clears this
-fallback cache.
+- Patterns match complete parsed commands. `pip *` does not match bare `pip`, `uv pip install ...`, or `python -m pip ...`.
+- Tree-sitter parses chains, substitutions, process substitutions, and heredocs. Every executable command must be allowed.
+- An effective `{"bash":"*","action":"allow"}` with no later restrictive rule bypasses parsing.
+- Otherwise, invalid syntax and parser failures are denied.
 
-This is a tool-call interceptor, not an OS sandbox.
+## Denial messages
+
+- Prefix: `Interceptor denied the tool call: `.
+- Matching deny: configured reason or match description, followed by `Matched rule: <JSON>`. JSON excludes `reason` and internal scope.
+- No match or input/parser failure: explanation only.
+
+## Reloading
+
+- Policies load at session start and `/reload`, not per tool call.
+- Successful loads populate a process-local last-valid cache keyed by working directory and trust state.
+- Failed loads warn and retain the matching cached policy; without one, they use an empty policy.
+- Restarting Pi clears the cache.
