@@ -186,25 +186,6 @@ update-flakes-all:
 build:
     @just _build_with_diff
 
-# Build an ISO image from a machine name or full flake target.
-make-iso flake:
-    #!/usr/bin/env bash
-    set -euo pipefail
-
-    target="{{flake}}"
-    case "$target" in
-        .#nixosConfigurations.*)
-            target="path:$(pwd)${target#.}"
-            ;;
-        .#*)
-            machine="${target#.#}"
-            target="path:$(pwd)#nixosConfigurations.${machine}.config.system.build.isoImage"
-            ;;
-    esac
-
-    echo "Running: nix build $target -L"
-    nix build "$target" -L
-
 # Switch this machine to the new configuration.
 switch:
     @just _switch

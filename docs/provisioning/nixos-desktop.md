@@ -6,8 +6,8 @@
 > outdated. Review every command, provide a real target and Disko layout, and
 > verify backups before using it. There is intentionally no automation script.
 
-1. Boot from the custom ISO. It is expected to include Firefox, Just, and
-   agenix.
+1. Boot the NixOS graphical installer. Ensure Firefox, Git, Just, and agenix
+   are available in the installer environment.
 2. Use Firefox to authenticate to GitHub.
 3. Skip the graphical installer, open a console, and run `sudo su`.
 4. Generate a temporary SSH key and add it to an agent:

@@ -19,7 +19,6 @@
 ```
 machines
 ├── esp-0       # Ubuntu desktop (x86_64)
-├── iso         # NixOS installer image
 ├── srv-de-0    # NixOS server (x86_64)
 ├── srv-jp-0    # NixOS server (x86_64)
 ├── srv-nl-0    # NixOS server (x86_64)
@@ -37,7 +36,6 @@ Available recipes:
     deploy target_hosts    # Deploy configurations to one or more remote target hosts.
     hs flake               # Switch a standalone home-manager configuration.
     list-generations       # List available system generations for this host. [alias: lg]
-    make-iso flake         # Build an ISO image from a machine name or full flake target.
     rollback gen_num       # Roll back to the specified system generation. [alias: rb]
     switch                 # Switch this machine to the new configuration. [alias: s]
     update-flakes          # Update shared flake inputs based on the current OS. [alias: uf]
