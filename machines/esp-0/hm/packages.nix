@@ -7,6 +7,9 @@
       llm-agents.cursor-agent
     ])
     ++ (with pkgs-unstable; [
+      espressif-udev
+      nrfconnect
+
       popsicle
     ]);
 }
