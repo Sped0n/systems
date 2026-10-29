@@ -19,7 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Configure SSH for private flake inputs
         env:
@@ -39,7 +41,7 @@ jobs:
           chmod 644 ~/.ssh/known_hosts
 
       - name: Set up Nix
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@75c75c31ebece974e48ebc36b4ad125bd97bd97b # v31.11.3
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
@@ -56,7 +58,7 @@ jobs:
 
       - name: Restore Nix store
         id: nix-cache-restore
-        uses: nix-community/cache-nix-action/restore@v7
+        uses: nix-community/cache-nix-action/restore@7df957e333c1e5da7721f60227dbba6d06080569 # v7
         with:
           primary-key: nix-store-prek-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.nix', 'flake.lock') }}
           restore-prefixes-first-match: nix-store-prek-${{ runner.os }}-${{ runner.arch }}-
@@ -66,7 +68,7 @@ jobs:
         run: echo "path=$(nix develop -c pnpm store path --silent)" >> "$GITHUB_OUTPUT"
 
       - name: Restore pnpm store
-        uses: actions/cache@v5
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ${{ steps.pnpm-store.outputs.path }}
           key: pnpm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('hm/shared/programs/pi/pnpm-lock.yaml') }}
@@ -80,7 +82,7 @@ jobs:
 
       - name: Save Nix store
         if: ${{ always() && steps.nix-cache-restore.outputs.hit-primary-key != 'true' }}
-        uses: nix-community/cache-nix-action/save@v7
+        uses: nix-community/cache-nix-action/save@7df957e333c1e5da7721f60227dbba6d06080569 # v7
         with:
           primary-key: ${{ steps.nix-cache-restore.outputs.primary-key }}
           gc-max-store-size: 500M
