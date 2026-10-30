@@ -1,0 +1,48 @@
+{
+  "syscalls": [
+    {
+      "names": ["clone"],
+      "action": "SCMP_ACT_ALLOW",
+      "args": [
+        { "index": 0, "value": 2114060288, "valueTwo": 268566528, "op": "SCMP_CMP_MASKED_EQ" }
+      ],
+      "includes": { "arches": ["amd64", "arm64"] },
+      "comment": "RootlessKit: CLONE_NEWUSER | CLONE_NEWNS; mask namespace bits so Go process flags remain allowed without permitting other namespaces."
+    },
+    {
+      "names": ["unshare"],
+      "action": "SCMP_ACT_ALLOW",
+      "args": [{ "index": 0, "value": 201457664, "op": "SCMP_CMP_EQ" }],
+      "comment": "BuildKit/runc with host networking and no process sandbox: CLONE_NEWNS | CLONE_NEWUTS | CLONE_NEWIPC."
+    },
+    {
+      "names": ["unshare"],
+      "action": "SCMP_ACT_ALLOW",
+      "args": [{ "index": 0, "value": 235012096, "op": "SCMP_CMP_EQ" }],
+      "comment": "BuildKit/runc on cgroup v2 adds CLONE_NEWCGROUP to the mount, UTS, and IPC namespaces."
+    },
+    {
+      "names": ["unshare"],
+      "action": "SCMP_ACT_ALLOW",
+      "args": [{ "index": 0, "value": 512, "op": "SCMP_CMP_EQ" }],
+      "comment": "runc mount-source thread detaches shared filesystem state with CLONE_FS before setns."
+    },
+    {
+      "names": ["setns"],
+      "action": "SCMP_ACT_ALLOW",
+      "args": [{ "index": 1, "value": 131072, "op": "SCMP_CMP_EQ" }],
+      "comment": "runc mount-source thread enters only a mount namespace (CLONE_NEWNS); kernel capability checks still apply."
+    },
+    {
+      "names": ["mount", "umount2", "pivot_root", "sethostname"],
+      "action": "SCMP_ACT_ALLOW",
+      "comment": "BuildKit/runc mount setup and hostname in private namespaces; kernel capability checks still apply."
+    },
+    {
+      "names": ["keyctl"],
+      "action": "SCMP_ACT_ERRNO",
+      "errnoRet": 38,
+      "comment": "Keep keyrings unavailable: runc tolerates ENOSYS, but its default session-keyring setup fails on EPERM."
+    }
+  ]
+}

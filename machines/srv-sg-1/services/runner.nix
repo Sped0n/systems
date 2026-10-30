@@ -3,13 +3,13 @@
   services.my-runner = {
     enable = true;
     labels = [
-      "docker:docker://catthehacker/ubuntu:act-latest"
-      "docker-aarch64:docker://catthehacker/ubuntu:act-latest"
+      "docker:docker://ghcr.io/catthehacker/ubuntu:runner-latest"
+      "docker-aarch64:docker://ghcr.io/catthehacker/ubuntu:runner-latest"
     ];
     capacity = 2;
     dockerOptions = [
       "--memory=6g"
-      "--memory-swap=10g"
+      "--memory-swap=9g"
       "--cpus=2"
     ];
     cacheMaxSizeInGib = 20;

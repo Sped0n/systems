@@ -1,6 +1,7 @@
 {
   imports = [
     ./docker
+    ./runner
     ./telegraf
 
     ./cloudflared.nix
@@ -9,7 +10,6 @@
     ./ladder
     ./msmtp.nix
     ./restic.nix
-    ./runner.nix
     ./sshd.nix
     ./traefik.nix
   ];

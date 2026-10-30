@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   pkgs-unstable,
   secrets,
   vars,
@@ -19,7 +20,7 @@ in
     labels = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [
-        "docker:docker://catthehacker/ubuntu:act-latest"
+        "docker:docker://ghcr.io/catthehacker/ubuntu:runner-latest"
       ];
       description = "Labels advertised by this runner.";
     };
@@ -83,7 +84,23 @@ in
           };
           container = {
             docker_host = "automount";
-            options = lib.concatStringsSep " " my-runner.dockerOptions;
+            options = lib.concatStringsSep " " (
+              my-runner.dockerOptions
+              ++ [
+                "--volume=/tmp"
+                "--security-opt=seccomp=${
+                  pkgs.runCommand "forgejo-runner-seccomp.json"
+                    {
+                      nativeBuildInputs = [ pkgs.jq ];
+                    }
+                    ''
+                      jq --slurpfile overrides ${./seccomp-overrides.json} \
+                        '.syscalls += $overrides[0].syscalls' \
+                        ${pkgs.docker-seccomp} > "$out"
+                    ''
+                }"
+              ]
+            );
             force_pull = true;
           };
         };
