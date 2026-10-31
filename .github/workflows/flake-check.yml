@@ -68,4 +68,4 @@ jobs:
         uses: nix-community/cache-nix-action/save@7df957e333c1e5da7721f60227dbba6d06080569 # v7
         with:
           primary-key: ${{ steps.nix-cache-restore.outputs.primary-key }}
-          gc-max-store-size: 500M
+          gc-max-store-size: 1024M
