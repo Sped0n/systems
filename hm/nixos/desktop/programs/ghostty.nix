@@ -11,4 +11,23 @@
       ];
     };
   };
+
+  xdg.desktopEntries."com.mitchellh.ghostty" = {
+    name = "Ghostty";
+    exec = "ghostty --gtk-single-instance=true";
+    icon = "com.mitchellh.ghostty";
+    categories = [
+      "System"
+      "TerminalEmulator"
+    ];
+    startupNotify = true;
+    settings = {
+      DBusActivatable = "false";
+      StartupWMClass = "com.mitchellh.ghostty";
+    };
+    actions.new-window = {
+      name = "New Window";
+      exec = "ghostty --gtk-single-instance=true";
+    };
+  };
 }
