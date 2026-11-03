@@ -1,18 +1,21 @@
-name: Flake Check
+name: Check
 
 on:
   push:
     paths:
       - "**/*.nix"
+      - "**/*.py"
+      - ".pre-commit-config.yaml"
+      - "hm/shared/programs/pi/**"
       - "flake.lock"
-      - ".github/workflows/flake-check.yml"
+      - ".github/workflows/check.yml"
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  flake-check:
+  check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -57,8 +60,25 @@ jobs:
         id: nix-cache-restore
         uses: nix-community/cache-nix-action/restore@7df957e333c1e5da7721f60227dbba6d06080569 # v7
         with:
-          primary-key: nix-store-flake-check-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', 'flake.lock') }}
-          restore-prefixes-first-match: nix-store-flake-check-${{ runner.os }}-${{ runner.arch }}-
+          primary-key: nix-store-check-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/*.nix', 'flake.lock') }}
+          restore-prefixes-first-match: nix-store-check-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Resolve pnpm store path
+        id: pnpm-store
+        run: echo "path=$(nix develop -c pnpm store path --silent)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore pnpm store
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: pnpm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('hm/shared/programs/pi/pnpm-lock.yaml') }}
+          restore-keys: pnpm-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Install Pi development dependencies
+        run: nix develop -c pnpm --dir hm/shared/programs/pi install --frozen-lockfile
+
+      - name: Run prek checks
+        run: nix develop -c prek run --all-files
 
       - name: Run flake check
         run: nix flake check -L --keep-going --all-systems
