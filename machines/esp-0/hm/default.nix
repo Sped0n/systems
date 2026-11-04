@@ -6,6 +6,6 @@
     ./programs
 
     ./packages.nix
-    ./ubuntu.nix
+    ./ubuntu
   ];
 }

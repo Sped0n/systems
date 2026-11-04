@@ -1,4 +1,0 @@
-{ ... }:
-{
-  services.standalone.enable = true;
-}
