@@ -4,6 +4,7 @@
     ./ccache.nix
     ./gc.nix
     ./generic-linux.nix
+    ./gnome.nix
     ./nix.nix
     ./udev-sync.nix
   ];
