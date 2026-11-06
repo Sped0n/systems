@@ -51,7 +51,3 @@ Add guards at real boundaries: user input, external systems, persistence, hardwa
 - State each fact once. Omit greetings, request and plan recaps, progress reports, feature tours, unchanged context, generic closings, and long raw logs. Quote only the shortest decisive error.
 - Exceed the budget only when explicitly requested or necessary for correctness, safety, or a consequential tradeoff. Persisted documentation, comments, commits, and third-party messages use clear normal prose.
 - Write deliverables as self-contained final-state artifacts. Incorporate feedback directly without mentioning drafts, versions, review rounds, prior wording, superseded decisions, or the editing process unless the user explicitly requests a changelog, history, or decision record.
-
-## Papercuts
-
-Record reusable friction discovered while applying a skill through the `papercut` skill. For audit-only or read-only tasks, defer recording until writes are authorized. Do not record task-specific bugs or ordinary environment failures.
