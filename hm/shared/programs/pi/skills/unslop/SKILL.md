@@ -1,3 +1,12 @@
+---
+name: unslop
+description: Cut AI tells from any writing.
+disable-model-invocation: true
+metadata:
+  source: "https://github.com/cursor/plugins"
+  commit: "2776ddd2355d6d6c8747d3964600f28daf62f049"
+---
+
 # Unslop
 
 Edit text to remove AI patterns. Scan for the patterns below, then rewrite. Preserve meaning and match the intended tone.

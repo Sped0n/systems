@@ -14,8 +14,8 @@ Apply these platform constraints alongside the shared embedded guidance. For int
 
 - Check stack-size and stack-measurement units in the installed ESP-IDF APIs rather than assuming upstream FreeRTOS conventions. Consider the full callback/serialization call chain before increasing a task's stack.
 - Select memory by access requirements, not just available capacity. Verify PSRAM configuration, DMA capability/alignment, cache-disabled access, and latency constraints before placing buffers or state in external RAM; handle capability-specific allocation failure.
-- Follow ESP-IDF error conventions: prefer `ESP_RETURN_ON_FALSE` for guards and `ESP_RETURN_ON_ERROR` for propagation. Use `ESP_GOTO_ON_*` when C resources need shared cleanup; preserve RAII in C++.
-- Handle recoverable failures normally rather than aborting. Log where useful context is available and avoid noisy polling/interrupt-path logging.
+- Follow ESP-IDF error conventions: prefer `ESP_RETURN_ON_FALSE` for guards and `ESP_RETURN_ON_ERROR` for propagation. Use `ESP_GOTO_ON_*` when C resources need shared cleanup; do not jump past C++ object initialization or bypass required cleanup.
+- Check whether the chosen error macro logs. Log a failure where useful context is available, not again at every propagation step. Use a supported non-logging form or a direct error return when another layer owns the diagnostic. Handle recoverable failures normally rather than aborting, and avoid noisy polling/interrupt-path logging.
 
 ## Build and device workflow
 

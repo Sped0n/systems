@@ -1,7 +1,11 @@
 ---
 name: restate
-description: Restate the user's goals and the underlying problem in the agent's own words.
+description: "Restate in your own words what you think the user's goals are and what problem they're trying to solve. Use for /restate."
 disable-model-invocation: true
+metadata:
+  source: "https://github.com/cursor/plugins"
+  commit: "2776ddd2355d6d6c8747d3964600f28daf62f049"
+  adaptation: "Renamed in-your-own-words to restate."
 ---
 
-Restate in your own words what you think my goals are and what the problem I'm trying to solve is. Distinguish stated goals from assumptions. Do not propose solutions or start implementation.
+Restate in your own words what you think the user's goals are and what problem they're trying to solve.
