@@ -1,3 +1,4 @@
+import type { NestedToolCallRecord } from "@earendil-works/pi-ai";
 import {
     estimateTokens,
     sessionEntryToContextMessages,
@@ -24,6 +25,7 @@ export interface TraceBlock {
         | "thinking"
         | "tool_call"
         | "tool_result"
+        | "nested_call"
         | "other";
     text: string;
     header: string;
@@ -34,6 +36,8 @@ export interface TraceBlock {
     callId?: string;
     toolName?: string;
     isError?: boolean;
+    nestedStatus?: NestedToolCallRecord["status"];
+    contextReplacement?: boolean;
     file?: { path: string; operation: "read" | "write" | "edit" };
 }
 
@@ -59,6 +63,68 @@ function isRecallTool(name: string): boolean {
     return name === "recall";
 }
 
+function fileOperation(
+    name: string,
+    args: Record<string, unknown> | undefined,
+): TraceBlock["file"] {
+    const path = typeof args?.path === "string" ? args.path : args?.file_path;
+    return (name === "read" || name === "write" || name === "edit") &&
+        typeof path === "string" &&
+        path.length > 0
+        ? { path, operation: name }
+        : undefined;
+}
+
+/** Collapse complete skill expansions in UI text, not quoted code or raw recall. */
+function collapseSkills(text: string): string {
+    const lines = text.split("\n");
+    const output: string[] = [];
+    let fence: string | undefined;
+    for (let index = 0; index < lines.length; index++) {
+        const line = lines[index];
+        const delimiter = line.match(/^[ \t]*(`{3,}|~{3,})(.*)$/);
+        if (delimiter) {
+            if (!fence) fence = delimiter[1];
+            else if (
+                delimiter[1][0] === fence[0] &&
+                delimiter[1].length >= fence.length &&
+                !delimiter[2].trim()
+            )
+                fence = undefined;
+        }
+        const skill =
+            !fence && line.match(/^<skill\s+name="([^"\r\n]+)"[^>\r\n]*>\r?$/);
+        const end = skill
+            ? lines.findIndex(
+                  (candidate, position) =>
+                      position > index &&
+                      /^<\/skill>[ \t]*\r?$/.test(candidate),
+              )
+            : -1;
+        if (skill && end >= 0) {
+            output.push(
+                `[skill: ${skill[1]}]${lines[end].endsWith("\r") ? "\r" : ""}`,
+            );
+            index = end;
+        } else output.push(line);
+    }
+    return output.join("\n");
+}
+
+function toolPreview(
+    name: string,
+    args: Record<string, unknown> | undefined,
+): string {
+    const key = ["path", "file_path", "command", "query", "target"].find(
+        (key) => typeof args?.[key] === "string",
+    );
+    return excerpt(
+        `${name}${key ? ` ${key}=${JSON.stringify(args![key])}` : ""}`,
+        200,
+        "…",
+    );
+}
+
 /** Compile original content once; projections never rewrite its coordinates. */
 export function compileTraceEntry(
     entry: SessionEntry,
@@ -78,6 +144,7 @@ export function compileTraceEntry(
                 | "callId"
                 | "toolName"
                 | "isError"
+                | "nestedStatus"
                 | "file"
             >
         > = {},
@@ -95,6 +162,7 @@ export function compileTraceEntry(
             offset,
             end: offset + text.length,
             searchable: true,
+            contextReplacement: !!edit,
             ...options,
             uiText:
                 options.uiText === undefined
@@ -135,7 +203,7 @@ export function compileTraceEntry(
         switch (message.role) {
             case "user": {
                 const text = contentText(message.content);
-                add("user", text, { uiText: text });
+                add("user", text, { uiText: collapseSkills(text) });
                 break;
             }
             case "assistant":
@@ -146,29 +214,7 @@ export function compileTraceEntry(
                         add("thinking", part.thinking);
                     if (part.type === "toolCall") {
                         const args = part.arguments;
-                        const path =
-                            typeof args?.path === "string"
-                                ? args.path
-                                : args?.file_path;
-                        const file: TraceBlock["file"] =
-                            (part.name === "read" ||
-                                part.name === "write" ||
-                                part.name === "edit") &&
-                            typeof path === "string" &&
-                            path.length > 0
-                                ? { path, operation: part.name }
-                                : undefined;
-                        const subject = [
-                            "path",
-                            "file_path",
-                            "command",
-                            "query",
-                            "target",
-                        ].flatMap((key) =>
-                            typeof args?.[key] === "string"
-                                ? [`${key}=${JSON.stringify(args[key])}`]
-                                : [],
-                        )[0];
+                        const file = fileOperation(part.name, args);
                         add(
                             "tool_call",
                             `${part.name} (call ${part.id})\n${JSON.stringify(args)}`,
@@ -179,11 +225,7 @@ export function compileTraceEntry(
                                 searchable: !isRecallTool(part.name),
                                 uiText: isRecallTool(part.name)
                                     ? undefined
-                                    : excerpt(
-                                          `${part.name}${subject ? ` ${subject}` : ""}`,
-                                          200,
-                                          "…",
-                                      ),
+                                    : toolPreview(part.name, args),
                             },
                         );
                     }
@@ -200,6 +242,34 @@ export function compileTraceEntry(
                         searchable: !isRecallTool(message.toolName),
                     },
                 );
+                // Append metadata after the original result so existing UTF-16 pointers
+                // keep their meaning. A canonical replacement must not expose hidden args.
+                if (!edit && message.nestedCalls) {
+                    for (const call of message.nestedCalls.calls) {
+                        const file = fileOperation(call.name, call.arguments);
+                        add(
+                            "nested_call",
+                            `${call.name} (nested call ${call.id}; parent ${message.toolCallId})\n${JSON.stringify(call)}\nResult body not recorded in nested metadata.`,
+                            {
+                                toolName: call.name,
+                                file,
+                                nestedStatus: call.status,
+                                searchable: !isRecallTool(call.name),
+                                uiText: isRecallTool(call.name)
+                                    ? undefined
+                                    : `${toolPreview(call.name, call.arguments)} (nested ${call.status}; result body not recorded${call.arguments === undefined ? "; arguments omitted" : ""})`,
+                            },
+                        );
+                    }
+                    if (!message.nestedCalls.complete)
+                        add(
+                            "other",
+                            "Nested call record incomplete: calls or arguments may be omitted, or calls unfinished.",
+                            {
+                                uiText: "Nested call record incomplete; recall this result for recorded metadata.",
+                            },
+                        );
+                }
                 break;
             case "bashExecution":
                 add("tool_result", `$ ${message.command}\n${message.output}`, {
@@ -323,7 +393,46 @@ export function uiTrace(blocks: readonly TraceBlock[]): TraceBlock[] {
     });
 }
 
-/** Bounded chronological UI. Reserve user space before selecting newest work. */
+function fileActivity(ui: readonly TraceBlock[], budgetChars: number): string {
+    const files = new Map<
+        string,
+        { latest: TraceBlock; counts: Record<string, number> }
+    >();
+    for (const block of ui) {
+        if (!block.file || block.contextReplacement) continue;
+        const { path, operation } = block.file;
+        const group = files.get(path) ?? { latest: block, counts: {} };
+        group.latest = block;
+        group.counts[operation] = (group.counts[operation] ?? 0) + 1;
+        files.delete(path);
+        files.set(path, group);
+    }
+    if (!files.size) return "";
+    const heading =
+        "## File activity\nRecorded operations, not current file state. Latest paths first.";
+    const rows: string[] = [];
+    const omitted = () =>
+        rows.length < files.size
+            ? `\n[…${files.size - rows.length} file paths omitted; recall files…]`
+            : "";
+    for (const { latest, counts } of [...files.values()].reverse()) {
+        const countText = Object.entries(counts)
+            .map(([name, count]) => name + "×" + count)
+            .join(", ");
+        const row = `- ${countText}; latest ${tracePointer(latest)}\n  ${latest.uiText}`;
+        rows.push(row);
+        if (
+            [heading, ...rows].join("\n").length + omitted().length >
+            budgetChars
+        ) {
+            rows.pop();
+            break;
+        }
+    }
+    return rows.length ? [heading, ...rows].join("\n") + omitted() : "";
+}
+
+/** Bounded chronological UI; exact gap costs leave room for more source evidence. */
 export function renderTrace(
     blocks: readonly TraceBlock[],
     budgetChars: number,
@@ -331,9 +440,11 @@ export function renderTrace(
     const ui = uiTrace(blocks);
     if (!ui.length)
         return "(no earlier dialogue)".slice(0, Math.max(0, budgetChars));
-    const render = (block: TraceBlock, text: string) =>
-        `[entry ${block.entryId}; ${block.role}; source ${tracePointer(block)}]\n${text}`;
-    const complete = ui.map((block) => render(block, block.uiText!));
+    const render = (index: number, text: string) => {
+        const block = ui[index];
+        return `[entry ${block.entryId}; ${block.role}; source ${tracePointer(block)}]\n${text}`;
+    };
+    const complete = ui.map((block, index) => render(index, block.uiText!));
     if (
         complete.reduce((length, row) => length + row.length + 2, -2) <=
         budgetChars
@@ -342,97 +453,118 @@ export function renderTrace(
 
     const gap = (first: number, last: number) =>
         `[…${last - first + 1} UI blocks omitted: ${ui[first].entryId} through ${ui[last].entryId}; recall around/read…]`;
-    // Reserve a gap per retained row so interleaved omissions can never exceed the cap.
-    const gapReserve =
-        90 +
-        2 *
-            ui.reduce(
-                (maximum, block) => Math.max(maximum, block.entryId.length),
-                0,
-            );
-    const available = Math.max(0, budgetChars - gapReserve);
+    const gapCost = (first: number, last: number) =>
+        first <= last ? gap(first, last).length + 2 : 0;
     const users = ui.flatMap((block, index) =>
         block.role === "user" ? [index] : [],
     );
-    const userBudget = Math.floor(available * 0.8);
-    const userLimit = Math.max(
-        480,
-        Math.floor(userBudget / Math.max(1, users.length)) - gapReserve,
-    );
-    const selected = new Map<number, string>();
-    let used = 0;
-    const renderExcerpt = (index: number, limit: number) =>
-        render(
-            ui[index],
-            excerpt(ui[index].uiText!, limit, "\n[…excerpt; read source…]\n"),
-        );
-    const select = (index: number, limit: number, ceiling: number) => {
-        const row = renderExcerpt(index, limit);
-        const cost = row.length + 2 + gapReserve;
-        if (used + cost > ceiling) return;
-        selected.set(index, row);
-        used += cost;
-    };
-    const userLimits = new Map(
-        users.map((index) => [
-            index,
-            Math.min(ui[index].uiText!.length, userLimit),
-        ]),
-    );
-    const userCost = users.reduce(
-        (cost, index) =>
-            cost +
-            renderExcerpt(index, userLimits.get(index)!).length +
-            2 +
-            gapReserve,
+    // Older user evidence comes first; native recent context already carries current work.
+    const userOverhead = users.reduce(
+        (sum, index) => sum + render(index, "").length + 2,
         0,
     );
-    // Short requests donate unused space to clipped wording before older work.
-    // Keep the existing overflow policy when the baseline itself cannot fit.
-    if (userCost <= userBudget) {
-        let remaining = userBudget - userCost;
-        const clipped = users
-            .filter(
-                (index) => ui[index].uiText!.length > userLimits.get(index)!,
-            )
-            .sort(
-                (a, b) =>
-                    ui[a].uiText!.length -
-                        userLimits.get(a)! -
-                        (ui[b].uiText!.length - userLimits.get(b)!) || a - b,
-            );
-        for (const index of clipped) {
-            const increase = Math.min(
-                remaining,
-                ui[index].uiText!.length - userLimits.get(index)!,
-            );
-            userLimits.set(index, userLimits.get(index)! + increase);
-            remaining -= increase;
+    const userLimit = Math.max(
+        480,
+        Math.floor((budgetChars - userOverhead) / Math.max(1, users.length)),
+    );
+    const selected: { index: number; row: string }[] = [];
+    let used = gapCost(0, ui.length - 1) - 2;
+    const select = (index: number, limit: number, ceiling: number) => {
+        const row = render(
+            index,
+            excerpt(ui[index].uiText!, limit, "\n[…excerpt; read source…]\n"),
+        );
+        let position = selected.findIndex((item) => item.index >= index);
+        if (position < 0) position = selected.length;
+        const previous =
+            selected[position]?.index === index
+                ? selected[position]
+                : undefined;
+        if (previous) {
+            if (used + row.length - previous.row.length > ceiling) return;
+            used += row.length - previous.row.length;
+            previous.row = row;
+        } else {
+            const first = (selected[position - 1]?.index ?? -1) + 1;
+            const last = (selected[position]?.index ?? ui.length) - 1;
+            const delta =
+                row.length +
+                2 +
+                gapCost(first, index - 1) +
+                gapCost(index + 1, last) -
+                gapCost(first, last);
+            if (used + delta > ceiling) return;
+            used += delta;
+            selected.splice(position, 0, { index, row });
+        }
+    };
+    // Keep the opening request, then intact corrections before excerpts of larger messages.
+    if (users.length) select(users[0], userLimit, budgetChars);
+    const recentUsers = users.slice(1).reverse();
+    for (const index of recentUsers)
+        if (ui[index].uiText!.length <= userLimit)
+            select(index, userLimit, budgetChars);
+    for (const index of recentUsers)
+        if (ui[index].uiText!.length > userLimit)
+            select(index, userLimit, budgetChars);
+    const clippedUsers = users
+        .filter(
+            (index) =>
+                selected.some((item) => item.index === index) &&
+                ui[index].uiText!.length > userLimit,
+        )
+        .sort((a, b) => ui[a].uiText!.length - ui[b].uiText!.length || a - b);
+    for (const index of clippedUsers)
+        select(
+            index,
+            Math.min(
+                ui[index].uiText!.length,
+                userLimit + Math.max(0, budgetChars - used),
+            ),
+            budgetChars,
+        );
+
+    // Walk backward to pair each short reply with its nearest assistant, not an earlier turn.
+    let reply: (typeof selected)[number] | undefined;
+    for (let index = ui.length - 1; index >= 0; index--) {
+        const block = ui[index];
+        if (block.role === "user") {
+            reply =
+                block.uiText!.length <= 80
+                    ? selected.find((item) => item.index === index)
+                    : undefined;
+        } else if (block.role === "assistant" && reply) {
+            const context = `; reply-context ${tracePointer(block)}`;
+            if (used + context.length <= budgetChars) {
+                reply.row = reply.row.replace("]\n", `${context}]\n`);
+                used += context.length;
+            }
+            reply = undefined;
         }
     }
-    // Oldest intent and newest corrections survive even when user evidence alone overflows.
-    if (users.length) select(users[0], userLimits.get(users[0])!, userBudget);
-    for (const index of users.slice(1).reverse())
-        select(index, userLimits.get(index)!, userBudget);
+    const files = fileActivity(
+        ui,
+        Math.min(1800, Math.max(0, budgetChars - used - 2)),
+    );
+    const dialogueBudget = budgetChars - (files ? files.length + 2 : 0);
     for (let index = ui.length - 1; index >= 0; index--)
-        if (ui[index].role !== "user") select(index, 800, available);
+        if (
+            ui[index].role !== "user" &&
+            (!ui[index].file || ui[index].contextReplacement || !files)
+        )
+            select(index, 800, dialogueBudget);
 
     const output: string[] = [];
-    let missing = -1;
-    for (let index = 0; index < ui.length; index++) {
-        const row = selected.get(index);
-        if (!row) {
-            if (missing < 0) missing = index;
-            continue;
-        }
-        if (missing >= 0) {
-            output.push(gap(missing, index - 1));
-            missing = -1;
-        }
+    let next = 0;
+    for (const { index, row } of selected) {
+        if (next < index) output.push(gap(next, index - 1));
         output.push(row);
+        next = index + 1;
     }
-    if (missing >= 0) output.push(gap(missing, ui.length - 1));
-    return output.join("\n\n");
+    if (next < ui.length) output.push(gap(next, ui.length - 1));
+    // Very small callers still get a bounded omission marker, never an over-budget row.
+    const dialogue = output.join("\n\n").slice(0, Math.max(0, dialogueBudget));
+    return files ? `${dialogue}\n\n${files}` : dialogue;
 }
 
 function toolResultKey(message: ContextMessage): string | undefined {

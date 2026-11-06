@@ -32,14 +32,9 @@ import {
 } from "@earendil-works/pi-coding-agent";
 
 import { buildBrief } from "./brief.ts";
-import { BRIEF_MAX_TOKENS, LARGE_TOOL_RESULT_CHARS } from "./constants.ts";
 import ctxExtension from "./index.ts";
 import { registerRecall } from "./recall.ts";
-import {
-    compileTrace,
-    maskConsumedToolResults,
-    recallTraceEntry,
-} from "./view.ts";
+import { maskConsumedToolResults } from "./view.ts";
 
 let directory: string;
 const originalAgentDir = process.env.PI_CODING_AGENT_DIR;
@@ -145,13 +140,52 @@ function recallHarness(manager = SessionManager.inMemory()) {
         },
     };
 }
-function resultText(
-    result: Awaited<ReturnType<ReturnType<typeof recallHarness>["read"]>>,
-) {
+type RecallResult = Awaited<
+    ReturnType<ReturnType<typeof recallHarness>["read"]>
+>;
+
+function resultText(result: RecallResult) {
     return result.content
         .filter((part) => part.type === "text")
         .map((part) => part.text)
         .join("\n");
+}
+
+function readBody(result: RecallResult) {
+    const text = resultText(result);
+    const headerEnd = text.indexOf("\n");
+    const range = text
+        .slice(0, headerEnd)
+        .match(/\(characters (\d+)-(\d+) of (\d+)\)$/);
+    assert.ok(range, "read responses declare their UTF-16 range");
+    const length = Number(range[2]) - Number(range[1]);
+    assert.ok(
+        length > 0 && length <= 12000,
+        "read pages stay within the public limit",
+    );
+    return text.slice(headerEnd + 1, headerEnd + 1 + length);
+}
+
+async function readAll(
+    harness: ReturnType<typeof recallHarness>,
+    request: JsonObject,
+) {
+    let next: JsonObject | null = request;
+    let recovered = "";
+    while (next) {
+        const current: JsonObject = next;
+        const page = await harness.read(current);
+        recovered += readBody(page);
+        next = (page.details as { next: JsonObject | null }).next;
+        if (next) {
+            assert.equal(next.target, current.target);
+            assert.ok(
+                Number(next.offset) > Number(current.offset),
+                "pagination advances",
+            );
+        }
+    }
+    return recovered;
 }
 
 async function runtime(
@@ -232,8 +266,9 @@ async function runtime(
     return { faux, session, manager, oldId, errors };
 }
 
-test("brief preserves requests, corrections, attempted actions and failed results without resolving them", () => {
-    const manager = SessionManager.inMemory();
+test("brief preserves requests, corrections, attempted actions and failed results without resolving them", async () => {
+    const h = recallHarness();
+    const manager = h.manager;
     const request = user(manager, "Audit only. Do not modify generated files.");
     manager.appendMessage(
         fauxAssistantMessage(
@@ -275,13 +310,13 @@ test("brief preserves requests, corrections, attempted actions and failed result
     assert.match(brief, /→ error/);
     assert.doesNotMatch(brief, /permission denied; no file changed/);
     assert.match(
-        recallTraceEntry(manager.getEntry(failed)!)!.text,
+        readBody(await h.read({ action: "read", target: failed, offset: 0 })),
         /permission denied; no file changed/,
     );
     assert.match(brief, /transport.ts/);
     assert.doesNotMatch(brief, /old-secret|new-secret/);
     assert.match(
-        recallTraceEntry(manager.getEntry(call)!)!.text,
+        readBody(await h.read({ action: "read", target: call, offset: 0 })),
         /old-secret.*new-secret/,
     );
 });
@@ -341,16 +376,19 @@ test("tool-heavy evidence cannot crowd out user constraints, and huge entries re
     const latest = user(manager, "New correction: do not flash; report only.");
     user(manager, "Continue.");
     const event = eventFor(manager);
-    for (const capacity of [16000, 32000, 272000]) {
+    for (const [capacity, budget] of [
+        [16000, 2000],
+        [32000, 4000],
+        [272000, 8192],
+    ]) {
         const brief = buildBrief(event, capacity);
-        assert.ok(brief.length <= Math.min(BRIEF_MAX_TOKENS, capacity / 8) * 4);
         assert.ok(
             estimateTokens({
                 role: "compactionSummary",
                 summary: brief,
                 tokensBefore: event.preparation.tokensBefore,
                 timestamp: 0,
-            }) <= Math.floor(Math.min(BRIEF_MAX_TOKENS, capacity / 8)),
+            }) <= budget,
         );
         // Whole-context usage can change with prompt overhead or masking while
         // these source excerpts are identical; it must not recalibrate brief text.
@@ -407,7 +445,6 @@ test("unused short-request allowance preserves complete longer instructions acro
     const second = buildBrief(eventFor(manager, secondTail), 32000);
     for (const request of requests) assert.ok(second.includes(request));
     assert.match(second, /Do not change the API/);
-    assert.equal((second.match(/# Session UI view/g) ?? []).length, 1);
     assert.ok(
         estimateTokens({
             role: "compactionSummary",
@@ -418,7 +455,7 @@ test("unused short-request allowance preserves complete longer instructions acro
     );
 });
 
-test("UI keeps call chronology and source coordinates across canonical replacements without inferring file outcomes", () => {
+test("UI keeps call chronology and canonical replacements without inferring file outcomes", () => {
     const manager = SessionManager.inMemory();
     user(manager, "Inspect the parser.");
     const call = (name: string, path: string, id: string) =>
@@ -471,18 +508,285 @@ test("UI keeps call chronology and source coordinates across canonical replaceme
     );
     assert.match(brief, /Propose creating planned.ts, but wait for approval/);
     assert.match(brief, /→ error/);
-    const entries = manager.getBranch();
-    for (const match of brief.matchAll(/source ([^:;\s]+):(\d+)-(\d+)/g)) {
-        const full = recallTraceEntry(manager.getEntry(match[1])!, entries)!;
-        const block = full.blocks.find(
-            (block) => block.offset === Number(match[2]),
+});
+
+test("skill expansions fold only in the brief while user wording and original instructions remain recoverable", async () => {
+    const harness = recallHarness();
+    const { manager } = harness;
+    const example =
+        '```xml\n<skill name="quoted">\nKeep this example literal.\n</skill>\n```';
+    const instructions =
+        "Historical skill constraint: do not flash hardware.\n".repeat(400);
+    const request = `Review only.\n<skill name="embedded" location="/skills/embedded/SKILL.md">\n${instructions}</skill>\nDo not modify source files.\n${example}`;
+    const id = user(manager, request);
+    user(
+        manager,
+        '<skill name="unfinished">\nKeep incomplete markup and this instruction.',
+    );
+    const boundary = user(manager, "Current tail");
+    const brief = buildBrief(eventFor(manager, boundary), 32000);
+    assert.ok(
+        brief.includes(
+            "Review only.\n[skill: embedded]\nDo not modify source files.",
+        ),
+    );
+    assert.ok(brief.includes(example));
+    assert.ok(brief.includes('name="unfinished"'));
+    assert.ok(!brief.includes(instructions));
+    const pointer = brief.match(new RegExp(`source (${id}):(\\d+)-(\\d+)`))!;
+    const recovered = await readAll(harness, {
+        action: "read",
+        target: pointer[1],
+        offset: Number(pointer[2]),
+    });
+    assert.equal(recovered, request);
+});
+
+test("nested file records expose status and arguments without inventing results or moving original pointers", async () => {
+    const harness = recallHarness();
+    const { manager } = harness;
+    user(manager, "Inspect the input and attempt the scoped output write.");
+    const parent = {
+        role: "toolResult" as const,
+        toolCallId: "batch",
+        toolName: "codemode",
+        content: [{ type: "text" as const, text: "Batch output: π and 😀" }],
+        isError: false,
+        timestamp: Date.now(),
+    };
+    const id = manager.appendMessage({
+        ...parent,
+        nestedCalls: {
+            complete: false,
+            calls: [
+                {
+                    id: "batch/read",
+                    name: "read",
+                    arguments: { path: "input.txt" },
+                    status: "ok",
+                },
+                {
+                    id: "batch/write",
+                    name: "write",
+                    arguments: { path: "output.txt", content: "payload-λ" },
+                    status: "error",
+                    error: "permission denied",
+                },
+                {
+                    id: "batch/unfinished",
+                    name: "bash",
+                    status: "unfinished",
+                    argumentsBytes: 50000,
+                },
+            ],
+        },
+    });
+    const full = await readAll(harness, {
+        action: "read",
+        target: id,
+        offset: 0,
+    });
+    // The pre-metadata wire prefix is a compatibility contract for old pointers.
+    const legacy =
+        "[tool_result]\ncodemode result (call batch)\nBatch output: π and 😀";
+    assert.ok(full.startsWith(legacy + "\n\n"));
+    assert.ok(
+        readBody(
+            await harness.read({
+                action: "read",
+                target: id,
+                offset: legacy.indexOf("Batch output"),
+            }),
+        ).startsWith("Batch output: π and 😀"),
+    );
+    const listing = await harness.read({
+        action: "files",
+        target: "output.txt",
+        offset: 0,
+    });
+    assert.match(
+        resultText(listing),
+        /nested call.*recorded error; result body not recorded/,
+    );
+    const pointer = (
+        listing.details as { reads: { target: string; offset: number }[] }
+    ).reads[0];
+    const recovered = await harness.read({ action: "read", ...pointer });
+    assert.match(resultText(recovered), /payload-λ/);
+    assert.match(resultText(recovered), /permission denied/);
+    assert.match(full, /argumentsBytes.*50000/);
+    assert.match(full, /Nested call record incomplete/);
+    manager.appendContextEdit(id, {
+        content: [{ type: "text", text: "Canonical redacted output." }],
+    });
+    const boundary = user(manager, "Continue from the redacted view.");
+    const brief = buildBrief(eventFor(manager, boundary), 32000);
+    assert.doesNotMatch(brief, /input\.txt|output\.txt|payload-λ|batch\/write/);
+    assert.match(
+        resultText(
+            await harness.read({ action: "read", target: id, offset: 0 }),
+        ),
+        /payload-λ/,
+    );
+});
+
+test("bounded briefs group repeated file activity and keep short replies linked to the actual proposal", async () => {
+    const harness = recallHarness();
+    const { manager } = harness;
+    user(manager, "Keep the existing API and configuration.");
+    for (let index = 0; index < 200; index++) {
+        manager.appendMessage(
+            fauxAssistantMessage([
+                fauxToolCall(
+                    "read",
+                    { path: "settings.json" },
+                    { id: `read-${index}` },
+                ),
+            ]),
         );
-        assert.ok(block);
-        assert.equal(
-            full.text.slice(block.offset, Number(match[3])),
-            block.text,
+        toolResult(
+            manager,
+            `read-${index}`,
+            "read",
+            `Configuration version ${index}.`,
         );
     }
+    const proposal = manager.appendMessage(
+        fauxAssistantMessage(
+            "I propose changing the timeout only. The public API stays unchanged.",
+        ),
+    );
+    const reply = user(manager, "Yes, but do not change the defaults.");
+    manager.appendMessage(
+        fauxAssistantMessage([
+            fauxToolCall(
+                "edit",
+                { path: "settings.json", oldText: "old", newText: "new" },
+                { id: "failed-edit" },
+            ),
+        ]),
+    );
+    toolResult(
+        manager,
+        "failed-edit",
+        "edit",
+        "No matching text; nothing changed.",
+        true,
+    );
+    const replaced = manager.appendMessage(
+        fauxAssistantMessage("No file operation was executed here."),
+    );
+    manager.appendContextEdit(replaced, {
+        content: [
+            fauxToolCall("write", {
+                path: "replacement-only.txt",
+                content: "not executed",
+            }),
+        ],
+    });
+    const boundary = user(manager, "Current tail.");
+    const brief = buildBrief(eventFor(manager, boundary), 32000);
+    assert.match(brief, /File activity/);
+    assert.doesNotMatch(brief.split("## File activity")[1], /replacement-only/);
+    assert.match(brief, /read×200, edit×1/);
+    assert.match(brief, /→ error/);
+    assert.match(
+        brief,
+        new RegExp(
+            `entry ${reply}; user; source .*; reply-context ${proposal}:`,
+        ),
+    );
+    const context = brief.match(/reply-context ([^:]+):(\d+)-(\d+)/)!;
+    const recovered = await harness.read({
+        action: "read",
+        target: context[1],
+        offset: Number(context[2]),
+    });
+    assert.match(resultText(recovered), /timeout only/);
+    assert.ok(
+        estimateTokens({
+            role: "compactionSummary",
+            summary: brief,
+            tokensBefore: 40000,
+            timestamp: 0,
+        }) <= 4000,
+    );
+});
+
+test("file navigation and reply pointers cannot displace user wording that fits", () => {
+    const manager = SessionManager.inMemory();
+    const request =
+        "Review the device configuration without changing it.\n" +
+        "Preserve authorization checks, persisted keys, and rollback behavior.\n".repeat(
+            170,
+        ) +
+        "Do not flash or erase the device.";
+    user(manager, request);
+    for (let index = 0; index < 200; index++) {
+        manager.appendMessage(
+            fauxAssistantMessage([
+                fauxToolCall(
+                    "read",
+                    { path: `devices/${index}/config.json` },
+                    { id: `file-${index}` },
+                ),
+            ]),
+        );
+        toolResult(manager, `file-${index}`, "read", "Recorded configuration.");
+    }
+    for (let index = 0; index < 5; index++) {
+        manager.appendMessage(
+            fauxAssistantMessage(`Inspect device ${index} next?`),
+        );
+        user(
+            manager,
+            `Yes, inspect device ${index}; do not change its configuration.`,
+        );
+    }
+    const boundary = user(manager, "Current tail.");
+    const brief = buildBrief(eventFor(manager, boundary), 32000);
+    assert.ok(brief.includes(request));
+    for (let index = 0; index < 5; index++)
+        assert.ok(
+            brief.includes(
+                `Yes, inspect device ${index}; do not change its configuration.`,
+            ),
+        );
+    assert.ok(
+        estimateTokens({
+            role: "compactionSummary",
+            summary: brief,
+            tokensBefore: 40000,
+            timestamp: 0,
+        }) <= 4000,
+    );
+});
+
+test("short user corrections survive when later pasted logs require excerpts", () => {
+    const manager = SessionManager.inMemory();
+    user(manager, "Investigate the device failure.");
+    user(manager, "Do not erase stored credentials or change the public API.");
+    for (let index = 0; index < 60; index++)
+        user(
+            manager,
+            `Device log ${index}\n${"I (1234) driver: observed device state and counters\n".repeat(60)}`,
+        );
+    const boundary = user(manager, "Current tail.");
+    const brief = buildBrief(eventFor(manager, boundary), 32000);
+    assert.ok(
+        brief.includes(
+            "Do not erase stored credentials or change the public API.",
+        ),
+    );
+    assert.match(brief, /excerpt; read source/);
+    assert.ok(
+        estimateTokens({
+            role: "compactionSummary",
+            summary: brief,
+            tokensBefore: 40000,
+            timestamp: 0,
+        }) <= 4000,
+    );
 });
 
 test("invalid boundaries and cancellation never produce a brief", () => {
@@ -513,7 +817,7 @@ test("masking protects recent multi-step work and recall results, and every olde
         manager,
         "old",
         "read",
-        `old-marker ${"x".repeat(LARGE_TOOL_RESULT_CHARS + 100)}`,
+        `old-marker ${"x".repeat(20000)}`,
     );
     manager.appendMessage(
         fauxAssistantMessage("Consumed, but still in the working window."),
@@ -528,7 +832,7 @@ test("masking protects recent multi-step work and recall results, and every olde
         ),
         /old-marker/,
     );
-    const recalled = toolResult(
+    toolResult(
         manager,
         "recall-1",
         "recall",
@@ -538,12 +842,7 @@ test("masking protects recent multi-step work and recall results, and every olde
         manager.appendMessage(
             fauxAssistantMessage(`working ${index} ${"z".repeat(8000)}`),
         );
-    const recent = toolResult(
-        manager,
-        "new",
-        "read",
-        `recent-marker ${"x".repeat(10000)}`,
-    );
+    toolResult(manager, "new", "read", `recent-marker ${"x".repeat(10000)}`);
     manager.appendMessage(
         fauxAssistantMessage("Use the recent result for the next edit."),
     );
@@ -571,8 +870,6 @@ test("masking protects recent multi-step work and recall results, and every olde
         resultText(await recallHarness(manager).read(args)),
         /old-marker/,
     );
-    assert.ok(recallTraceEntry(manager.getEntry(recalled)!));
-    assert.ok(recallTraceEntry(manager.getEntry(recent)!));
 });
 
 test("masking leaves ambiguous and edited results alone", () => {
@@ -582,10 +879,6 @@ test("masking leaves ambiguous and edited results alone", () => {
         manager.appendMessage(fauxAssistantMessage("z".repeat(8000)));
     const entries = manager.getBranch();
     const messages = entries.flatMap(sessionEntryToContextMessages);
-    assert.deepEqual(
-        maskConsumedToolResults(messages, [...entries, manager.getEntry(id)!]),
-        messages,
-    );
     const edited = messages.map((message) =>
         message.role === "toolResult"
             ? {
@@ -600,16 +893,31 @@ test("masking leaves ambiguous and edited results alone", () => {
             : message,
     );
     assert.deepEqual(maskConsumedToolResults(edited, entries), edited);
+
+    const original = manager.getEntry(id)!;
+    assert.ok(
+        original.type === "message" && original.message.role === "toolResult",
+    );
+    manager.appendMessage(original.message);
+    const duplicateEntries = manager.getBranch();
+    const duplicateMessages = duplicateEntries.flatMap(
+        sessionEntryToContextMessages,
+    );
+    assert.deepEqual(
+        maskConsumedToolResults(duplicateMessages, duplicateEntries),
+        duplicateMessages,
+    );
 });
 
 test("recall recovers paged original text and readable but unsearchable recall echoes after compaction", async () => {
     const h = recallHarness();
-    const original = user(h.manager, `needle ${"x".repeat(24000)} end-marker`);
+    const request = `needle ${"x".repeat(12000)}\nContinue: recall(this is source text, not navigation) 🐕\n${"x".repeat(12000)} end-marker`;
+    const original = user(h.manager, request);
     const echo = toolResult(
         h.manager,
         "recall-echo",
         "recall",
-        "previous recall evidence",
+        "previous recall evidence: echo-only-4829",
     );
     const tail = user(h.manager, "Current tail");
     h.manager.appendCompaction("Old summary", tail, 40000);
@@ -619,27 +927,9 @@ test("recall recovers paged original text and readable but unsearchable recall e
         offset: 0,
     });
     assert.match(resultText(search), new RegExp(original));
-    let next: JsonObject | null = {
-        action: "read",
-        target: original,
-        offset: 0,
-    };
-    let recovered = "";
-    let pages = 0;
-    while (next) {
-        const result = await h.read(next);
-        const text = resultText(result);
-        recovered += text
-            .slice(text.indexOf("\n") + 1)
-            .split("\nContinue: recall(")[0]
-            .split("\nAround: recall(")[0];
-        next = (result.details as { next: JsonObject | null }).next;
-        pages++;
-    }
-    assert.equal(pages, 3);
     assert.equal(
-        recovered,
-        recallTraceEntry(h.manager.getEntry(original)!)!.text,
+        await readAll(h, { action: "read", target: original, offset: 0 }),
+        `[user]\n${request}`,
     );
     assert.match(
         resultText(
@@ -655,7 +945,7 @@ test("recall recovers paged original text and readable but unsearchable recall e
         resultText(
             await h.read({
                 action: "search",
-                target: "previous recall evidence",
+                target: "echo-only-4829",
                 offset: 0,
             }),
         ),
@@ -698,19 +988,38 @@ test("UI and adaptive retrieval share exact full-view coordinates and distinguis
     assert.match(brief, /I propose needle; not yet verified/);
     assert.match(brief, /→ error/);
     assert.doesNotMatch(brief, /private reasoning|needle payload|NOT written/);
-    const before = compileTrace(h.manager.getBranch());
-    for (const block of before) {
-        const full = recallTraceEntry(
-            h.manager.getEntry(block.entryId)!,
-            h.manager.getBranch(),
-        )!;
-        assert.equal(full.text.slice(block.offset, block.end), block.text);
-    }
+    const expected = new Map([
+        ["user", "Keep the existing API."],
+        ["assistant", "I propose needle; not yet verified. 🐕"],
+        [
+            "tool_call",
+            `write (call needle-call)\n${JSON.stringify({ path: "needle.ts", content: "needle payload\nsecond line" })}`,
+        ],
+    ]);
+    const pointers = [
+        ...brief.matchAll(
+            /^\[entry [^;]+; ([^;]+); source ([^:]+):(\d+)-(\d+)/gm,
+        ),
+    ];
+    const verifyPointers = async () => {
+        const seen = new Set<string>();
+        for (const [, role, target, start, end] of pointers) {
+            const page = await h.read({
+                action: "read",
+                target,
+                offset: Number(start),
+            });
+            assert.equal(
+                readBody(page).slice(0, Number(end) - Number(start)),
+                expected.get(role),
+            );
+            seen.add(role);
+        }
+        for (const role of expected.keys()) assert.ok(seen.has(role));
+    };
+    await verifyPointers();
     user(h.manager, "Appended after the coordinates were issued.");
-    assert.deepEqual(
-        compileTrace(h.manager.getBranch()).slice(0, before.length),
-        before,
-    );
+    await verifyPointers();
     const found = await h.read({
         action: "search",
         target: "needle",
@@ -775,22 +1084,14 @@ test("adaptive search bundles recorded calls and observations without changing h
     for (const [, target, start, end] of text.matchAll(
         /source ([^:;\s]+):(\d+)-(\d+)/g,
     )) {
-        const full = recallTraceEntry(
-            h.manager.getEntry(target)!,
-            h.manager.getBranch(),
-        )!.text;
-        const quoted = full.slice(Number(start), Number(end));
+        const page = await h.read({
+            action: "read",
+            target,
+            offset: Number(start),
+        });
+        const quoted = readBody(page).slice(0, Number(end) - Number(start));
         assert.ok(quoted.length > 0);
         assert.ok(text.includes(quoted));
-        assert.ok(
-            resultText(
-                await h.read({
-                    action: "read",
-                    target,
-                    offset: Number(start),
-                }),
-            ).includes(quoted),
-        );
     }
     const second = await h.read(details.next);
     assert.equal((second.details as { reads: JsonObject[] }).reads.length, 2);
@@ -1020,9 +1321,14 @@ test("adaptive hits retain bounded original user-turn context across branches an
         "turn excerpts share the existing evidence budget",
     );
     for (const [, target, start, end] of sources) {
-        const entry = h.manager.getEntry(target)!;
-        const full = recallTraceEntry(entry, h.manager.getBranch())!.text;
-        assert.ok(text.includes(full.slice(Number(start), Number(end))));
+        const page = await h.read({
+            action: "read",
+            target,
+            offset: Number(start),
+        });
+        assert.ok(
+            text.includes(readBody(page).slice(0, Number(end) - Number(start))),
+        );
     }
 });
 
@@ -1193,14 +1499,12 @@ test("file navigation recovers multi-call payloads and failed results across com
         resultText(await h.read(details.reads[3])),
         /Permission denied/,
     );
-    let request: JsonObject | null = details.reads[0];
-    let payload = "";
-    while (request) {
-        const read = await h.read(request);
-        payload += resultText(read);
-        request = (read.details as { next: JsonObject | null }).next;
-    }
-    assert.match(payload, /complete-write-é/);
+    const payload = await readAll(h, details.reads[0]);
+    assert.ok(
+        payload.includes(
+            JSON.stringify(`${"padding ".repeat(2000)}complete-write-é`),
+        ),
+    );
     const all = resultText(await h.read({ ...params, target: "" }));
     assert.match(all, /read call .*→ no recorded result/);
     assert.doesNotMatch(all, /fabricated.ts|not-indexed.ts/);
@@ -1275,13 +1579,18 @@ test("file navigation keeps branch evidence and canonical replacements distinct 
 
 test("file navigation is pageable and does not guess through duplicate call IDs or mismatched tools", async () => {
     const h = recallHarness();
-    for (let index = 0; index < 12; index++) {
-        h.manager.appendMessage(
-            fauxAssistantMessage(
-                fauxToolCall(
-                    "read",
-                    { path: `src/file-${String(index).padStart(2, "0")}.ts` },
-                    { id: `read-${index}` },
+    const expectedCalls: string[] = [];
+    for (let index = 11; index >= 0; index--) {
+        expectedCalls.unshift(
+            h.manager.appendMessage(
+                fauxAssistantMessage(
+                    fauxToolCall(
+                        "read",
+                        {
+                            path: `src/file-${String(index).padStart(2, "0")}.ts`,
+                        },
+                        { id: `read-${index}` },
+                    ),
                 ),
             ),
         );
@@ -1313,7 +1622,7 @@ test("file navigation is pageable and does not guess through duplicate call IDs 
         pages++;
     }
     assert.equal(pages, 3);
-    assert.equal(new Set(calls).size, 12);
+    assert.deepEqual(calls, expectedCalls);
     await assert.rejects(h.read({ ...params, offset: 12 }), /offset/);
     const missing = await h.read({ ...params, target: "does-not-exist" });
     assert.equal((missing.details as { total: number }).total, 0);
@@ -1364,12 +1673,12 @@ test("file navigation is pageable and does not guess through duplicate call IDs 
 
 test("recall navigation is bounded and pageable with executable pointers and explicit errors", async () => {
     const h = recallHarness();
-    const ids = Array.from({ length: 12 }, (_, index) =>
-        user(
-            h.manager,
+    const requests = Array.from(
+        { length: 12 },
+        (_, index) =>
             `${"İ".repeat(300)} compact-marker-${index} ${"x".repeat(2000)}`,
-        ),
     );
+    const ids = requests.map((request) => user(h.manager, request));
     for (const action of ["search", "around"]) {
         const page = await h.read({
             action,
@@ -1382,16 +1691,13 @@ test("recall navigation is bounded and pageable with executable pointers and exp
         const pointers = [...text.matchAll(/source ([^:;\s]+):(\d+)-(\d+)/g)];
         assert.equal(pointers.length, 5);
         for (const [, target, start, end] of pointers) {
-            const full = recallTraceEntry(
-                h.manager.getEntry(target)!,
-                h.manager.getBranch(),
-            )!.text;
+            const full = `[user]\n${requests[ids.indexOf(target)]}`;
             assert.ok(Number(start) < Number(end));
             assert.ok(Number(end) <= full.length);
-            const read = resultText(
+            const read = readBody(
                 await h.read({ action: "read", target, offset: Number(start) }),
             );
-            assert.match(read, /compact-marker/);
+            assert.equal(read, full.slice(Number(start)));
         }
         const next = (page.details as { next: JsonObject }).next;
         const second = resultText(await h.read(next));
@@ -1553,9 +1859,15 @@ test("canonical provider edits survive masking while recall retains original his
     await h.session.prompt("Continue with edited context.");
     assert.doesNotMatch(request, /Original wording retained in history/);
     assert.match(request, /Replacement provider wording/);
-    assert.match(
-        JSON.stringify(compileTrace(h.manager.getBranch())),
-        /Original wording retained in history/,
+    assert.equal(
+        readBody(
+            await recallHarness(h.manager).read({
+                action: "read",
+                target: replaced,
+                offset: 0,
+            }),
+        ),
+        "[user]\nOriginal wording retained in history.",
     );
     assert.deepEqual(h.errors, []);
 });

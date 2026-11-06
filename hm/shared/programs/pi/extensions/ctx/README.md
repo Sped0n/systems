@@ -1,9 +1,12 @@
 # Context management
 
-Ctx uses [VCC](https://arxiv.org/abs/2603.29678)-style typed views for deterministic
-compaction and source-linked recall. Pi's session JSONL is the only durable store.
-Compilation, compaction, and tool retrieval make no model calls and infer no
-task state.
+Ctx uses typed views of Pi's session JSONL for compaction and recall. The JSONL
+is the only persistent store. Compilation, compaction, and tool retrieval make
+no model calls. Ctx does not infer task state.
+
+The design draws on [VCC](https://arxiv.org/abs/2603.29678). That paper evaluates
+structured views for memory reflection, not live compaction quality. See
+[Replay evaluation](REPLAY.md) for local measurements and their limits.
 
 ```text
 Pi session JSONL
@@ -19,57 +22,101 @@ Typed trace + source coordinates
 
 ## Views
 
-- **Full:** original sanitized text, including tool arguments and results;
-  images are metadata only.
-- **UI:** chronological dialogue and folded tool calls with source pointers.
-- **Adaptive:** matching source blocks, ranked and labeled by role, with bounded
-  recorded call/result evidence when the association is unambiguous and original
-  user-turn anchors for context, not renewed approval.
+- The full view contains sanitized source text, including tool arguments and
+  results. Images appear as metadata only. Recorded nested calls follow the
+  original result, so existing UTF-16 offsets do not change. Nested records
+  contain status and sometimes arguments, but no child-result bodies. Incomplete
+  records are labeled.
+- The UI view shows dialogue in chronological order and summarizes tool calls
+  with source pointers. Complete skill expansions become `[skill: name]`.
+  Surrounding user wording and fenced examples remain intact. Ctx does not track
+  which skills are active.
+- The adaptive view ranks matching source blocks and labels their roles. It
+  includes excerpts from recorded calls and results when their association is
+  unambiguous. It also includes the user message that started the turn. That
+  message provides historical context, not renewed approval.
 
-Pointers use `entryId:start-end`: zero-based, end-exclusive UTF-16 offsets in
-the full textual view. Use `recall` with `target=entryId, offset=start` to read
-one. Canonical replacements point to context-edit entries; originals remain
-readable. Tool calls, results, and approvals are not interchangeable evidence.
+Pointers use `entryId:start-end`. These are zero-based, end-exclusive UTF-16
+offsets in the full textual view. To read a pointer, call `recall` with
+`action="read"`, `target=entryId`, and `offset=start`. Canonical replacements
+point to context-edit entries. The originals remain readable. A tool call does
+not prove success, and a tool result does not establish approval.
 
 ## Compaction
 
-Pi owns scheduling, model capacity, safe recent-tail boundaries, persistence,
-and recovery. Ctx rebuilds older dialogue from source, respects canonical edits,
-and leaves the native recent tail unduplicated.
+Pi controls when compaction runs, the model's context capacity, and which recent
+messages remain uncompressed. Pi also handles persistence and recovery. Ctx
+rebuilds older dialogue from source and applies canonical edits. It does not
+duplicate the recent messages that Pi retains.
 
-Briefs use at most an estimated one-eighth of capacity, capped at 8,192 tokens.
-Selection prioritizes original user evidence, then recent work, preserving
-chronology and marking omissions. Unused space from short user messages goes to
-clipped user text before older work. Older large tool results may also be masked
-in the provider view with recall pointers; storage is unchanged.
+A brief uses at most an estimated one-eighth of the model's context capacity,
+capped at 8,192 tokens. Ctx keeps the full UI view if it fits. Otherwise, it
+selects user evidence first. It preserves the opening request and complete
+messages before taking excerpts from larger messages. It presents the selected
+evidence chronologically, marks omissions, and expands clipped wording if space
+remains. There is no fixed percentage split between user messages and other work.
 
-Use `/compact [focus]` manually. Focus is a bounded note, not a selection rule.
-Compaction requires active recall; failure commits nothing and does not fall
-back to a model summarizer.
+Ctx uses remaining space for pointers to the context of short replies, file
+activity, and older assistant or tool excerpts. These cannot displace selected
+user wording. File activity groups repeated operations and shows the latest
+recorded call for each path. Its counts describe recorded operations, not current
+file contents or successful edits. Pi's recent messages already include current
+work.
 
-Compaction preserves session history, but the brief can omit instructions.
-Retrieve original instructions when scope or authorization is unclear, and ask
-if ambiguity remains. Compaction never renews historical permission.
+Ctx may replace older large tool results with recall pointers in the context
+sent to the provider. Recent work and recall results remain visible. This does
+not change stored history.
+
+Use `/compact [focus]` to compact manually. The focus becomes a length-limited
+note. It does not control evidence selection. Compaction requires an active
+recall tool. If compaction fails, Ctx saves no changes and does not call a model
+to generate a summary.
+
+The brief can omit instructions even though session history remains intact.
+Retrieve the original instructions when scope or authorization is unclear. Ask
+the user if ambiguity remains. Compaction never renews historical permission.
 
 ## Recall
 
 `/recall [question]` asks the main model to retrieve evidence, cite source IDs,
-and identify gaps. For example: `/recall What requirements still apply?`.
-Recall always uses the active lineage, including history before compaction;
-other branches and sessions are not searchable.
+and identify gaps. For example, use `/recall What requirements still apply?`.
+Recall searches only the active lineage, including history before compaction.
+It cannot search other branches or sessions.
 
-The model can also call the tool directly:
+The model can also call the tool directly with the following actions.
 
-- `search`: case-insensitive literal OR matching, ranked by BM25-style relevance,
-  then recency. Each page has up to five matches. A hit, any uniquely associated
-  recorded call/result, and its optional historical user-turn anchor share a
-  600-character excerpt budget. Turn anchors appear at most once per page. Excerpts
-  retain explicit roles, matched terms, and source pointers. Context replacements are labeled but never
-  paired as recorded execution. `offset` counts matches, not related evidence;
-  restart at zero when the query changes. “Expand if needed” supplies a ready-to-run
-  read of the first match, not its contextual user anchor.
-- `files`: five recorded native `read`/`write`/`edit` operations, ordered by
-  path then chronology. `target` is a case-insensitive literal path substring;
-  empty lists all operations. `offset` skips operations, not files.
-- `read`: up to 12,000 UTF-16 characters, including complete mutation payloads.
-- `around`: five chronological entry excerpts surrounding an anchor.
+### Search
+
+`search` uses case-insensitive literal OR matching. It ranks matches by
+BM25-style relevance, then recency. Each page contains up to five matches.
+
+Each match shares a 600-character excerpt budget with any uniquely associated
+recorded call or result and the optional user message that started the turn.
+That user message appears at most once per page. Excerpts include roles,
+matched terms, and source pointers. Context replacements are labeled and are
+never paired as recorded execution.
+
+The `offset` counts matches, not related evidence. Restart at zero when the query
+changes. "Expand if needed" supplies a read request for the first match, not for
+the user message included as context.
+
+### Files
+
+`files` lists up to five recorded direct or nested `read`, `write`, or `edit`
+operations per page, ordered by path, then chronology. Direct calls include result
+pointers when the association is unambiguous. Nested records have status but no
+recovered child-result body.
+
+The `target` is a case-insensitive literal path substring. An empty target lists
+all operations. The `offset` skips operations, not files. Ctx does not infer file
+changes from shell scripts.
+
+### Read
+
+`read` returns up to 12,000 UTF-16 characters per page. Follow its continuation
+requests to recover the full source text, including complete edit and write
+payloads.
+
+### Around
+
+`around` returns up to five chronological entry excerpts surrounding an anchor.

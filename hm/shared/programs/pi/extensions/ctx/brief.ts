@@ -57,7 +57,7 @@ export function buildBrief(
     const focus = event.customInstructions?.trim();
     const introduction = `# Session UI view
 Chronological source evidence, not inferred goals or a resolved task state. The original session is intact.
-Tool bodies and thinking are folded; source coordinates are entryId:start-end (UTF-16 offsets in recall's full textual view). Read with target=entryId, offset=start; use around for neighboring events.
+Tool bodies, thinking, and expanded skills are folded; source coordinates are entryId:start-end (UTF-16 offsets in recall's full textual view). Read with target=entryId, offset=start; use around for neighboring events. Skill markers link to historical instructions, not a list of currently active skills. Nested call status is recorded metadata, not a recovered result body.
 Continue from the native recent tail, starting at ${preparation.firstKeptEntryId}; it is not duplicated here. Proposals and tool calls are not approval or proof of completion. Historical permission is not renewed.
 Omitted user messages may contain applicable constraints. Before consequential action, recall original instructions and surrounding decisions when scope or authorization is unclear; ask if ambiguity remains.
 ${focus ? `\nUser-supplied compaction focus (not semantically processed):\n${excerpt(sanitize(focus), 600, "\n[…focus excerpt…]\n")}\n` : ""}`;

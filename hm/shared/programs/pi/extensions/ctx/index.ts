@@ -23,7 +23,7 @@ export default function contextManagement(pi: ExtensionAPI) {
                     tokensBefore: event.preparation.tokensBefore,
                     details: {
                         compactor: "ctx",
-                        format: "ui-v1",
+                        format: "ui-v2",
                         readFiles: [...event.preparation.fileOps.read],
                         modifiedFiles: [
                             ...new Set([

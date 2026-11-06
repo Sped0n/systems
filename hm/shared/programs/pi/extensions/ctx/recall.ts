@@ -437,6 +437,8 @@ function fileEntries(
         );
         if (entriesById.get(call.entryId)?.type === "context_edit")
             return `${path}\n  ${file.operation} context replacement ${source} (not a recorded call)`;
+        if (call.nestedStatus)
+            return `${path}\n  ${file.operation} nested call ${source} → recorded ${call.nestedStatus}; result body not recorded`;
         const result = pairs.get(call);
         const outcome = result
             ? `${result.isError ? "error" : "result"} ${pointer(result)}`
@@ -494,7 +496,7 @@ export function registerRecall(pi: ExtensionAPI) {
         description:
             "Search or read this session's active lineage, including compacted messages. " +
             "Call recall directly, not through codemode or other tools. " +
-            "Files lists five recorded native read/write/edit operations with call/result pointers; target is a literal path substring (empty lists all). Calls are attempts, not current file state. " +
+            "Files lists five recorded direct or nested read/write/edit operations with source pointers; target is a literal path substring (empty lists all). Nested records include status, not result bodies. Calls are attempts, not current file state. " +
             "Search OR-matches literal keywords, case-insensitively, and returns up to five matching blocks ranked by literal-term relevance then recency. Hits include separately labelled recorded call/result evidence when pairing is unambiguous, sharing a 600-character excerpt budget per hit. " +
             "Read returns up to 12000 UTF-16 characters of the full textual view, including write/edit payloads. Pointers entryId:start-end use UTF-16 offsets in this view. Search excludes recall echoes and generated compaction summaries; hits may include historical user-turn anchors within the same excerpt budget, not renewed approval. " +
             "Start around with target=entryId, offset=0; five chronological excerpts begin two recallable entries before the anchor. " +
