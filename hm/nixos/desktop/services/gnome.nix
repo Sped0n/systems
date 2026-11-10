@@ -21,6 +21,8 @@
         disable-extension-version-validation = true;
       };
 
+      "org/gnome/mutter".overlay-key = "Super_L";
+
       "org/gnome/desktop/input-sources" = with lib.hm.gvariant; {
         mru-sources = [
           (mkTuple [
