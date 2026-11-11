@@ -1,6 +1,9 @@
 # misc
 result*
 .pi
+!/.pi/
+/.pi/*
+!/.pi/prompts/
 repomix*
 
 # python
