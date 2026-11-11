@@ -13,10 +13,10 @@
             lib.makeBinPath [
               pkgs.coreutils
               pkgs.gnugrep
-              pkgs.procps
               config.nix.package
             ]
           }:/usr/sbin:/usr/bin:/sbin:/bin
+          ${config.lib.bash.initHomeManagerLib}
           ${builtins.readFile ./scripts/policy.sh}
         ''}
       '';

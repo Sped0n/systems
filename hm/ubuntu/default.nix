@@ -10,6 +10,8 @@
     ./otbr.nix
     ./packages.nix
     ./policy.nix
+    ./shell.nix
+    ./userns.nix
     ./zram.nix
   ];
 

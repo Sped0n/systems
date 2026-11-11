@@ -1,9 +1,11 @@
 {
+  config,
   lib,
   pkgs,
   name,
   description,
   script,
+  variables ? { },
 }:
 pkgs.writeShellScript name ''
   export PATH=${
@@ -16,7 +18,9 @@ pkgs.writeShellScript name ''
       pkgs.procps
     ]
   }:/usr/sbin:/usr/bin:/sbin:/bin
+  ${config.lib.bash.initHomeManagerLib}
   description=${lib.escapeShellArg description}
+  ${lib.toShellVars variables}
   ${builtins.readFile script}
   ${builtins.readFile ./scripts/setup-script.sh}
 ''

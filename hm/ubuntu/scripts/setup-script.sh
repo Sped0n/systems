@@ -28,7 +28,7 @@ if [[ "$workstation_user" == root ]]; then
 fi
 
 warn() {
-    printf 'warning: %s\n' "$*" >&2
+    warnEcho "warning: $*" >&2
 }
 needs_setup=false
 mismatch() {
@@ -43,20 +43,24 @@ check
 if [[ "$mode" == --check ]]; then
     if [[ "$needs_setup" == true ]]; then
         warn 'To repair these settings, run the following command and confirm its changes:'
-        printf '  %q --apply' "$0" >&2
+        printf -v command '  %q --apply' "$0"
         if ((${#setup_args[@]} > 0)); then
-            printf ' %q' "${setup_args[@]}" >&2
+            printf -v arguments ' %q' "${setup_args[@]}"
+            command+="$arguments"
         fi
-        printf '\n' >&2
+        warnEcho "$command" >&2
     fi
     exit 0
 fi
 
 printf '\n%s\n' "$description"
-read -r -p 'Type apply to continue: ' confirmation </dev/tty
-[[ "$confirmation" == apply ]] || {
+read -r -p 'Continue? [Y/n] ' confirmation </dev/tty
+case "$confirmation" in
+"" | [Yy] | [Yy][Ee][Ss]) ;;
+*)
     printf 'Cancelled.\n'
     exit 0
-}
+    ;;
+esac
 sudo -v
 apply

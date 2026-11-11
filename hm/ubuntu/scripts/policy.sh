@@ -2,14 +2,10 @@
 set -euo pipefail
 
 warn() {
-  printf 'warning: %s\n' "$*" >&2
+  warnEcho "warning: $*" >&2
 }
 
 workstation_user=$(id -un)
-if [[ "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || true)" == 1 ]]; then
-  warn "AppArmor restricts unprivileged user namespaces. Only investigate if a required application cannot start."
-  warn "  journalctl -k -g 'apparmor=\"DENIED\"'"
-fi
 # Client-side trusted-users does not establish whether the daemon trusts this user.
 if daemon_info="$(nix --extra-experimental-features nix-command store ping --store daemon --json 2>/dev/null)"; then
   if grep -Eq '"trusted"[[:space:]]*:[[:space:]]*false' <<<"$daemon_info"; then
