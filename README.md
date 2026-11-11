@@ -19,6 +19,7 @@
 ```
 machines
 ├── esp-0       # Ubuntu desktop (x86_64)
+├── esp-1       # Ubuntu desktop (x86_64)
 ├── srv-de-0    # NixOS server (x86_64)
 ├── srv-jp-0    # NixOS server (x86_64)
 ├── srv-nl-0    # NixOS server (x86_64)
@@ -43,15 +44,4 @@ Available recipes:
     update-pkgs            # Update unstable package channels. [alias: up]
     update-pkgs-all        # Update both stable and unstable package channels. [alias: upa]
     update-specific input  # Update only the specified flake inputs. [alias: us]
-```
-
-## Development
-
-Enter the pinned development environment, install the Pi development graph,
-and enable the repository checks:
-
-```bash
-nix develop # or `direnv allow`
-pnpm --dir hm/shared/programs/pi install --frozen-lockfile
-prek install
 ```
