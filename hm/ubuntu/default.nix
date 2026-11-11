@@ -5,7 +5,13 @@
 
     ./programs
 
+    ./groups.nix
+    ./host.nix
+    ./otbr.nix
     ./packages.nix
-    ./ubuntu
+    ./policy.nix
+    ./zram.nix
   ];
+
+  services.standalone.enable = true;
 }

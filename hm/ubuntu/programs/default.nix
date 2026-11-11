@@ -2,7 +2,6 @@
   imports = [
     ./git.nix
     ./gpg-import.nix
-    ./ghostty.nix
     ./home-manager.nix
     ./hunk.nix
     ./neovim.nix

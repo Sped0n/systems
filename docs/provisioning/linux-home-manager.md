@@ -31,4 +31,4 @@ link. After the first activation, update with
 `home-manager switch --flake path:.#esp-0`.
 
 Review activation warnings for any remaining host setup. Ubuntu checks live in
-[`machines/esp-0/hm/ubuntu/`](../../machines/esp-0/hm/ubuntu/).
+[`hm/ubuntu/`](../../hm/ubuntu/).
