@@ -25,14 +25,14 @@
         "cv02"
         "cv08"
       ];
-      adjust-cell-height = "10%";
+      adjust-cell-height = lib.mkDefault "3%";
 
       theme = "kanagawa-dragon";
       cursor-style = "bar";
       cursor-style-blink = false;
       macos-titlebar-style = "tabs";
-      window-padding-x = 9;
-      window-padding-y = 9;
+      window-padding-x = lib.mkDefault 7;
+      window-padding-y = lib.mkDefault 5;
 
       keybind = [
         "ctrl+shift+\\=new_split:right"
