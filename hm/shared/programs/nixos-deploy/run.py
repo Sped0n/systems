@@ -16,6 +16,8 @@ USAGE = """Usage:
 Notes:
   - Remaining nixos-rebuild arguments are fixed by this wrapper.
   - Provide sudo password via stdin if you want non-interactive execution.
+  - With piped passwords, SSH host keys must already be trusted.
+    For unknown hosts, connect manually, verify the fingerprint, then retry.
 """
 
 
@@ -60,6 +62,11 @@ def run_with_piped_password(command: list[str]) -> int:
         sys.stderr.write("Error: expected sudo password on stdin.\n")
         return 1
 
+    env = os.environ.copy()
+    env["NIX_SSHOPTS"] = (
+        "-o StrictHostKeyChecking=yes " + env.get("NIX_SSHOPTS", "")
+    ).strip()
+
     master_fd, slave_fd = pty.openpty()
 
     def child_setup():
@@ -69,6 +76,7 @@ def run_with_piped_password(command: list[str]) -> int:
 
     proc = subprocess.Popen(
         command,
+        env=env,
         stdin=slave_fd,
         close_fds=True,
         preexec_fn=child_setup,
@@ -92,10 +100,11 @@ def run_with_piped_password(command: list[str]) -> int:
             if not data:
                 break
 
+            os.write(sys.stdout.fileno(), data)
+
             if not sent_password:
                 output = (output + data)[-4096:]
                 if b"password" in output.lower():
-                    os.write(sys.stdout.fileno(), output)
                     os.write(master_fd, password)
                     os.write(sys.stdout.fileno(), b"\n")
                     sent_password = True
