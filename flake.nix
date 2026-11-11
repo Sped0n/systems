@@ -40,220 +40,80 @@
   };
 
   outputs =
-    inputs@{
-      self,
-      nixpkgs,
-      nixpkgs-unstable,
-      secrets,
-      home-manager,
-      agenix,
-      disko,
-      nix-darwin,
-      nix-homebrew,
-      ...
-    }:
+    inputs:
     let
-      supportedSystems = [
-        "aarch64-darwin"
-        "aarch64-linux"
-        "x86_64-linux"
-      ];
-
-      forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
-
-      genSpecialArgs =
-        {
-          system,
-          extraArgs ? { },
-        }:
-        rec {
-          inherit
-            agenix
-            nixpkgs
-            nixpkgs-unstable
-            secrets
-            ;
-
-          vars = import "${secrets}/vars" // rec {
-            username = "spedon";
-            home =
-              if builtins.match ".*darwin$" system != null then "/Users/${username}" else "/home/${username}";
-            serverHostnames = [
-              "srv-de-0"
-              "srv-jp-0"
-              "srv-nl-0"
-              "srv-sg-0"
-              "srv-sg-1"
-              "srv-us-0"
-            ];
-          };
-
-          functions = import ./functions {
-            lib = nixpkgs.lib;
-            inherit self;
-          };
-        }
-        // extraArgs;
-
-      overlaysList =
-        (import ./functions {
-          lib = nixpkgs.lib;
-          inherit self;
-        }).loadOverlays
-          {
-            overlayDirectory = ./overlays;
-            args = { inherit inputs; };
-          };
-
-      nixpkgsConfig = {
-        allowUnfree = true;
-      };
-
-      nixpkgsModule =
-        { ... }:
-        {
-          nixpkgs = {
-            config = nixpkgsConfig;
-            overlays = overlaysList;
-          };
-        };
-
-      pkgsUnstableFor =
+      varsFor =
         system:
-        import nixpkgs-unstable {
-          inherit system;
-          config = nixpkgsConfig;
-          overlays = overlaysList;
+        import "${inputs.secrets}/vars"
+        // rec {
+          username = "spedon";
+          home =
+            if builtins.match ".*darwin$" system != null then "/Users/${username}" else "/home/${username}";
+          serverHostnames = [
+            "srv-de-0"
+            "srv-jp-0"
+            "srv-nl-0"
+            "srv-sg-0"
+            "srv-sg-1"
+            "srv-us-0"
+          ];
         };
 
-      mkHomeConfiguration =
-        {
-          system,
-          username,
-          homeDirectory,
-          stateVersion,
-          modules,
-        }:
-        home-manager.lib.homeManagerConfiguration {
-          pkgs = import nixpkgs {
-            inherit system;
-            config = nixpkgsConfig;
-            overlays = overlaysList;
-          };
-          extraSpecialArgs = (genSpecialArgs { inherit system; }) // {
-            pkgs-unstable = pkgsUnstableFor system;
-          };
-          modules = [
-            {
-              home = {
-                inherit username homeDirectory stateVersion;
-              };
-            }
-          ]
-          ++ modules;
-        };
-
-      commonNixosModules = [
-        nixpkgsModule
-        disko.nixosModules.disko
-        agenix.nixosModules.default
-        home-manager.nixosModules.home-manager
-      ];
-
-      commonDarwinModules = [
-        nixpkgsModule
-        agenix.darwinModules.default
-        home-manager.darwinModules.home-manager
-        nix-homebrew.darwinModules.nix-homebrew
-      ];
+      inherit (import ./functions/mkConfigurations.nix { inherit inputs varsFor; })
+        mkNixos
+        mkDarwin
+        mkHome
+        pkgsFor
+        pkgsUnstableFor
+        ;
     in
     {
-      devShells = forAllSystems (
-        system:
-        let
-          pkgs = import nixpkgs {
-            inherit system;
-            config = nixpkgsConfig;
-            overlays = overlaysList;
-          };
-          pkgs-unstable = pkgsUnstableFor system;
-        in
-        {
-          default = pkgs.mkShellNoCC {
-            packages = [
-              pkgs.nodejs_24
-              pkgs.pnpm_11
-              pkgs-unstable.nixfmt
-              pkgs-unstable.prek
-              (pkgs.python3.withPackages (pythonPackages: [ pythonPackages.pyyaml ]))
-              pkgs-unstable.ruff
-            ];
-          };
-        }
-      );
+      devShells = import ./functions/mkDevShells.nix {
+        lib = inputs.nixpkgs.lib;
+        inherit pkgsFor pkgsUnstableFor;
+      };
 
       darwinConfigurations = {
-        "wks-0" = nix-darwin.lib.darwinSystem rec {
+        "wks-0" = mkDarwin {
           system = "aarch64-darwin";
-          specialArgs = (genSpecialArgs { inherit system; }) // {
-            pkgs-unstable = pkgsUnstableFor system;
-          };
-          modules = commonDarwinModules ++ [ ./machines/wks-0 ];
+          modules = [ ./machines/wks-0 ];
         };
       };
 
       nixosConfigurations = {
-        "srv-de-0" = nixpkgs.lib.nixosSystem rec {
+        "srv-de-0" = mkNixos {
           system = "x86_64-linux";
-          specialArgs = (genSpecialArgs { inherit system; }) // {
-            pkgs-unstable = pkgsUnstableFor system;
-          };
-          modules = commonNixosModules ++ [ ./machines/srv-de-0 ];
+          modules = [ ./machines/srv-de-0 ];
         };
 
-        "srv-jp-0" = nixpkgs.lib.nixosSystem rec {
+        "srv-jp-0" = mkNixos {
           system = "x86_64-linux";
-          specialArgs = (genSpecialArgs { inherit system; }) // {
-            pkgs-unstable = pkgsUnstableFor system;
-          };
-          modules = commonNixosModules ++ [ ./machines/srv-jp-0 ];
+          modules = [ ./machines/srv-jp-0 ];
         };
 
-        "srv-nl-0" = nixpkgs.lib.nixosSystem rec {
+        "srv-nl-0" = mkNixos {
           system = "x86_64-linux";
-          specialArgs = (genSpecialArgs { inherit system; }) // {
-            pkgs-unstable = pkgsUnstableFor system;
-          };
-          modules = commonNixosModules ++ [ ./machines/srv-nl-0 ];
+          modules = [ ./machines/srv-nl-0 ];
         };
 
-        "srv-sg-0" = nixpkgs.lib.nixosSystem rec {
+        "srv-sg-0" = mkNixos {
           system = "x86_64-linux";
-          specialArgs = (genSpecialArgs { inherit system; }) // {
-            pkgs-unstable = pkgsUnstableFor system;
-          };
-          modules = commonNixosModules ++ [ ./machines/srv-sg-0 ];
+          modules = [ ./machines/srv-sg-0 ];
         };
 
-        "srv-sg-1" = nixpkgs.lib.nixosSystem rec {
+        "srv-sg-1" = mkNixos {
           system = "aarch64-linux";
-          specialArgs = (genSpecialArgs { inherit system; }) // {
-            pkgs-unstable = pkgsUnstableFor system;
-          };
-          modules = commonNixosModules ++ [ ./machines/srv-sg-1 ];
+          modules = [ ./machines/srv-sg-1 ];
         };
 
-        "srv-us-0" = nixpkgs.lib.nixosSystem rec {
+        "srv-us-0" = mkNixos {
           system = "x86_64-linux";
-          specialArgs = (genSpecialArgs { inherit system; }) // {
-            pkgs-unstable = pkgsUnstableFor system;
-          };
-          modules = commonNixosModules ++ [ ./machines/srv-us-0 ];
+          modules = [ ./machines/srv-us-0 ];
         };
       };
 
       homeConfigurations = {
-        "esp-0" = mkHomeConfiguration {
+        "esp-0" = mkHome {
           system = "x86_64-linux";
           username = "spedon";
           homeDirectory = "/home/spedon";
@@ -261,7 +121,7 @@
           modules = [ ./machines/esp-0 ];
         };
 
-        "esp-1" = mkHomeConfiguration {
+        "esp-1" = mkHome {
           system = "x86_64-linux";
           username = "spedon";
           homeDirectory = "/home/spedon";
