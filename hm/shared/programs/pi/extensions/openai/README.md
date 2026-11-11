@@ -10,4 +10,4 @@ Priority pricing may apply.
 
 Fast mode defaults off and is saved per session branch. Resume restores it;
 unsupported models suspend it without clearing the preference. The shared
-[footer](../footer/README.md) highlights `(fast)` beside the model name while active.
+[UI extension](../ui/README.md) highlights `(fast)` beside the model name while active.

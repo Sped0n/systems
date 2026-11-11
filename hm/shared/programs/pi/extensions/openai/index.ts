@@ -2,7 +2,7 @@ import type {
     ExtensionAPI,
     ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
-import { FAST_MODE_STATUS } from "../footer/index.ts";
+import { FAST_MODE_STATUS } from "../ui/footer.ts";
 
 const FAST_MODE_ENTRY = "openai-fast-mode";
 

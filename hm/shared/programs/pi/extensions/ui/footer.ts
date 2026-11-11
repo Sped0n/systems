@@ -1,5 +1,5 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { FooterComponent } from "@earendil-works/pi-coding-agent";
+import { CustomEditor, FooterComponent } from "@earendil-works/pi-coding-agent";
 import { truncateToWidth, visibleWidth } from "@earendil-works/pi-tui";
 
 // These statuses occupy dedicated footer slots rather than the status line.
@@ -9,6 +9,26 @@ export const FAST_MODE_STATUS = "footer-openai-fast";
 export default function footerExtension(pi: ExtensionAPI): void {
     pi.on("session_start", (_event, ctx) => {
         if (ctx.mode !== "tui") return;
+        const previousEditor = ctx.ui.getEditorComponent();
+        ctx.ui.setEditorComponent((tui, editorTheme, keybindings) => {
+            const editor = previousEditor
+                ? previousEditor(tui, editorTheme, keybindings)
+                : new CustomEditor(tui, editorTheme, keybindings, {
+                      embedWorkingStatus: true,
+                  });
+            const render = editor.render.bind(editor);
+            editor.render = (width) => {
+                // Pi reapplies reasoning colors on level/model changes.
+                editor.borderColor = editor
+                    .getText()
+                    .trimStart()
+                    .startsWith("!")
+                    ? ctx.ui.theme.getBashModeBorderColor()
+                    : (text) => ctx.ui.theme.fg("accent", text);
+                return render(width);
+            };
+            return editor;
+        });
         ctx.ui.setFooter((tui, theme, footerData) => {
             const session = {
                 get state() {

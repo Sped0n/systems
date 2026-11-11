@@ -7,7 +7,7 @@ import { getAgentDir, getMarkdownTheme } from "@earendil-works/pi-coding-agent";
 import type { TextContent } from "@earendil-works/pi-ai";
 import { Box, Markdown, Spacer, Text } from "@earendil-works/pi-tui";
 import * as path from "node:path";
-import { SESSION_MARKER_STATUS } from "../footer/index.ts";
+import { SESSION_MARKER_STATUS } from "../ui/footer.ts";
 
 import {
     ensureSessionControlDirectory,

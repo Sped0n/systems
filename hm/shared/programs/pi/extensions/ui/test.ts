@@ -11,9 +11,13 @@ import {
 import { visibleWidth } from "@earendil-works/pi-tui";
 import controlExtension from "../control/index.ts";
 import openaiExtension from "../openai/index.ts";
-import footerExtension, { FAST_MODE_STATUS } from "./index.ts";
+import { FAST_MODE_STATUS } from "./footer.ts";
+import uiExtension from "./index.ts";
 
 type Handler = (event: unknown, ctx: ExtensionContext) => unknown;
+type EditorFactory = NonNullable<
+    Parameters<ExtensionContext["ui"]["setEditorComponent"]>[0]
+>;
 type Factory = NonNullable<Parameters<ExtensionContext["ui"]["setFooter"]>[0]>;
 
 initTheme("dark");
@@ -22,8 +26,10 @@ async function harness(footerFirst: boolean) {
     const manager = SessionManager.inMemory();
     manager.appendCustomEntry("openai-fast-mode", { enabled: true });
     const statuses = new Map<string, string>([["other", "Other status"]]);
+    const workingMessages: (string | undefined)[] = [];
     const handlers = new Map<string, Handler[]>();
     let factory: Factory | undefined;
+    let editorFactory: EditorFactory | undefined;
     const ctx = {
         mode: "tui",
         model: {
@@ -37,8 +43,21 @@ async function harness(footerFirst: boolean) {
         sessionManager: manager,
         getContextUsage: () => undefined,
         ui: {
+            theme: {
+                fg: (color: string, text: string) =>
+                    `\x1b[${color === "accent" ? "35" : "90"}m${text}\x1b[0m`,
+                getBashModeBorderColor: () => (text: string) =>
+                    `\x1b[33m${text}\x1b[0m`,
+            },
+            getEditorComponent: () => editorFactory,
+            setEditorComponent: (value: EditorFactory | undefined) => {
+                editorFactory = value;
+            },
             setFooter: (value: Factory | undefined) => {
                 factory = value;
+            },
+            setWorkingMessage: (message?: string) => {
+                workingMessages.push(message);
             },
             setStatus: (key: string, value: string | undefined) => {
                 if (value === undefined) statuses.delete(key);
@@ -58,8 +77,8 @@ async function harness(footerFirst: boolean) {
         getFlag: () => true,
     } as unknown as ExtensionAPI;
     const factories = footerFirst
-        ? [footerExtension, controlExtension, openaiExtension]
-        : [controlExtension, openaiExtension, footerExtension];
+        ? [uiExtension, controlExtension, openaiExtension]
+        : [controlExtension, openaiExtension, uiExtension];
     for (const extension of factories) extension(pi);
     const emit = async (name: string) => {
         for (const handler of handlers.get(name) ?? []) await handler({}, ctx);
@@ -82,9 +101,10 @@ async function harness(footerFirst: boolean) {
         },
     );
     return {
-        ctx,
         statuses,
+        workingMessages,
         footer,
+        editorFactory,
         emit,
     };
 }
@@ -99,16 +119,49 @@ test("footer preserves the control marker, highlights fast, and keeps other stat
         assert.doesNotMatch(plain[1]!, /\(circe-responses\)/u);
         assert.ok(lines[1]!.includes("\x1b[35m(fast)\x1b[0m\x1b[90m • medium"));
         assert.deepEqual(plain.slice(2), ["Other status"]);
-        assert.equal(h.ctx.model?.id, "gpt-6.1-sol");
 
         h.statuses.delete(FAST_MODE_STATUS);
         const withoutFast = stripVTControlCharacters(h.footer.render(120)[1]!);
         assert.match(withoutFast, /gpt-6\.1-sol • medium$/u);
         assert.doesNotMatch(withoutFast, /\(fast\)|\(circe-responses\)/u);
-        assert.equal(h.ctx.model?.provider, "circe-responses");
         h.footer.dispose?.();
         await h.emit("session_shutdown");
     }
+});
+
+test("editor keeps accent-colored borders after host color updates and preserves bash mode", async () => {
+    const h = await harness(true);
+    assert.ok(h.editorFactory);
+    const editor = h.editorFactory(
+        {
+            terminal: { rows: 24 },
+            requestRender() {},
+        } as Parameters<EditorFactory>[0],
+        { borderColor: (text: string) => text } as Parameters<EditorFactory>[1],
+        {} as Parameters<EditorFactory>[2],
+    );
+    // Simulate the host overwriting the color when reasoning effort changes.
+    editor.borderColor = (text) => `\x1b[34m${text}\x1b[0m`;
+    const lines = editor.render(40);
+    assert.ok(lines[0]!.includes("\x1b[35m"));
+    assert.ok(!lines[0]!.includes("\x1b[34m"));
+    editor.setText(" !pwd");
+    assert.ok(editor.render(40)[0]!.includes("\x1b[33m"));
+    editor.setText("");
+    assert.ok(editor.render(40)[0]!.includes("\x1b[35m"));
+    h.footer.dispose?.();
+    await h.emit("session_shutdown");
+});
+
+test("working message uses a phrase during a turn and resets afterward", async () => {
+    const h = await harness(true);
+    await h.emit("turn_start");
+    assert.equal(h.workingMessages.length, 1);
+    assert.ok(h.workingMessages[0]);
+    await h.emit("turn_end");
+    assert.deepEqual(h.workingMessages, [h.workingMessages[0], undefined]);
+    h.footer.dispose?.();
+    await h.emit("session_shutdown");
 });
 
 test("footer lines stay within narrow terminal widths", async () => {

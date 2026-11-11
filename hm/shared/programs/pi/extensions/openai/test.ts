@@ -14,7 +14,7 @@ import {
     type ExtensionContext,
     type RegisteredCommand,
 } from "@earendil-works/pi-coding-agent";
-import { FAST_MODE_STATUS } from "../footer/index.ts";
+import { FAST_MODE_STATUS } from "../ui/footer.ts";
 import openaiExtension from "./index.ts";
 
 const gpt = {
