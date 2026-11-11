@@ -185,6 +185,7 @@
               pkgs.pnpm_11
               pkgs-unstable.nixfmt
               pkgs-unstable.prek
+              (pkgs.python3.withPackages (pythonPackages: [ pythonPackages.pyyaml ]))
               pkgs-unstable.ruff
             ];
           };

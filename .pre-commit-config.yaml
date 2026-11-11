@@ -7,6 +7,13 @@ repos:
         language: system
         files: '\.nix$'
 
+      - id: nix-cache-sync
+        name: Check CI Nix cache settings
+        entry: python3 .github/workflows/check_nix_cache_sync.py
+        language: system
+        pass_filenames: false
+        files: '^(modules/shared/nix/settings\.nix|\.github/workflows/|flake\.nix|\.pre-commit-config\.yaml)'
+
       - id: python-fix
         name: Fix Python
         entry: ruff check --fix --force-exclude --exit-zero --no-cache
