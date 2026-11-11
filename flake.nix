@@ -259,6 +259,14 @@
           stateVersion = "26.05";
           modules = [ ./machines/esp-0 ];
         };
+
+        "esp-1" = mkHomeConfiguration {
+          system = "x86_64-linux";
+          username = "spedon";
+          homeDirectory = "/home/spedon";
+          stateVersion = "26.05";
+          modules = [ ./machines/esp-1 ];
+        };
       };
     };
 }
