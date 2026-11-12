@@ -49,14 +49,11 @@
           username = "spedon";
           home =
             if builtins.match ".*darwin$" system != null then "/Users/${username}" else "/home/${username}";
-          serverHostnames = [
-            "srv-de-0"
-            "srv-jp-0"
-            "srv-nl-0"
-            "srv-sg-0"
-            "srv-sg-1"
-            "srv-us-0"
-          ];
+          serverHostnames = builtins.attrNames (
+            inputs.nixpkgs.lib.filterAttrs (
+              name: type: type == "directory" && inputs.nixpkgs.lib.hasPrefix "srv-" name
+            ) (builtins.readDir ./machines)
+          );
         };
 
       inherit (import ./functions/mkConfigurations.nix { inherit inputs varsFor; })
