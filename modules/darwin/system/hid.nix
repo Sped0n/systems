@@ -61,8 +61,8 @@
           "33".enabled = false; # Application windows
           "36".enabled = false; # Show Desktop
           "222".enabled = false; # Turn Stage Manager on/off
-          "79".enabled = false; # Move left a space
-          "81".enabled = false; # Move right a space
+          "79".enabled = true; # Move left a space
+          "81".enabled = true; # Move right a space
 
           "118".enabled = true; # Switch to Desktop 1
           "119".enabled = true; # Switch to Desktop 2
