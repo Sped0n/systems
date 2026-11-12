@@ -23,7 +23,7 @@ flakes_all := flake_shared + " nix-darwin nix-homebrew disko"
 current_system := "/run/current-system"
 result_link := "./result"
 system_profile := "/nix/var/nix/profiles/system"
-hm_switch_diff_target := "esp-0"
+hm_switch_diff_target := "esp-sh-0"
 
 # =============================================================================
 # Default Recipe
@@ -194,17 +194,64 @@ switch:
 hm-build flake:
     @just _hm_build_with_diff {{flake}}
 
-# Switch a standalone Home Manager configuration.
-hm-switch flake:
+# Switch the local Home Manager configuration, or override a mismatch with --force.
+[positional-arguments]
+hm-switch *args:
     #!/usr/bin/env bash
     set -euo pipefail
 
-    if [ "{{flake}}" = "{{hm_switch_diff_target}}" ]; then
-        {{just_executable()}} _hm_build_with_diff "{{flake}}"
+    flake=""
+    force=false
+    for arg in "$@"; do
+        case "$arg" in
+            --force) force=true ;;
+            -*) echo "Error: Unknown option '$arg'. Usage: just hs [configuration] [--force]" >&2; exit 1 ;;
+            *)
+                if [ -n "$flake" ]; then
+                    echo "Error: Expected at most one configuration. Usage: just hs [configuration] [--force]" >&2
+                    exit 1
+                fi
+                flake="$arg"
+                ;;
+        esac
+    done
+
+    identity_file="$HOME/.config/systems-local"
+    if [ ! -f "$identity_file" ] || ! local_host="$(<"$identity_file")"; then
+        echo "Error: Cannot read $identity_file. Create it with this machine's Home Manager configuration name, such as esp-sg-0." >&2
+        exit 1
+    fi
+    if [[ ! "$local_host" =~ ^[a-zA-Z0-9][a-zA-Z0-9_-]*$ ]]; then
+        echo "Error: Invalid identity in $identity_file. It must contain one Home Manager configuration name, such as esp-sg-0." >&2
+        exit 1
+    fi
+    flake="${flake:-$local_host}"
+    if [[ ! "$flake" =~ ^[a-zA-Z0-9][a-zA-Z0-9_-]*$ ]]; then
+        echo "Error: Invalid configuration name '$flake'." >&2
+        exit 1
     fi
 
-    echo "Running: home-manager switch --flake .#{{flake}}"
-    home-manager switch --flake .#{{flake}}
+    nix eval --raw .#homeConfigurations --apply "configs:
+        if !(builtins.hasAttr \"$local_host\" configs) then
+            throw \"Unknown local identity '$local_host'. Correct $identity_file.\"
+        else if !(builtins.hasAttr \"$flake\" configs) then
+            throw \"Unknown Home Manager configuration '$flake'.\"
+        else \"\""
+
+    if [ "$flake" != "$local_host" ]; then
+        if [ "$force" != true ]; then
+            echo "Error: Local identity is '$local_host', but requested '$flake'. Use --force to override." >&2
+            exit 1
+        fi
+        echo "Warning: Forcing configuration '$flake' on local identity '$local_host'." >&2
+    fi
+
+    if [ "$flake" = "{{hm_switch_diff_target}}" ]; then
+        {{just_executable()}} _hm_build_with_diff "$flake"
+    fi
+
+    echo "Running: home-manager switch --flake .#$flake"
+    home-manager switch --flake ".#$flake"
 
 # =============================================================================
 # Generation Management

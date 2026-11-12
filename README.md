@@ -18,8 +18,8 @@
 
 ```
 machines
-├── esp-0       # Ubuntu desktop (x86_64)
-├── esp-1       # Ubuntu desktop (x86_64)
+├── esp-sh-0    # Ubuntu desktop (x86_64)
+├── esp-sg-0    # Ubuntu desktop (x86_64)
 ├── srv-de-0    # NixOS server (x86_64)
 ├── srv-jp-0    # NixOS server (x86_64)
 ├── srv-nl-0    # NixOS server (x86_64)
@@ -35,7 +35,7 @@ Available recipes:
     build                  # Build the local configuration and show closure changes. [alias: b]
     default                # Show all public recipes.
     deploy target_hosts    # Deploy configurations to one or more remote target hosts.
-    hs flake               # Switch a standalone home-manager configuration.
+    hs [configuration] [--force] # Switch the local Home Manager configuration.
     list-generations       # List available system generations for this host. [alias: lg]
     rollback gen_num       # Roll back to the specified system generation. [alias: rb]
     switch                 # Switch this machine to the new configuration. [alias: s]

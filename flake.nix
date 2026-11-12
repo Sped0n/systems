@@ -110,20 +110,20 @@
       };
 
       homeConfigurations = {
-        "esp-0" = mkHome {
+        "esp-sh-0" = mkHome {
           system = "x86_64-linux";
           username = "spedon";
           homeDirectory = "/home/spedon";
           stateVersion = "26.05";
-          modules = [ ./machines/esp-0 ];
+          modules = [ ./machines/esp-sh-0 ];
         };
 
-        "esp-1" = mkHome {
+        "esp-sg-0" = mkHome {
           system = "x86_64-linux";
           username = "spedon";
           homeDirectory = "/home/spedon";
           stateVersion = "26.05";
-          modules = [ ./machines/esp-1 ];
+          modules = [ ./machines/esp-sg-0 ];
         };
       };
     };
