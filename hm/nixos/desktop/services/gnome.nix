@@ -62,6 +62,8 @@
       };
 
       "org/gnome/desktop/wm/keybindings" = {
+        move-to-monitor-left = [ "<Super><Shift>Left" ];
+        move-to-monitor-right = [ "<Super><Shift>Right" ];
         switch-to-workspace-left = [ ];
         switch-to-workspace-right = [ ];
         switch-input-source = [ ];
