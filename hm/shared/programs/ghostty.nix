@@ -6,7 +6,7 @@
     package = lib.mkDefault pkgs.ghostty;
     settings = {
       shell-integration = "zsh";
-      shell-integration-features = true;
+      shell-integration-features = lib.mkDefault true;
       macos-option-as-alt = true;
       mouse-hide-while-typing = true;
       working-directory = "home";

@@ -1,5 +1,6 @@
 {
   imports = [
+    ./ghostty.nix
     ./git.nix
     ./gpg-import.nix
     ./home-manager.nix
