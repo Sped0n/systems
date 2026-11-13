@@ -1,0 +1,4 @@
+{ ... }:
+{
+  programs.lcs.enable = true;
+}

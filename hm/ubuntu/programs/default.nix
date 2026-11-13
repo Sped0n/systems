@@ -5,6 +5,7 @@
     ./gpg-import.nix
     ./home-manager.nix
     ./hunk.nix
+    ./lcs.nix
     ./neovim.nix
     ./nix-cache-push.nix
     ./pi.nix
