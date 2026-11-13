@@ -1,9 +1,11 @@
 { ... }:
 {
-  services.my-linux-builder = {
+  nix.linux-builder = {
     enable = true;
-    cores = 6;
-    memory = "8192M";
-    image = "ghcr.io/sped0n/darwin-builder:latest";
+    config.virtualisation = {
+      cores = 6;
+      darwin-builder.memorySize = 8192;
+      vz.idleTimeout = 60 * 60;
+    };
   };
 }
