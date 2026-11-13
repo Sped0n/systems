@@ -28,6 +28,7 @@ lib.genAttrs supportedSystems (
           nixfmt
           prek
           ruff
+          actionlint
         ]);
     };
   }
