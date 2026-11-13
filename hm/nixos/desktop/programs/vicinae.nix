@@ -15,6 +15,10 @@
       "vicinae@dagimg-dot"
     ];
 
+    "org/gnome/shell/extensions/vicinae" = {
+      show-status-indicator = false;
+    };
+
     "org/gnome/settings-daemon/plugins/media-keys".custom-keybindings = [
       "/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/"
     ];
