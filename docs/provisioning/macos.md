@@ -1,6 +1,6 @@
 # macOS Provisioning
 
-This is the current bootstrap procedure for `darwinConfigurations.wks-0`.
+This is the current bootstrap procedure for `darwinConfigurations.dlp-0`.
 
 1. Prepare the age recipients described in
    [Provisioning](README.md#secrets-and-age-identities).
@@ -21,13 +21,13 @@ This is the current bootstrap procedure for `darwinConfigurations.wks-0`.
 
    ```bash
    sudo nix run nix-darwin/nix-darwin-26.05#darwin-rebuild -- \
-     switch --flake path:.#wks-0
+     switch --flake path:.#dlp-0
    ```
 
 6. After `darwin-rebuild` is installed, subsequent activation can use:
 
    ```bash
-   sudo darwin-rebuild switch --flake path:.#wks-0
+   sudo darwin-rebuild switch --flake path:.#dlp-0
    ```
 
 7. Remove the temporary GitHub SSH credential.

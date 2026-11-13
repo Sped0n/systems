@@ -77,7 +77,7 @@ in
 Evaluate a package to confirm the overlay took effect:
 
 ```bash
-nix eval .#darwinConfigurations.wks-0.pkgs.swift.version
+nix eval .#darwinConfigurations.dlp-0.pkgs.swift.version
 # or
 nix eval .#nixosConfigurations.srv-de-0.pkgs.swift.version
 ```

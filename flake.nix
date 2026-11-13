@@ -71,9 +71,9 @@
       };
 
       darwinConfigurations = {
-        "wks-0" = mkDarwin {
+        "dlp-0" = mkDarwin {
           system = "aarch64-darwin";
-          modules = [ ./machines/wks-0 ];
+          modules = [ ./machines/dlp-0 ];
         };
       };
 
