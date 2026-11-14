@@ -42,11 +42,6 @@
           port = 12222;
           user = "builder";
         };
-        openwrtBlock = {
-          port = 12222;
-          user = "root";
-          identityFile = config.age.secrets."openwrt-ssh-key".path;
-        };
       in
       {
         # --- git servers ------------------------------------------------------
@@ -70,14 +65,12 @@
         // builderBlock;
 
         # --- routers ----------------------------------------------------------
-        "openwrt-17" = {
-          hostname = "192.168.17.1";
-        }
-        // openwrtBlock;
-        "openwrt-31" = {
-          hostname = "192.168.31.1";
-        }
-        // openwrtBlock;
+        "rtr-0" = {
+          hostname = "192.168.88.1";
+          port = 22;
+          user = "root";
+          identityFile = config.age.secrets."openwrt-ssh-key".path;
+        };
       }
       # --- servers ------------------------------------------------------------
       // (
