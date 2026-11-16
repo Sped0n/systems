@@ -1,7 +1,21 @@
 { ... }:
-final: prev: {
-  segger-jlink = prev.segger-jlink.override { acceptLicense = true; };
-  segger-jlink-headless = prev.segger-jlink-headless.override { acceptLicense = true; };
+final: prev:
+let
+  jlinkOverrides = {
+    acceptLicense = true;
+    fetchurl =
+      args:
+      (prev.fetchurl args).overrideAttrs (old: {
+        # Work around https://github.com/NixOS/nixpkgs/issues/580434.
+        builder = final.writeText "fetchurl-without-resume.sh" (
+          final.lib.replaceStrings [ "--continue-at -" "-C -" ] [ "" "" ] (builtins.readFile old.builder)
+        );
+      });
+  };
+in
+{
+  segger-jlink = prev.segger-jlink.override jlinkOverrides;
+  segger-jlink-headless = prev.segger-jlink-headless.override jlinkOverrides;
 
   # nixpkgs' headless variant omits every executable; the full variant pulls
   # in insecure Qt 4. Keep Commander and its device data without the GUI tools.
