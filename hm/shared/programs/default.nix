@@ -1,13 +1,13 @@
 { ... }:
 {
   imports = [
+    ./atuin
     ./pi
     ./neovim
     ./nixos-deploy
     ./yazi
     ./zsh
 
-    ./atuin.nix
     ./bat.nix
     ./delta.nix
     ./direnv.nix

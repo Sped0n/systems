@@ -1,5 +1,21 @@
-{ pkgs-unstable, ... }:
 {
+  config,
+  pkgs,
+  pkgs-unstable,
+  ...
+}:
+{
+  home.packages = [
+    (pkgs.writeShellApplication {
+      name = "atuin-prune";
+      runtimeInputs = [
+        config.programs.atuin.package
+        pkgs.coreutils
+      ];
+      text = builtins.readFile ./prune.sh;
+    })
+  ];
+
   programs.atuin = {
     enable = true;
     package = pkgs-unstable.atuin;
@@ -17,9 +33,9 @@
 
         "^ls(\\s|$)"
         "^exa(\\s|$)"
-        "^(sudo\s+)?rm(\\s|$)"
-        "^(sudo\s+)?cat(\\s|$)"
-        "^(sudo\s+)?bat(\\s|$)"
+        "^(sudo\\s+)?rm(\\s|$)"
+        "^(sudo\\s+)?cat(\\s|$)"
+        "^(sudo\\s+)?bat(\\s|$)"
         "(?i)^clear(\\s|$)"
         "^open(\\s|$)"
         "^pcommit(\\s|$)"
