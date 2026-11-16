@@ -23,7 +23,6 @@ flakes_all := flake_shared + " nix-darwin nix-homebrew disko"
 current_system := "/run/current-system"
 result_link := "./result"
 system_profile := "/nix/var/nix/profiles/system"
-hm_switch_diff_target := "esp-sh-0"
 
 # =============================================================================
 # Default Recipe
@@ -246,9 +245,7 @@ hm-switch *args:
         echo "Warning: Forcing configuration '$flake' on local identity '$local_host'." >&2
     fi
 
-    if [ "$flake" = "{{hm_switch_diff_target}}" ]; then
-        {{just_executable()}} _hm_build_with_diff "$flake"
-    fi
+    {{just_executable()}} _hm_build_with_diff "$flake"
 
     echo "Running: home-manager switch --flake .#$flake"
     home-manager switch --flake ".#$flake"
