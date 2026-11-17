@@ -7,21 +7,19 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 export type Operation = "read" | "write";
 export type PermissionAction = "allow" | "deny";
-export type PathPermissionRule = {
-    path: string;
-    operations: Operation[];
-    action: PermissionAction;
-    reason?: string;
+export type Matcher =
+    | { path: string; operations: Operation[] }
+    | { bash: string };
+export type Rule = { matches: Matcher[] } & (
+    | { action: PermissionAction; message?: string }
+    | { action: "remind"; id: string; message: string; once: boolean }
+);
+export type Policy = { rules: Rule[] };
+export type ScopedRule = Rule & {
+    scope: string;
+    source: string;
 };
-export type BashPermissionRule = {
-    bash: string;
-    action: PermissionAction;
-    reason?: string;
-};
-export type PermissionRule = PathPermissionRule | BashPermissionRule;
-export type PermissionPolicy = { rules: PermissionRule[] };
-export type ScopedPermissionRule = PermissionRule & { scope: string };
-export type PolicyLoad = { rules: ScopedPermissionRule[] } | { error: string };
+export type PolicyLoad = { rules: ScopedRule[] } | { error: string };
 type ToolName = "read" | "edit" | "write";
 
 const DIRECT_FILE_TOOLS: Record<string, ToolName> = {
@@ -30,12 +28,9 @@ const DIRECT_FILE_TOOLS: Record<string, ToolName> = {
     write: "write",
 };
 const OPERATIONS: Operation[] = ["read", "write"];
-const ACTIONS: PermissionAction[] = ["allow", "deny"];
-const REASON_CHARACTERS_MAX = 500;
+const TEXT_CHARACTERS_MAX = 500;
 const FILE_POLICY_CACHE_ENTRIES_MAX = 32;
-const FILE_POLICY_CACHE_SYMBOL = Symbol.for(
-    "pi.interceptor.last-valid-file-policies",
-);
+const INTERCEPTOR_STATE_SYMBOL = Symbol.for("pi.interceptor.state.v2");
 
 function isObject(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -65,7 +60,9 @@ function validateRulePath(value: unknown, name: string): string {
         throw new Error(`${name} must be a non-empty path`);
     }
     const subtree = value.endsWith("/**");
-    const root = value === "/**" ? "/" : subtree ? value.slice(0, -3) : value;
+    const root = (
+        value === "/**" ? "/" : subtree ? value.slice(0, -3) : value
+    ).replace(/\$\{[A-Za-z_][A-Za-z0-9_]*\}/gu, "ENV");
     if (!root || /[*?\[\]{}]/.test(root) || (!subtree && value.includes("*"))) {
         throw new Error(
             `${name} supports exact paths and a terminal /** subtree only`,
@@ -98,83 +95,140 @@ function validateCommandPattern(value: unknown, name: string): string {
     return value;
 }
 
-function validateReason(value: unknown, name: string): string | undefined {
+function validateText(value: unknown, name: string): string | undefined {
     if (value === undefined) return undefined;
     if (
         typeof value !== "string" ||
         value.trim().length === 0 ||
-        value.length > REASON_CHARACTERS_MAX ||
+        value.length > TEXT_CHARACTERS_MAX ||
         value.includes("\0")
     ) {
         throw new Error(
-            `${name} must be a non-empty string of at most ${REASON_CHARACTERS_MAX} characters`,
+            `${name} must be a non-empty string of at most ${TEXT_CHARACTERS_MAX} characters`,
         );
     }
     return value;
 }
 
+function parseMatcher(value: unknown, name: string): Matcher {
+    if (isObject(value) && "bash" in value) {
+        const matcher = onlyKeys(value, name, ["bash"]);
+        return { bash: validateCommandPattern(matcher.bash, name + ".bash") };
+    }
+    const matcher = onlyKeys(value, name, ["path", "operations"]);
+    return {
+        path: validateRulePath(matcher.path, name + ".path"),
+        operations: validateOperations(
+            matcher.operations,
+            name + ".operations",
+        ),
+    };
+}
+
 /** Parses the strict ordered interceptor.json schema. */
-export function parsePolicy(value: unknown): PermissionPolicy {
+export function parsePolicy(value: unknown): Policy {
     const policy = onlyKeys(value, "policy", ["rules"]);
     if (!Array.isArray(policy.rules))
         throw new Error("policy.rules must be an array");
-
+    const ids = new Set<string>();
     return {
-        rules: policy.rules.map((value, index) => {
+        rules: policy.rules.map((value, index): Rule => {
             const name = `policy.rules[${index}]`;
-            if (!isObject(value)) throw new Error(`${name} must be an object`);
-            const rule =
-                "bash" in value
-                    ? onlyKeys(value, name, ["bash", "action", "reason"])
-                    : onlyKeys(value, name, [
-                          "path",
-                          "operations",
-                          "action",
-                          "reason",
-                      ]);
-            if (!ACTIONS.includes(rule.action as PermissionAction)) {
-                throw new Error(`${name}.action must be allow or deny`);
-            }
-            const reason = validateReason(rule.reason, `${name}.reason`);
-            if ("bash" in rule)
-                return {
-                    bash: validateCommandPattern(rule.bash, `${name}.bash`),
-                    action: rule.action as PermissionAction,
-                    ...(reason === undefined ? {} : { reason }),
-                };
-            if (!("path" in rule) || !("operations" in rule)) {
+            if (!isObject(value)) throw new Error(name + " must be an object");
+            const action = value.action;
+            if (action !== "allow" && action !== "deny" && action !== "remind")
                 throw new Error(
-                    `${name} must contain path, operations, and action`,
+                    name + ".action must be allow, deny, or remind",
                 );
-            }
-            return {
-                path: validateRulePath(rule.path, `${name}.path`),
-                operations: validateOperations(
-                    rule.operations,
-                    `${name}.operations`,
-                ),
-                action: rule.action as PermissionAction,
-                ...(reason === undefined ? {} : { reason }),
-            };
+            const rule = onlyKeys(
+                value,
+                name,
+                action === "remind"
+                    ? ["matches", "action", "id", "message", "once"]
+                    : action === "deny"
+                      ? ["matches", "action", "message"]
+                      : ["matches", "action"],
+            );
+            if (!Array.isArray(rule.matches) || rule.matches.length === 0)
+                throw new Error(name + ".matches must be a non-empty array");
+            const matches = rule.matches.map((matcher, i) =>
+                parseMatcher(matcher, name + ".matches[" + i + "]"),
+            );
+            const message = validateText(rule.message, name + ".message");
+            if (action !== "remind")
+                return {
+                    matches,
+                    action,
+                    ...(message === undefined ? {} : { message }),
+                };
+            const id = validateText(rule.id, name + ".id");
+            if (id === undefined) throw new Error(name + ".id is required");
+            if (ids.has(id)) throw new Error(name + ".id duplicates " + id);
+            ids.add(id);
+            if (message === undefined)
+                throw new Error(name + ".message is required");
+            if (rule.once !== undefined && typeof rule.once !== "boolean")
+                throw new Error(name + ".once must be a boolean");
+            return { matches, action, id, message, once: rule.once !== false };
         }),
     };
 }
 
 function scopedRules(
-    policy: PermissionPolicy,
+    policy: Policy,
     scope: string,
-): ScopedPermissionRule[] {
-    return policy.rules.map((rule) => ({ ...rule, scope }));
+    source = scope,
+): ScopedRule[] {
+    return policy.rules.map((rule) => ({
+        ...rule,
+        scope,
+        source,
+        matches: rule.matches.map((matcher) => {
+            if (!("path" in matcher)) return matcher;
+            const { root, subtree } = splitPattern(matcher.path);
+            const expanded = root.replace(
+                /\$\{([A-Za-z_][A-Za-z0-9_]*)\}/gu,
+                (_match, name: string) => {
+                    const replacement = process.env[name];
+                    if (!replacement)
+                        throw new Error(
+                            "environment variable " +
+                                name +
+                                " is missing or empty",
+                        );
+                    // Values are literal paths, not another round of interpolation or globbing.
+                    if (/[*?\[\]{}\0]/u.test(replacement))
+                        throw new Error(
+                            "invalid path in environment variable " + name,
+                        );
+                    return replacement;
+                },
+            );
+            // Environment values are literal, including leading ~ or $CWD.
+            const resolved = root.startsWith("${")
+                ? path.resolve(scope, expanded)
+                : expandPath(expanded, scope);
+            return {
+                ...matcher,
+                path: subtree
+                    ? resolved === "/"
+                        ? "/**"
+                        : resolved + "/**"
+                    : resolved,
+            };
+        }),
+    }));
 }
 
 async function loadPolicyFile(
     file: string,
     scope: string,
-): Promise<ScopedPermissionRule[]> {
+): Promise<ScopedRule[]> {
     try {
         return scopedRules(
             parsePolicy(JSON.parse(await fs.readFile(file, "utf8"))),
             scope,
+            file,
         );
     } catch (error) {
         if (isNodeError(error, "ENOENT")) {
@@ -198,7 +252,7 @@ export async function loadPolicies(options: {
     globalConfigDir?: string;
 }): Promise<PolicyLoad> {
     try {
-        const rules: ScopedPermissionRule[] = [];
+        const rules: ScopedRule[] = [];
         const globalConfigDir =
             options.globalConfigDir ?? process.env.PI_CODING_AGENT_DIR;
         if (globalConfigDir) {
@@ -230,21 +284,26 @@ export async function loadPolicies(options: {
 }
 
 type SessionPolicyLoad = {
-    rules: ScopedPermissionRule[];
+    rules: ScopedRule[];
     warning?: string;
 };
 
 // /reload creates a fresh extension instance, so last-valid policies live in a
 // bounded process-global cache rather than the instance being replaced.
-function filePolicyCache(): Map<string, ScopedPermissionRule[]> {
+type InterceptorState = {
+    policies: Map<string, ScopedRule[]>;
+    startupChecked: boolean;
+};
+
+function interceptorState(): InterceptorState {
     const processState = globalThis as unknown as Record<PropertyKey, unknown>;
-    const existing = processState[FILE_POLICY_CACHE_SYMBOL];
-    if (existing instanceof Map) {
-        return existing as Map<string, ScopedPermissionRule[]>;
+    if (!processState[INTERCEPTOR_STATE_SYMBOL]) {
+        processState[INTERCEPTOR_STATE_SYMBOL] = {
+            policies: new Map(),
+            startupChecked: false,
+        } satisfies InterceptorState;
     }
-    const cache = new Map<string, ScopedPermissionRule[]>();
-    processState[FILE_POLICY_CACHE_SYMBOL] = cache;
-    return cache;
+    return processState[INTERCEPTOR_STATE_SYMBOL] as InterceptorState;
 }
 
 function filePolicyCacheKey(cwd: string, projectTrusted: boolean): string {
@@ -255,8 +314,8 @@ function filePolicyCacheKey(cwd: string, projectTrusted: boolean): string {
     ]);
 }
 
-function rememberFilePolicy(key: string, rules: ScopedPermissionRule[]): void {
-    const cache = filePolicyCache();
+function rememberFilePolicy(key: string, rules: ScopedRule[]): void {
+    const cache = interceptorState().policies;
     cache.delete(key);
     cache.set(key, rules);
     while (cache.size > FILE_POLICY_CACHE_ENTRIES_MAX) {
@@ -277,7 +336,7 @@ async function loadSessionPolicy(
         return loaded;
     }
 
-    const lastValidRules = filePolicyCache().get(key);
+    const lastValidRules = interceptorState().policies.get(key);
     const fallback = lastValidRules ? "last valid policy" : "empty policy";
     return {
         rules: lastValidRules ?? [],
@@ -336,67 +395,76 @@ function matchesPath(target: string, root: string, subtree: boolean): boolean {
 }
 
 async function ruleMatches(
-    rule: ScopedPermissionRule,
+    matcher: Extract<Matcher, { path: string }>,
+    scope: string,
     target: string,
     canonicalTarget: string,
 ): Promise<{ lexical: boolean; canonical: boolean }> {
-    if (!("path" in rule)) return { lexical: false, canonical: false };
-    const { root, subtree } = splitPattern(rule.path);
-    const lexicalRoot = path.resolve(rule.scope, expandPath(root, rule.scope));
-    const canonicalRoot = await canonicalizePath(lexicalRoot, rule.scope);
+    const { root, subtree } = splitPattern(matcher.path);
+    const lexicalRoot = root;
+    const canonicalRoot = await canonicalizePath(lexicalRoot, scope);
     return {
         lexical: matchesPath(target, lexicalRoot, subtree),
         canonical: matchesPath(canonicalTarget, canonicalRoot, subtree),
     };
 }
 
-function denyReason(rule: ScopedPermissionRule, fallback: string): string {
-    const { scope, reason, ...matchedRule } = rule;
-    const message = reason ?? fallback;
-    const separator = /[.!?]$/u.test(message) ? " " : ". ";
-    return `${message}${separator}Matched rule: ${JSON.stringify(matchedRule)}`;
+function denyReason(rule: ScopedRule, fallback: string): string {
+    const { scope, source, message, ...matchedRule } = rule;
+    const reason = message ?? fallback;
+    const separator = /[.!?]$/u.test(reason) ? " " : ". ";
+    return reason + separator + "Matched rule: " + JSON.stringify(matchedRule);
 }
 
-export type PathDecision = { action: PermissionAction; reason?: string };
+export type PermissionDecision = { action: PermissionAction; reason?: string };
 
-function isPermissionPolicy(
-    value: readonly ScopedPermissionRule[] | PermissionPolicy,
-): value is PermissionPolicy {
+function isPolicy(value: readonly ScopedRule[] | Policy): value is Policy {
     return !Array.isArray(value);
 }
 
-/** Evaluates ordered rules. Allow rules require canonical matching to prevent symlink escapes. */
+/** Allow requires canonical matching; deny also matches the lexical path. */
 export async function pathDecision(
-    rules: readonly ScopedPermissionRule[] | PermissionPolicy,
+    rules: readonly ScopedRule[] | Policy,
     tool: ToolName,
     target: string,
     cwd: string,
-): Promise<PathDecision> {
-    const scoped = isPermissionPolicy(rules) ? scopedRules(rules, cwd) : rules;
+): Promise<PermissionDecision> {
+    const scoped = isPolicy(rules) ? scopedRules(rules, cwd) : rules;
     const operation: Operation = tool === "read" ? "read" : "write";
     const lexicalTarget = path.resolve(cwd, target);
     const canonicalTarget = await canonicalizePath(target, cwd);
-    let decision: PathDecision = {
+    let decision: PermissionDecision = {
         action: "deny",
-        reason: `${target} does not match a permission rule`,
+        reason: target + " does not match a permission rule",
     };
-
     for (const rule of scoped) {
-        if (!("path" in rule)) continue;
-        if (!rule.operations.includes(operation)) continue;
-        const matches = await ruleMatches(rule, lexicalTarget, canonicalTarget);
-        if (
-            rule.action === "allow"
-                ? matches.canonical
-                : matches.lexical || matches.canonical
-        ) {
-            decision = {
-                action: rule.action,
-                reason:
-                    rule.action === "deny"
-                        ? denyReason(rule, `${target} matches ${rule.path}`)
-                        : `${target} matches ${rule.path}`,
-            };
+        if (rule.action === "remind") continue;
+        for (const matcher of rule.matches) {
+            if (!("path" in matcher) || !matcher.operations.includes(operation))
+                continue;
+            const matches = await ruleMatches(
+                matcher,
+                rule.scope,
+                lexicalTarget,
+                canonicalTarget,
+            );
+            if (
+                rule.action === "allow"
+                    ? matches.canonical
+                    : matches.lexical || matches.canonical
+            ) {
+                decision = {
+                    action: rule.action,
+                    reason:
+                        rule.action === "deny"
+                            ? denyReason(
+                                  rule,
+                                  target + " matches " + matcher.path,
+                              )
+                            : target + " matches " + matcher.path,
+                };
+                break;
+            }
         }
     }
     return decision;
@@ -504,53 +572,91 @@ export async function parseBashCommands(
     return "commands" in result ? result.commands : undefined;
 }
 
-/** Evaluates each command in a shell chain; every command must be allowed. */
+/** Every parsed command must be allowed; reminders never grant permission. */
 export async function commandDecision(
-    rules: readonly ScopedPermissionRule[] | PermissionPolicy,
+    rules: readonly ScopedRule[] | Policy,
     command: string,
     cwd: string,
-): Promise<PathDecision> {
-    const scoped = isPermissionPolicy(rules) ? scopedRules(rules, cwd) : rules;
+): Promise<PermissionDecision> {
+    const scoped = isPolicy(rules) ? scopedRules(rules, cwd) : rules;
     for (let index = scoped.length - 1; index >= 0; index -= 1) {
         const rule = scoped[index];
-        if (!("bash" in rule)) continue;
-        if (rule.bash === "*" && rule.action === "allow")
+        if (
+            rule.action === "remind" ||
+            !rule.matches.some((matcher) => "bash" in matcher)
+        )
+            continue;
+        if (
+            rule.action === "allow" &&
+            rule.matches.some(
+                (matcher) => "bash" in matcher && matcher.bash === "*",
+            )
+        )
             return { action: "allow" };
-        if (rule.action !== "allow") break;
+        if (rule.action === "deny") break;
     }
     const parsed = await inspectBashCommands(command);
     if ("error" in parsed) return { action: "deny", reason: parsed.error };
-    const commands = parsed.commands;
-    for (const parsed of commands) {
-        let decision: PathDecision = {
+    for (const command of parsed.commands) {
+        let decision: PermissionDecision = {
             action: "deny",
-            reason: `${parsed} does not match a Bash rule`,
+            reason: command + " does not match a Bash rule",
         };
         for (const rule of scoped) {
-            if ("bash" in rule && wildcardMatches(rule.bash, parsed)) {
+            if (rule.action === "remind") continue;
+            const matcher = rule.matches.find(
+                (matcher) =>
+                    "bash" in matcher && wildcardMatches(matcher.bash, command),
+            );
+            if (matcher && "bash" in matcher)
                 decision = {
                     action: rule.action,
                     reason:
                         rule.action === "deny"
-                            ? denyReason(rule, `${parsed} matches ${rule.bash}`)
-                            : `${parsed} matches ${rule.bash}`,
+                            ? denyReason(
+                                  rule,
+                                  command + " matches " + matcher.bash,
+                              )
+                            : command + " matches " + matcher.bash,
                 };
-            }
         }
         if (decision.action === "deny") return decision;
     }
     return { action: "allow" };
 }
 
-function eventPaths(event: unknown): string[] | undefined {
-    if (!isObject(event)) return undefined;
-    const input = isObject(event.input)
-        ? event.input
-        : isObject(event.params)
-          ? event.params
-          : undefined;
-    if (typeof input?.path === "string") return [input.path];
-    return undefined;
+async function reminderMatches(
+    rule: ScopedRule,
+    tool: ToolName | "bash",
+    value: string,
+    cwd: string,
+): Promise<boolean> {
+    if (tool === "bash") {
+        // Include the whole source to catch assignments/redirections with no command node.
+        const parsed = await parseBashCommands(value);
+        return rule.matches.some(
+            (matcher) =>
+                "bash" in matcher &&
+                [value, ...(parsed ?? [])].some((command) =>
+                    wildcardMatches(matcher.bash, command),
+                ),
+        );
+    }
+    const operation: Operation = tool === "read" ? "read" : "write";
+    const lexical = path.resolve(cwd, value);
+    const canonical = await canonicalizePath(value, cwd);
+    for (const matcher of rule.matches) {
+        if (!("path" in matcher) || !matcher.operations.includes(operation))
+            continue;
+        const matched = await ruleMatches(
+            matcher,
+            rule.scope,
+            lexical,
+            canonical,
+        );
+        if (matched.lexical || matched.canonical) return true;
+    }
+    return false;
 }
 
 function block(reason: string) {
@@ -560,66 +666,121 @@ function block(reason: string) {
     };
 }
 
-export default function interceptor(pi: ExtensionAPI): void {
-    let fileRules: ScopedPermissionRule[] = [];
+export default async function interceptor(pi: ExtensionAPI): Promise<void> {
+    let fileRules: ScopedRule[] = [];
+    const delivered = new Set<string>();
+    const reminderType = "interceptor-reminder";
+
+    // Extension factories finish before the interactive UI starts. This is only
+    // validation: project permissions are not activated until trust is known.
+    const state = interceptorState();
+    if (!state.startupChecked) {
+        state.startupChecked = true;
+        const preflight = await loadPolicies({
+            cwd: process.cwd(),
+            projectTrusted: true,
+        });
+        if ("error" in preflight)
+            process.stderr.write(
+                "Interceptor configuration warning: " +
+                    preflight.error +
+                    ". Invalid configuration will not be activated.\n",
+            );
+    }
 
     pi.on("session_start", async (_event, ctx) => {
         const loaded = await loadSessionPolicy(ctx.cwd, ctx.isProjectTrusted());
         fileRules = loaded.rules;
+        delivered.clear();
+        for (const entry of ctx.sessionManager.getBranch()) {
+            if (entry.type === "compaction") delivered.clear();
+            if (
+                entry.type === "custom_message" &&
+                entry.customType === reminderType &&
+                isObject(entry.details) &&
+                typeof entry.details.key === "string"
+            )
+                delivered.add(entry.details.key);
+        }
         if (!loaded.warning) return;
-
         if (ctx.hasUI) ctx.ui.notify(loaded.warning, "warning");
-        else process.stderr.write(`${loaded.warning}\n`);
+        else process.stderr.write(loaded.warning + "\n");
+    });
+
+    pi.on("session_compact", async () => {
+        delivered.clear();
     });
 
     pi.on("before_agent_start", async (event) => ({
-        systemPrompt: `${event.systemPrompt}\n\nThe interceptor applies ordered permissions to built-in read, edit, write, and bash calls. It is a tool-call guard, not an OS sandbox.`,
+        systemPrompt:
+            event.systemPrompt +
+            "\n\nThe interceptor applies ordered permissions and non-blocking reminders to built-in read, edit, write, and bash calls. It is a tool-call guard, not an OS sandbox.",
     }));
 
     pi.on("tool_call", async (event, ctx) => {
-        const tool = DIRECT_FILE_TOOLS[event.toolName];
-        if (!tool && event.toolName !== "bash") return;
-
-        const rules = fileRules;
-
-        if (event.toolName === "bash") {
-            const input = isObject(event.input) ? event.input : undefined;
-            if (
-                typeof input?.command !== "string" ||
-                input.command.length === 0
-            )
-                return block("bash did not provide a command");
-            const decision = await commandDecision(
-                rules,
-                input.command,
-                ctx.cwd,
+        const tool =
+            event.toolName === "bash"
+                ? "bash"
+                : DIRECT_FILE_TOOLS[event.toolName];
+        if (!tool) return;
+        const input: Record<string, unknown> | undefined = isObject(event.input)
+            ? event.input
+            : undefined;
+        const value = tool === "bash" ? input?.command : input?.path;
+        if (
+            typeof value !== "string" ||
+            (tool === "bash" && value.length === 0)
+        )
+            return block(
+                tool +
+                    " did not provide a " +
+                    (tool === "bash" ? "command" : "path argument"),
             );
-            if (decision.action === "allow") return;
-            return block(decision.reason ?? input.command);
-        }
-
-        let targets: string[] | undefined;
         try {
-            targets = eventPaths(event);
+            const decision =
+                tool === "bash"
+                    ? await commandDecision(fileRules, value, ctx.cwd)
+                    : await pathDecision(fileRules, tool, value, ctx.cwd);
+            if (decision.action === "deny")
+                return block(decision.reason ?? value);
         } catch (error) {
             return block(
-                `${tool} paths could not be parsed (${error instanceof Error ? error.message : "unknown error"})`,
+                tool +
+                    " permission check failed (" +
+                    (error instanceof Error ? error.message : "unknown error") +
+                    ")",
             );
         }
-        if (!targets || targets.length === 0)
-            return block(`${tool} did not provide a path argument`);
-
-        for (const target of targets) {
-            let decision: PathDecision;
+        for (const rule of fileRules) {
+            if (rule.action !== "remind") continue;
+            const key = JSON.stringify([rule.source, rule.id]);
+            if (rule.once && delivered.has(key)) continue;
             try {
-                decision = await pathDecision(rules, tool, target, ctx.cwd);
+                if (!(await reminderMatches(rule, tool, value, ctx.cwd)))
+                    continue;
+                // Another call can finish matching during the await above.
+                if (rule.once && delivered.has(key)) continue;
+                pi.sendMessage(
+                    {
+                        customType: reminderType,
+                        content: rule.message,
+                        display: false,
+                        details: { key },
+                    },
+                    { triggerTurn: false },
+                );
+                // sendMessage is synchronous; no competing match can interleave here.
+                delivered.add(key);
             } catch (error) {
-                return block(
-                    `could not canonicalize ${target} (${error instanceof Error ? error.message : "unknown error"})`,
+                // Advisory failures must not turn allowed operations into denials.
+                process.stderr.write(
+                    "Interceptor reminder failed: " +
+                        (error instanceof Error
+                            ? error.message
+                            : "unknown error") +
+                        "\n",
                 );
             }
-            if (decision.action === "allow") continue;
-            return block(decision.reason ?? target);
         }
     });
 }

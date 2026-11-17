@@ -1,20 +1,63 @@
 {
   "rules": [
-    { "path": "/**", "operations": ["read"], "action": "allow" },
-    { "path": "~/.ssh/**", "operations": ["read"], "action": "deny" },
-    { "path": "~/.gnupg/**", "operations": ["read"], "action": "deny" },
-    { "path": "~/.config/age/**", "operations": ["read"], "action": "deny" },
-    { "path": "/**", "operations": ["write"], "action": "deny" },
-    { "path": "$CWD/**", "operations": ["write"], "action": "allow" },
-    { "path": "/tmp/**", "operations": ["write"], "action": "allow" },
-    { "bash": "*", "action": "allow" },
-    { "bash": "find", "action": "deny", "reason": "Use `fd` instead." },
-    { "bash": "find *", "action": "deny", "reason": "Use `fd` instead." },
-    { "bash": "grep", "action": "deny", "reason": "Use `rg` instead." },
-    { "bash": "grep *", "action": "deny", "reason": "Use `rg` instead." },
-    { "bash": "pip", "action": "deny", "reason": "Use `uv pip` instead." },
-    { "bash": "pip *", "action": "deny", "reason": "Use `uv pip` instead." },
-    { "bash": "pip3", "action": "deny", "reason": "Use `uv pip` instead." },
-    { "bash": "pip3 *", "action": "deny", "reason": "Use `uv pip` instead." }
+    {
+      "matches": [{ "path": "/**", "operations": ["read"] }],
+      "action": "allow"
+    },
+    {
+      "matches": [
+        { "path": "~/.ssh/**", "operations": ["read"] },
+        { "path": "~/.gnupg/**", "operations": ["read"] },
+        { "path": "${XDG_RUNTIME_DIR}/agenix/**", "operations": ["read"] },
+        { "path": "${XDG_RUNTIME_DIR}/agenix.d/**", "operations": ["read"] },
+        { "path": "/etc/ssh/**", "operations": ["read"] }
+      ],
+      "action": "deny"
+    },
+    {
+      "matches": [{ "path": "/**", "operations": ["write"] }],
+      "action": "deny"
+    },
+    {
+      "matches": [
+        { "path": "$CWD/**", "operations": ["write"] },
+        { "path": "/tmp/**", "operations": ["write"] }
+      ],
+      "action": "allow"
+    },
+    {
+      "matches": [{ "bash": "*" }],
+      "action": "allow"
+    },
+    {
+      "matches": [{ "bash": "find" }, { "bash": "find *" }],
+      "action": "deny",
+      "message": "Use `fd` instead."
+    },
+    {
+      "matches": [{ "bash": "grep" }, { "bash": "grep *" }],
+      "action": "deny",
+      "message": "Use `rg` instead."
+    },
+    {
+      "matches": [
+        { "bash": "pip" },
+        { "bash": "pip *" },
+        { "bash": "pip3" },
+        { "bash": "pip3 *" }
+      ],
+      "action": "deny",
+      "message": "Use `uv pip` instead."
+    },
+    {
+      "id": "tmp-usage",
+      "matches": [
+        { "path": "/tmp/**", "operations": ["write"] },
+        { "bash": "*/tmp/*" },
+        { "bash": "*mktemp*" }
+      ],
+      "action": "remind",
+      "message": "Keep temporary files small and short-lived. /tmp is tmpfs on this system and consumes memory/swap; use disk-backed storage for large artifacts."
+    }
   ]
 }

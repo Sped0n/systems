@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import {
     mkdtemp,
     mkdir,
@@ -11,7 +12,21 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test, { type TestContext } from "node:test";
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
+import {
+    createAgentSession,
+    DefaultResourceLoader,
+    ModelRuntime,
+    SessionManager,
+    SettingsManager,
+    type ExtensionAPI,
+} from "@earendil-works/pi-coding-agent";
+import {
+    fauxAssistantMessage,
+    fauxProvider,
+    fauxToolCall,
+    InMemoryCredentialStore,
+    InMemoryModelsStore,
+} from "@earendil-works/pi-ai";
 
 import interceptorExtension, {
     canonicalizePath,
@@ -64,38 +79,106 @@ test("schema rejects legacy fields, unknown keys, duplicate operations, and unsu
         { write: { roots: ["$CWD"] } },
         {
             rules: [
-                { path: "$CWD", operations: ["read", "read"], action: "allow" },
+                {
+                    matches: [{ path: "$CWD", operations: ["read", "read"] }],
+                    action: "allow",
+                },
             ],
         },
         {
             rules: [
-                { path: "src/*.ts", operations: ["read"], action: "allow" },
+                {
+                    matches: [{ path: "src/*.ts", operations: ["read"] }],
+                    action: "allow",
+                },
             ],
         },
-        { rules: [{ path: "$CWD", operations: ["execute"], action: "allow" }] },
-        { rules: [{ path: "$CWD", operations: ["read"], action: "ask" }] },
-        { rules: [{ path: "$CWD", operations: ["read"], action: "ignore" }] },
+        {
+            rules: [
+                {
+                    matches: [{ path: "$CWD", operations: ["execute"] }],
+                    action: "allow",
+                },
+            ],
+        },
+        {
+            rules: [
+                {
+                    matches: [{ path: "$CWD", operations: ["read"] }],
+                    action: "ask",
+                },
+            ],
+        },
+        {
+            rules: [
+                {
+                    matches: [{ path: "$CWD", operations: ["read"] }],
+                    action: "ignore",
+                },
+            ],
+        },
         { rules: [{ command: "git *", action: "allow" }] },
-        { rules: [{ bash: "git *", operations: ["read"], action: "allow" }] },
-        { rules: [{ bash: "", action: "allow" }] },
-        { rules: [{ bash: "pip *", action: "deny", reason: "" }] },
-        { rules: [{ bash: "pip *", action: "deny", reason: 42 }] },
-        { rules: [{ bash: "pip *", action: "deny", reason: "x".repeat(501) }] },
+        {
+            rules: [
+                {
+                    matches: [{ bash: "git *", operations: ["read"] }],
+                    action: "allow",
+                },
+            ],
+        },
+        { rules: [{ matches: [{ bash: "" }], action: "allow" }] },
+        {
+            rules: [
+                { matches: [{ bash: "pip *" }], action: "deny", message: "" },
+            ],
+        },
+        {
+            rules: [
+                { matches: [{ bash: "pip *" }], action: "deny", message: 42 },
+            ],
+        },
+        {
+            rules: [
+                {
+                    matches: [{ bash: "pip *" }],
+                    action: "deny",
+                    message: "x".repeat(501),
+                },
+            ],
+        },
     ]) {
         assert.throws(() => parsePolicy(policy));
     }
 });
 
-function interceptorLifecycleHarness() {
+async function interceptorLifecycleHarness(
+    sessionManager = SessionManager.inMemory(),
+) {
     const handlers = new Map<string, (...args: any[]) => any>();
     const notifications: string[] = [];
+    const messages: {
+        content: string;
+        details: { key: string };
+        options: unknown;
+    }[] = [];
     const pi = {
         on(name: string, handler: (...args: any[]) => any) {
-            handlers.set(name, handler);
+            handlers.set(name, (event: unknown, ctx: any) =>
+                handler(event, { sessionManager, ...ctx }),
+            );
+        },
+        sendMessage(message: any, options: unknown) {
+            messages.push({ ...message, options });
+            sessionManager.appendCustomMessageEntry(
+                message.customType,
+                message.content,
+                message.display,
+                message.details,
+            );
         },
     } as unknown as ExtensionAPI;
-    interceptorExtension(pi);
-    return { handlers, notifications };
+    await interceptorExtension(pi);
+    return { pi, handlers, notifications, messages, sessionManager };
 }
 
 test("file policy changes take effect only after session start or reload", async (t) => {
@@ -105,11 +188,13 @@ test("file policy changes take effect only after session start or reload", async
     const policyFile = path.join(config, "interceptor.json");
     await writeFile(
         policyFile,
-        JSON.stringify({ rules: [{ bash: "*", action: "allow" }] }),
+        JSON.stringify({
+            rules: [{ matches: [{ bash: "*" }], action: "allow" }],
+        }),
     );
     const previousConfig = process.env.PI_CODING_AGENT_DIR;
     process.env.PI_CODING_AGENT_DIR = config;
-    const harness = interceptorLifecycleHarness();
+    const harness = await interceptorLifecycleHarness();
     const ctx = {
         cwd: root,
         hasUI: true,
@@ -122,7 +207,9 @@ test("file policy changes take effect only after session start or reload", async
         await harness.handlers.get("session_start")!({}, ctx);
         await writeFile(
             policyFile,
-            JSON.stringify({ rules: [{ bash: "*", action: "deny" }] }),
+            JSON.stringify({
+                rules: [{ matches: [{ bash: "*" }], action: "deny" }],
+            }),
         );
         assert.equal(
             await harness.handlers.get("tool_call")!(
@@ -152,12 +239,14 @@ test("invalid reload warns and retains the matching last valid policy", async (t
     const policyFile = path.join(config, "interceptor.json");
     await writeFile(
         policyFile,
-        JSON.stringify({ rules: [{ bash: "*", action: "allow" }] }),
+        JSON.stringify({
+            rules: [{ matches: [{ bash: "*" }], action: "allow" }],
+        }),
     );
     const previousConfig = process.env.PI_CODING_AGENT_DIR;
     process.env.PI_CODING_AGENT_DIR = config;
     try {
-        const initial = interceptorLifecycleHarness();
+        const initial = await interceptorLifecycleHarness();
         const initialContext = {
             cwd: root,
             hasUI: true,
@@ -170,7 +259,7 @@ test("invalid reload warns and retains the matching last valid policy", async (t
         await initial.handlers.get("session_start")!({}, initialContext);
         await writeFile(policyFile, "not JSON");
 
-        const reloaded = interceptorLifecycleHarness();
+        const reloaded = await interceptorLifecycleHarness();
         const reloadedContext = {
             ...initialContext,
             ui: {
@@ -208,7 +297,7 @@ test("invalid initial policy warns and falls back to an empty policy", async (t)
     await writeFile(path.join(config, "interceptor.json"), "not JSON");
     const previousConfig = process.env.PI_CODING_AGENT_DIR;
     process.env.PI_CODING_AGENT_DIR = config;
-    const harness = interceptorLifecycleHarness();
+    const harness = await interceptorLifecycleHarness();
     const ctx = {
         cwd: root,
         hasUI: true,
@@ -235,10 +324,10 @@ test("invalid initial policy warns and falls back to an empty policy", async (t)
 test("Bash rules use wildcards and last match wins", async () => {
     const policy = parsePolicy({
         rules: [
-            { bash: "*", action: "deny" },
-            { bash: "git *", action: "allow" },
-            { bash: "git push*", action: "deny" },
-            { bash: "git status --?hort", action: "allow" },
+            { matches: [{ bash: "*" }], action: "deny" },
+            { matches: [{ bash: "git *" }], action: "allow" },
+            { matches: [{ bash: "git push*" }], action: "deny" },
+            { matches: [{ bash: "git status --?hort" }], action: "allow" },
         ],
     });
     assert.equal(
@@ -260,29 +349,45 @@ test("Bash rules use wildcards and last match wins", async () => {
 test("deny rules return custom reasons without matching prefixed commands", async () => {
     const policy = parsePolicy({
         rules: [
-            { bash: "*", action: "allow" },
-            { bash: "pip", action: "deny", reason: "Use `uv pip` instead." },
-            { bash: "pip *", action: "deny", reason: "Use `uv pip` instead." },
-            { bash: "pip3", action: "deny", reason: "Use `uv pip` instead." },
-            { bash: "pip3 *", action: "deny", reason: "Use `uv pip` instead." },
+            { matches: [{ bash: "*" }], action: "allow" },
+            {
+                matches: [{ bash: "pip" }],
+                action: "deny",
+                message: "Use `uv pip` instead.",
+            },
+            {
+                matches: [{ bash: "pip *" }],
+                action: "deny",
+                message: "Use `uv pip` instead.",
+            },
+            {
+                matches: [{ bash: "pip3" }],
+                action: "deny",
+                message: "Use `uv pip` instead.",
+            },
+            {
+                matches: [{ bash: "pip3 *" }],
+                action: "deny",
+                message: "Use `uv pip` instead.",
+            },
         ],
     });
     assert.deepEqual(await commandDecision(policy, "pip", process.cwd()), {
         action: "deny",
-        reason: 'Use `uv pip` instead. Matched rule: {"bash":"pip","action":"deny"}',
+        reason: 'Use `uv pip` instead. Matched rule: {"matches":[{"bash":"pip"}],"action":"deny"}',
     });
     assert.deepEqual(
         await commandDecision(policy, "pip install requests", process.cwd()),
         {
             action: "deny",
-            reason: 'Use `uv pip` instead. Matched rule: {"bash":"pip *","action":"deny"}',
+            reason: 'Use `uv pip` instead. Matched rule: {"matches":[{"bash":"pip *"}],"action":"deny"}',
         },
     );
     assert.deepEqual(
         await commandDecision(policy, "pip3 install requests", process.cwd()),
         {
             action: "deny",
-            reason: 'Use `uv pip` instead. Matched rule: {"bash":"pip3 *","action":"deny"}',
+            reason: 'Use `uv pip` instead. Matched rule: {"matches":[{"bash":"pip3 *"}],"action":"deny"}',
         },
     );
     assert.equal(
@@ -304,33 +409,39 @@ test("tool blocks identify winning rules while unmatched and invalid inputs keep
         path.join(root, ".pi", "interceptor.json"),
         JSON.stringify({
             rules: [
-                { bash: "pip *", action: "allow" },
+                { matches: [{ bash: "pip *" }], action: "allow" },
                 {
-                    bash: "pip *",
+                    matches: [{ bash: "pip *" }],
                     action: "deny",
-                    reason: "Use `uv pip` instead.",
+                    message: "Use `uv pip` instead.",
                 },
-                { path: "secret", operations: ["read"], action: "allow" },
-                { path: "secret", operations: ["read"], action: "deny" },
+                {
+                    matches: [{ path: "secret", operations: ["read"] }],
+                    action: "allow",
+                },
+                {
+                    matches: [{ path: "secret", operations: ["read"] }],
+                    action: "deny",
+                },
             ],
         }),
     );
     const previousConfig = process.env.PI_CODING_AGENT_DIR;
     process.env.PI_CODING_AGENT_DIR = path.join(root, "global");
     try {
-        const harness = interceptorLifecycleHarness();
+        const harness = await interceptorLifecycleHarness();
         const ctx = { cwd: root, hasUI: false, isProjectTrusted: () => true };
         await harness.handlers.get("session_start")!({}, ctx);
         for (const [toolName, input, reason] of [
             [
                 "bash",
                 { command: "pip install requests" },
-                'Use `uv pip` instead. Matched rule: {"bash":"pip *","action":"deny"}',
+                'Use `uv pip` instead. Matched rule: {"matches":[{"bash":"pip *"}],"action":"deny"}',
             ],
             [
                 "read",
                 { path: "secret" },
-                'secret matches secret. Matched rule: {"path":"secret","operations":["read"],"action":"deny"}',
+                `secret matches ${root}/secret. Matched rule: {"matches":[{"path":"${root}/secret","operations":["read"]}],"action":"deny"}`,
             ],
             [
                 "bash",
@@ -366,9 +477,9 @@ test("tool blocks identify winning rules while unmatched and invalid inputs keep
 test("every command in a shell chain must be allowed", async () => {
     const policy = parsePolicy({
         rules: [
-            { bash: "*", action: "deny" },
-            { bash: "git *", action: "allow" },
-            { bash: "rm *", action: "deny" },
+            { matches: [{ bash: "*" }], action: "deny" },
+            { matches: [{ bash: "git *" }], action: "allow" },
+            { matches: [{ bash: "rm *" }], action: "deny" },
         ],
     });
     assert.deepEqual(
@@ -400,8 +511,8 @@ test("every command in a shell chain must be allowed", async () => {
 test("complex shell substitutions evaluate nested commands", async () => {
     const policy = parsePolicy({
         rules: [
-            { bash: "printf *", action: "allow" },
-            { bash: "diff *", action: "allow" },
+            { matches: [{ bash: "printf *" }], action: "allow" },
+            { matches: [{ bash: "diff *" }], action: "allow" },
         ],
     });
     assert.equal(
@@ -457,7 +568,9 @@ test("valid Bash forms never report a parser failure", async () => {
 });
 
 test("valid Bash without an executable command is allowed", async () => {
-    const policy = parsePolicy({ rules: [{ bash: "*", action: "deny" }] });
+    const policy = parsePolicy({
+        rules: [{ matches: [{ bash: "*" }], action: "deny" }],
+    });
     assert.equal(
         (await commandDecision(policy, "NAME=value", process.cwd())).action,
         "allow",
@@ -465,7 +578,9 @@ test("valid Bash without an executable command is allowed", async () => {
 });
 
 test("invalid Bash syntax is denied without interaction", async () => {
-    const policy = parsePolicy({ rules: [{ bash: "git *", action: "allow" }] });
+    const policy = parsePolicy({
+        rules: [{ matches: [{ bash: "git *" }], action: "allow" }],
+    });
     assert.deepEqual(await commandDecision(policy, "if then", process.cwd()), {
         action: "deny",
         reason: "invalid Bash syntax",
@@ -473,7 +588,9 @@ test("invalid Bash syntax is denied without interaction", async () => {
 });
 
 test("a final catch-all allow bypasses parsing complex shell syntax", async () => {
-    const policy = parsePolicy({ rules: [{ bash: "*", action: "allow" }] });
+    const policy = parsePolicy({
+        rules: [{ matches: [{ bash: "*" }], action: "allow" }],
+    });
     const heredoc = "node <<'JS'\nconsole.log(process.cwd())\nJS";
     assert.equal(
         (await commandDecision(policy, heredoc, process.cwd())).action,
@@ -484,8 +601,8 @@ test("a final catch-all allow bypasses parsing complex shell syntax", async () =
 test("narrower allows after catch-all allow still bypass parsing", async () => {
     const policy = parsePolicy({
         rules: [
-            { bash: "*", action: "allow" },
-            { bash: "git *", action: "allow" },
+            { matches: [{ bash: "*" }], action: "allow" },
+            { matches: [{ bash: "git *" }], action: "allow" },
         ],
     });
     assert.equal(
@@ -503,8 +620,8 @@ test("narrower allows after catch-all allow still bypass parsing", async () => {
 test("a restrictive rule after catch-all allow evaluates nested commands", async () => {
     const policy = parsePolicy({
         rules: [
-            { bash: "*", action: "allow" },
-            { bash: "rm *", action: "deny" },
+            { matches: [{ bash: "*" }], action: "allow" },
+            { matches: [{ bash: "rm *" }], action: "deny" },
         ],
     });
     assert.equal(
@@ -523,23 +640,26 @@ test("last matching path rule wins and no match denies", async (t) => {
     const root = await tempRoot(t);
     const policy = parsePolicy({
         rules: [
-            { path: "/**", operations: ["read"], action: "allow" },
             {
-                path: "$CWD/secret/**",
-                operations: ["read"],
-                action: "deny",
-                reason: "Secrets must not be sent to the model provider.",
+                matches: [{ path: "/**", operations: ["read"] }],
+                action: "allow",
             },
             {
-                path: "$CWD/secret/approved",
-                operations: ["read"],
+                matches: [{ path: "$CWD/secret/**", operations: ["read"] }],
+                action: "deny",
+                message: "Secrets must not be sent to the model provider.",
+            },
+            {
+                matches: [
+                    { path: "$CWD/secret/approved", operations: ["read"] },
+                ],
                 action: "allow",
             },
         ],
     });
     assert.deepEqual(await pathDecision(policy, "read", "secret/key", root), {
         action: "deny",
-        reason: 'Secrets must not be sent to the model provider. Matched rule: {"path":"$CWD/secret/**","operations":["read"],"action":"deny"}',
+        reason: `Secrets must not be sent to the model provider. Matched rule: {"matches":[{"path":"${root}/secret/**","operations":["read"]}],"action":"deny"}`,
     });
     assert.equal(
         (await pathDecision(policy, "read", "secret/approved", root)).action,
@@ -559,7 +679,12 @@ test("trusted project rules append after global rules", async (t) => {
     await writeFile(
         path.join(global, "interceptor.json"),
         JSON.stringify({
-            rules: [{ path: "$CWD/**", operations: ["write"], action: "deny" }],
+            rules: [
+                {
+                    matches: [{ path: "$CWD/**", operations: ["write"] }],
+                    action: "deny",
+                },
+            ],
         }),
     );
     await writeFile(
@@ -567,8 +692,9 @@ test("trusted project rules append after global rules", async (t) => {
         JSON.stringify({
             rules: [
                 {
-                    path: "$CWD/generated/**",
-                    operations: ["write"],
+                    matches: [
+                        { path: "$CWD/generated/**", operations: ["write"] },
+                    ],
                     action: "allow",
                 },
             ],
@@ -661,11 +787,18 @@ test("placeholders and symlinks retain sensitive lexical matching without allowi
     await symlink(actual, path.join(root, "alias"));
     const policy = parsePolicy({
         rules: [
-            { path: "$CWD/**", operations: ["write"], action: "allow" },
-            { path: "$CWD/link/**", operations: ["read"], action: "deny" },
             {
-                path: "~/does-not-exist/**",
-                operations: ["read"],
+                matches: [{ path: "$CWD/**", operations: ["write"] }],
+                action: "allow",
+            },
+            {
+                matches: [{ path: "$CWD/link/**", operations: ["read"] }],
+                action: "deny",
+            },
+            {
+                matches: [
+                    { path: "~/does-not-exist/**", operations: ["read"] },
+                ],
                 action: "deny",
             },
         ],
@@ -691,7 +824,10 @@ test("placeholders and symlinks retain sensitive lexical matching without allowi
     );
     const canonicalPolicy = parsePolicy({
         rules: [
-            { path: "$CWD/actual/**", operations: ["write"], action: "allow" },
+            {
+                matches: [{ path: "$CWD/actual/**", operations: ["write"] }],
+                action: "allow",
+            },
         ],
     });
     assert.equal(
@@ -699,4 +835,408 @@ test("placeholders and symlinks retain sensitive lexical matching without allowi
             .action,
         "allow",
     );
+});
+
+async function policyHarness(t: TestContext, rules: unknown[]) {
+    const root = await tempRoot(t);
+    const previousConfig = process.env.PI_CODING_AGENT_DIR;
+    process.env.PI_CODING_AGENT_DIR = root;
+    t.after(() => {
+        if (previousConfig === undefined)
+            delete process.env.PI_CODING_AGENT_DIR;
+        else process.env.PI_CODING_AGENT_DIR = previousConfig;
+    });
+    await writeFile(
+        path.join(root, "interceptor.json"),
+        JSON.stringify({ rules }),
+    );
+    const harness = await interceptorLifecycleHarness();
+    const ctx = { cwd: root, hasUI: false, isProjectTrusted: () => false };
+    await harness.handlers.get("session_start")!({ reason: "startup" }, ctx);
+    const call = (toolName: string, input: unknown) =>
+        harness.handlers.get("tool_call")!({ toolName, input }, ctx);
+    return { ...harness, root, ctx, call };
+}
+
+const tmpReminder = {
+    id: "temporary-files",
+    action: "remind",
+    matches: [{ path: "$CWD/**", operations: ["write"] }, { bash: "*/tmp/*" }],
+    message: "Keep temporary files small.",
+};
+
+test("reminder schema defaults once and validates action-specific fields and IDs", () => {
+    assert.deepEqual(parsePolicy({ rules: [tmpReminder] }).rules[0], {
+        ...tmpReminder,
+        once: true,
+    });
+    for (const rule of [
+        { ...tmpReminder, id: undefined },
+        { ...tmpReminder, message: undefined },
+        { ...tmpReminder, once: 1 },
+        { ...tmpReminder, matches: [] },
+        { ...tmpReminder, action: "allow" },
+        { ...tmpReminder, action: "deny" },
+        { matches: [{ bash: "*", path: "/tmp" }], action: "allow" },
+    ])
+        assert.throws(() => parsePolicy({ rules: [rule] }));
+    assert.throws(
+        () => parsePolicy({ rules: [tmpReminder, tmpReminder] }),
+        /duplicates/,
+    );
+});
+
+test("mixed OR matchers preserve permission ordering and reminders cannot authorize", async (t) => {
+    const root = await tempRoot(t);
+    const policy = parsePolicy({
+        rules: [
+            {
+                matches: [
+                    { path: "$CWD/**", operations: ["read"] },
+                    { bash: "git *" },
+                ],
+                action: "allow",
+            },
+            {
+                matches: [
+                    { path: "$CWD/secret", operations: ["read"] },
+                    { bash: "git push*" },
+                ],
+                action: "deny",
+            },
+            tmpReminder,
+        ],
+    });
+    assert.equal(
+        (await pathDecision(policy, "read", "file", root)).action,
+        "allow",
+    );
+    assert.equal(
+        (await pathDecision(policy, "read", "secret", root)).action,
+        "deny",
+    );
+    assert.equal(
+        (await pathDecision(policy, "write", "new", root)).action,
+        "deny",
+    );
+    assert.equal(
+        (await commandDecision(policy, "git status", root)).action,
+        "allow",
+    );
+    assert.equal(
+        (await commandDecision(policy, "git status && git push", root)).action,
+        "deny",
+    );
+    assert.equal(
+        (await commandDecision(policy, "echo /tmp/new", root)).action,
+        "deny",
+    );
+});
+
+test("allowed file and Bash calls share one non-blocking model-visible reminder", async (t) => {
+    const h = await policyHarness(t, [
+        {
+            matches: [
+                { path: "$CWD/**", operations: ["write"] },
+                { bash: "*" },
+            ],
+            action: "allow",
+        },
+        tmpReminder,
+    ]);
+    assert.equal(
+        await h.call("write", { path: path.join(h.root, "new") }),
+        undefined,
+    );
+    assert.equal(h.messages.length, 1);
+    assert.equal(await h.call("bash", { command: "echo /tmp/new" }), undefined);
+    assert.equal(
+        await h.call("edit", { path: path.join(h.root, "new") }),
+        undefined,
+    );
+    assert.equal(h.messages.length, 1);
+    assert.equal(h.messages[0].content, tmpReminder.message);
+    assert.deepEqual(h.messages[0].options, { triggerTurn: false });
+    const context = h.sessionManager.buildSessionContext();
+    assert.ok(
+        context.messages.some(
+            (message) =>
+                message.role === "custom" &&
+                message.content === tmpReminder.message,
+        ),
+    );
+});
+
+test("once false emits on every matching allowed call but never on denied calls", async (t) => {
+    const h = await policyHarness(t, [
+        { matches: [{ bash: "*" }], action: "allow" },
+        { ...tmpReminder, once: false },
+        { matches: [{ bash: "rm *" }], action: "deny" },
+    ]);
+    assert.equal(await h.call("bash", { command: "echo /tmp/a" }), undefined);
+    assert.equal(await h.call("bash", { command: "echo /tmp/b" }), undefined);
+    assert.equal((await h.call("bash", { command: "rm /tmp/c" })).block, true);
+    assert.equal(h.messages.length, 2);
+});
+
+test("concurrent matches emit once and successful compaction re-arms persisted suppression", async (t) => {
+    const h = await policyHarness(t, [
+        { matches: [{ bash: "*" }], action: "allow" },
+        tmpReminder,
+    ]);
+    await Promise.all([
+        h.call("bash", { command: "echo /tmp/a" }),
+        h.call("bash", { command: "echo /tmp/b" }),
+    ]);
+    assert.equal(h.messages.length, 1);
+    // A new extension instance models /reload or resuming the same session.
+    const reloaded = await interceptorLifecycleHarness(h.sessionManager);
+    await reloaded.handlers.get("session_start")!({ reason: "reload" }, h.ctx);
+    const call = () =>
+        reloaded.handlers.get("tool_call")!(
+            { toolName: "bash", input: { command: "echo /tmp/c" } },
+            h.ctx,
+        );
+    await call();
+    assert.equal(reloaded.messages.length, 0);
+    h.sessionManager.appendCompaction("summary", null, 1000);
+    await reloaded.handlers.get("session_compact")!({}, h.ctx);
+    assert.equal(reloaded.messages.length, 0);
+    await call();
+    await call();
+    assert.equal(reloaded.messages.length, 1);
+    const resumed = await interceptorLifecycleHarness(h.sessionManager);
+    await resumed.handlers.get("session_start")!({ reason: "resume" }, h.ctx);
+    await resumed.handlers.get("tool_call")!(
+        { toolName: "bash", input: { command: "echo /tmp/d" } },
+        h.ctx,
+    );
+    assert.equal(resumed.messages.length, 0);
+    const fresh = await interceptorLifecycleHarness();
+    await fresh.handlers.get("session_start")!({ reason: "new" }, h.ctx);
+    await fresh.handlers.get("tool_call")!(
+        { toolName: "bash", input: { command: "echo /tmp/e" } },
+        h.ctx,
+    );
+    assert.equal(fresh.messages.length, 1);
+});
+
+test("environment paths are snapshotted on load while Bash patterns and messages stay literal", async (t) => {
+    const name = "PI_INTERCEPTOR_TEST_ROOT";
+    const previous = process.env[name];
+    t.after(() => {
+        if (previous === undefined) delete process.env[name];
+        else process.env[name] = previous;
+    });
+    const root = await tempRoot(t);
+    process.env[name] = root;
+    const variable = "$" + "{" + name + "}";
+    const h = await policyHarness(t, [
+        {
+            matches: [
+                { path: variable + "/**", operations: ["write"] },
+                { bash: "echo " + variable },
+            ],
+            action: "allow",
+        },
+        {
+            ...tmpReminder,
+            matches: [{ path: variable + "/**", operations: ["write"] }],
+            message: variable,
+        },
+    ]);
+    process.env[name] = "/not-the-loaded-root";
+    assert.equal(
+        await h.call("write", { path: path.join(root, "file") }),
+        undefined,
+    );
+    assert.equal(h.messages[0].content, variable);
+    assert.equal(
+        await h.call("bash", { command: "echo " + variable }),
+        undefined,
+    );
+    assert.equal(
+        (await h.call("bash", { command: "echo " + root })).block,
+        true,
+    );
+    process.env[name] = "$CWD";
+    const literal = await loadPolicies({ cwd: h.root, projectTrusted: false });
+    assert.ok("rules" in literal);
+    assert.equal(
+        (await pathDecision(literal.rules, "write", "$CWD/file", h.root))
+            .action,
+        "allow",
+    );
+    for (const value of [undefined, "", "/tmp/*", "$" + "{OTHER}"]) {
+        if (value === undefined) delete process.env[name];
+        else process.env[name] = value;
+        const loaded = await loadPolicies({
+            cwd: h.root,
+            projectTrusted: false,
+        });
+        assert.ok("error" in loaded);
+    }
+});
+
+test("global and trusted-project reminders have independent IDs", async (t) => {
+    const h = await policyHarness(t, [
+        { matches: [{ bash: "*" }], action: "allow" },
+        tmpReminder,
+    ]);
+    await mkdir(path.join(h.root, ".pi"));
+    await writeFile(
+        path.join(h.root, ".pi", "interceptor.json"),
+        JSON.stringify({ rules: [tmpReminder] }),
+    );
+    const ctx = { ...h.ctx, isProjectTrusted: () => true };
+    await h.handlers.get("session_start")!({ reason: "reload" }, ctx);
+    await h.handlers.get("tool_call")!(
+        { toolName: "bash", input: { command: "echo /tmp/a" } },
+        ctx,
+    );
+    assert.equal(h.messages.length, 2);
+    assert.notEqual(h.messages[0].details.key, h.messages[1].details.key);
+});
+
+test("invalid schema warns before startup completes and factory reloads do not write over the TUI", async (t) => {
+    const root = await tempRoot(t);
+    await writeFile(
+        path.join(root, "interceptor.json"),
+        JSON.stringify({ rules: [{ action: "allow", matches: [] }] }),
+    );
+    const module = new URL("./index.ts", import.meta.url).href;
+    const result = spawnSync(
+        process.execPath,
+        [
+            "--import",
+            "tsx",
+            "--input-type=module",
+            "-e",
+            "import interceptor from " +
+                JSON.stringify(module) +
+                ";" +
+                "await interceptor({on(){}}); process.stderr.write('startup-complete\\n');" +
+                "await interceptor({on(){}}); process.stderr.write('reload-complete\\n');",
+        ],
+        {
+            // Resolve tsx from the package while keeping policy lookup independent.
+            cwd: path.resolve(import.meta.dirname, "../.."),
+            env: { ...process.env, PI_CODING_AGENT_DIR: root },
+            encoding: "utf8",
+        },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(
+        result.stderr,
+        /^Interceptor configuration warning:.*matches must be a non-empty array.*\nstartup-complete\nreload-complete\n$/,
+    );
+});
+
+test("real tool execution delivers reminders on the next request without skipping sibling calls", async (t) => {
+    const h = await policyHarness(t, [
+        { matches: [{ bash: "*" }], action: "allow" },
+        { ...tmpReminder, matches: [{ bash: "*" }] },
+    ]);
+    const faux = fauxProvider({
+        models: [
+            { id: "interceptor-test", contextWindow: 32000, maxTokens: 1024 },
+        ],
+    });
+    const modelRuntime = await ModelRuntime.create({
+        modelsPath: null,
+        refreshOnCreate: false,
+        credentials: new InMemoryCredentialStore(),
+        modelsStore: new InMemoryModelsStore(),
+    });
+    modelRuntime.registerNativeProvider(faux.provider);
+    await modelRuntime.setRuntimeApiKey(faux.getModel().provider, "test-only");
+    const settings = SettingsManager.create(h.root, h.root, {
+        projectTrusted: false,
+    });
+    const loader = new DefaultResourceLoader({
+        cwd: h.root,
+        agentDir: h.root,
+        settingsManager: settings,
+        noExtensions: true,
+        noSkills: true,
+        noPromptTemplates: true,
+        noThemes: true,
+        agentsFilesOverride: () => ({ agentsFiles: [] }),
+        extensionFactories: [interceptorExtension],
+    });
+    await loader.reload();
+    const { session } = await createAgentSession({
+        cwd: h.root,
+        agentDir: h.root,
+        modelRuntime,
+        model: faux.getModel(),
+        sessionManager: SessionManager.inMemory(h.root),
+        settingsManager: settings,
+        resourceLoader: loader,
+        tools: ["bash"],
+    });
+    t.after(() => session.dispose());
+    const errors: string[] = [];
+    await session.bindExtensions({
+        onError: (error) => errors.push(error.error),
+    });
+    let nextRequest = "";
+    let outputs: string[] = [];
+    faux.setResponses([
+        fauxAssistantMessage(
+            [
+                fauxToolCall(
+                    "bash",
+                    { command: "printf first" },
+                    { id: "first" },
+                ),
+                fauxToolCall(
+                    "bash",
+                    { command: "printf second" },
+                    { id: "second" },
+                ),
+            ],
+            { stopReason: "toolUse" },
+        ),
+        (context) => {
+            nextRequest = JSON.stringify(context.messages);
+            outputs = context.messages
+                .filter((message) => message.role === "toolResult")
+                .map((message) =>
+                    message.content
+                        .filter((part) => part.type === "text")
+                        .map((part) => part.text)
+                        .join(""),
+                );
+            return fauxAssistantMessage("Done.");
+        },
+    ]);
+    await session.prompt("Execute both commands.");
+    assert.deepEqual(outputs, ["first", "second"]);
+    assert.equal(nextRequest.split(tmpReminder.message).length - 1, 1);
+    assert.doesNotMatch(nextRequest, /skipped|aborted/i);
+    assert.equal(faux.state.callCount, 2);
+    assert.deepEqual(errors, []);
+});
+
+test("reminder delivery failure neither blocks execution nor consumes once", async (t) => {
+    const h = await policyHarness(t, [
+        { matches: [{ bash: "*" }], action: "allow" },
+        tmpReminder,
+    ]);
+    const warnings: string[] = [];
+    const stderr = t.mock.method(process.stderr, "write", (value: string) => {
+        warnings.push(value);
+        return true;
+    });
+    const send = t.mock.method(h.pi, "sendMessage", () => {
+        throw new Error("delivery unavailable");
+    });
+    assert.equal(await h.call("bash", { command: "echo /tmp/a" }), undefined);
+    assert.equal(h.messages.length, 0);
+    assert.match(warnings[0], /delivery unavailable/);
+    send.mock.restore();
+    stderr.mock.restore();
+    assert.equal(await h.call("bash", { command: "echo /tmp/b" }), undefined);
+    assert.equal(h.messages.length, 1);
 });
