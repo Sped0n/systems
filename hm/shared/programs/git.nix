@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 {
   home.packages = [
     pkgs.git-extras
@@ -22,6 +22,20 @@
         rebase.autoStash = true;
         merge.conflictStyle = "zdiff3";
         core.editor = "nvim";
+        hook.require-prek = {
+          event = "pre-commit";
+          command = "${pkgs.writeShellScript "require-prek-hook" ''
+            if [ ! -f .pre-commit-config.yaml ] || ! command -v prek >/dev/null 2>&1; then
+              exit 0
+            fi
+
+            hook="$(${config.programs.git.package}/bin/git rev-parse --git-path hooks/pre-commit)"
+            if [ ! -x "$hook" ]; then
+              printf '%s\n' 'Pre-commit hook missing. Run: prek install' >&2
+              exit 1
+            fi
+          ''}";
+        };
       };
 
       signing = {
