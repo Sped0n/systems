@@ -81,20 +81,26 @@ security sandbox.
 names, commands, and working directories to rediscover builds, debuggers, and
 monitors after losing context. No helper registration files are required.
 
+`EXIT` shows an exit code or `signal:<name-or-number>`. A `-` means no exit
+result is available.
+
 ## Sending input safely
 
 ```bash
-"$CTL" --socket firmware send "$PANE" 'print(6 * 7)' --enter
-printf 'x = 20\nprint(x + 3)\n' | "$CTL" --socket firmware send "$PANE" --stdin
+"$CTL" --socket firmware send "$PANE" --enter -- 'print(6 * 7)'
+"$CTL" --socket firmware send "$PANE" --enter -- '--help'
+printf '%s' "$TEXT" | "$CTL" --socket firmware send "$PANE" --stdin --enter
 "$CTL" --socket firmware send-key "$PANE" C-c
 "$CTL" --socket firmware send-key "$PANE" F12 M-x Enter
 ```
 
-`send` treats text as literal data, including multiline input. It adds Enter only
-with `--enter`; use `send-key PANE Enter` for a bare Enter. `send-key` accepts all
-native tmux key names and sequences. Commands after a creation command's `--`
-execute as argv without implicit shell expansion; use an explicit clean shell
-when shell syntax is required.
+`send` passes text literally. Prefer `--stdin` for arbitrary text, including
+multiline input. For a text argument, put helper options before `--`. Quotes
+alone do not stop the CLI from treating `--help` as an option.
+`send` adds Enter only with `--enter`; use `send-key PANE Enter` for a bare Enter.
+`send-key` accepts all native tmux key names and sequences. Commands after a
+creation command's `--` execute as argv without implicit shell expansion; use an
+explicit clean shell when shell syntax is required.
 
 ## Watching output
 
@@ -118,7 +124,8 @@ when shell syntax is required.
   with `set pagination off`. Interrupt with `C-c`; quit when finished.
 - For a Python REPL, use `run -- env PYTHON_BASIC_REPL=1 python3 -q`. Always set
   `PYTHON_BASIC_REPL=1` because the enhanced console interferes with scripted input.
-  Wait for `^>>>`, send literal code and Enter, and exit with `C-d`.
+  Wait for `^>>>` only at startup. Send literal code and Enter, then wait for
+  a new completion marker as shown below. Exit with `C-d`.
 - `run` without a command starts `bash --noprofile --norc`.
   It preserves shell state without loading user startup files or history integrations.
 - For serial monitors and other TTY apps, start the program's normal command,
@@ -128,10 +135,24 @@ when shell syntax is required.
 ## Synchronizing / waiting for prompts
 
 ```bash
+# Wait for the initial Python REPL prompt.
 "$CTL" --socket firmware wait "$PANE" --regex '^>>>' --for 15s --lines 4000
 "$CTL" --socket firmware wait "$PANE" --text 'server ready' --for 20s --interval 500ms
 "$CTL" --socket firmware wait "$PANE" --for 5m --json
 ```
+
+After each Python REPL command, wait for a unique marker:
+
+```bash
+MARKER="DONE_$(python3 -c 'import uuid; print(uuid.uuid4().hex)')"
+"$CTL" --socket firmware send "$PANE" --enter -- \
+  "import time; time.sleep(3); print('$MARKER', flush=True)"
+"$CTL" --socket firmware wait "$PANE" --regex "^${MARKER}$" --for 10s
+```
+
+Use a new marker for each command so old output cannot match. Anchor the regex
+to the whole line so echoed input cannot match. If the command fails before
+printing the marker, the wait times out. Use `capture` to inspect the error.
 
 - `--regex` preserves POSIX extended-regex semantics, including `[[:space:]]` and
   `[[:digit:]]`. `--text` matches a fixed string. Default search history is 1000

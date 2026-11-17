@@ -682,10 +682,15 @@ def main():
                 for item in result:
                     print(f"{item['socket']}\t{item['state']}\t{item['socketPath']}")
             case "list":
-                print("PANE\tTARGET\tSTATE\tCOMMAND\tCWD")
+                print("PANE\tTARGET\tSTATE\tEXIT\tCOMMAND\tCWD")
                 for item in result:
+                    exit_status = item["exitCode"]
+                    if exit_status is None:
+                        exit_status = (
+                            f"signal:{item['signal']}" if item["signal"] else "-"
+                        )
                     print(
-                        f"{item['pane']}\t{item['session']}:{item['window']}.{item['index']}\t{item['state']}\t{item.get('startCommand', item['command'])}\t{item['cwd']}"
+                        f"{item['pane']}\t{item['session']}:{item['window']}.{item['index']}\t{item['state']}\t{exit_status}\t{item.get('startCommand', item['command'])}\t{item['cwd']}"
                     )
         return status
     except KeyboardInterrupt:
