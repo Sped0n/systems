@@ -10,6 +10,8 @@
         { "path": "~/.gnupg/**", "operations": ["read"] },
         { "path": "${XDG_RUNTIME_DIR}/agenix/**", "operations": ["read"] },
         { "path": "${XDG_RUNTIME_DIR}/agenix.d/**", "operations": ["read"] },
+        { "path": "${TMPDIR}/agenix/**", "operations": ["read"] },
+        { "path": "${TMPDIR}/agenix.d/**", "operations": ["read"] },
         { "path": "/etc/ssh/**", "operations": ["read"] }
       ],
       "action": "deny"

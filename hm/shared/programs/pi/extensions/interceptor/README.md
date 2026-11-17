@@ -38,7 +38,7 @@ Tool-call guard for `read`, `edit`, `write`, and `bash`; not an OS sandbox. File
 - The read tool uses `read`. The edit and write tools use `write`. Paths match exactly or use a terminal `/**` to include the root and its descendants.
 - Allow rules check resolved paths. Deny rules check both original and resolved paths to protect sensitive symlink aliases.
 - `$CWD` refers to the policy's working directory, and `~` refers to the home directory. Both support a `/...` suffix.
-- `${VAR}` expands from Pi's process environment in path matchers when the policy loads. Missing or empty variables make the load fail.
+- `${VAR}` expands from Pi's process environment in path matchers when the policy loads. Missing or empty variables silently skip the affected matcher.
 - Expansion happens once, without shell execution or fallback expressions. Variable values cannot introduce globs or further `${...}` expressions. Bash patterns, messages, and tool inputs stay literal. Variables set inside a shell command are not available to the interceptor.
 
 ## Bash matching

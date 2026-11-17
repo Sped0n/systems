@@ -183,19 +183,18 @@ function scopedRules(
         ...rule,
         scope,
         source,
-        matches: rule.matches.map((matcher) => {
-            if (!("path" in matcher)) return matcher;
+        matches: rule.matches.flatMap((matcher): Matcher[] => {
+            if (!("path" in matcher)) return [matcher];
             const { root, subtree } = splitPattern(matcher.path);
+            let missing = false;
             const expanded = root.replace(
                 /\$\{([A-Za-z_][A-Za-z0-9_]*)\}/gu,
                 (_match, name: string) => {
                     const replacement = process.env[name];
-                    if (!replacement)
-                        throw new Error(
-                            "environment variable " +
-                                name +
-                                " is missing or empty",
-                        );
+                    if (!replacement) {
+                        missing = true;
+                        return "";
+                    }
                     // Values are literal paths, not another round of interpolation or globbing.
                     if (/[*?\[\]{}\0]/u.test(replacement))
                         throw new Error(
@@ -204,18 +203,21 @@ function scopedRules(
                     return replacement;
                 },
             );
+            if (missing) return [];
             // Environment values are literal, including leading ~ or $CWD.
             const resolved = root.startsWith("${")
                 ? path.resolve(scope, expanded)
                 : expandPath(expanded, scope);
-            return {
-                ...matcher,
-                path: subtree
-                    ? resolved === "/"
-                        ? "/**"
-                        : resolved + "/**"
-                    : resolved,
-            };
+            return [
+                {
+                    ...matcher,
+                    path: subtree
+                        ? resolved === "/"
+                            ? "/**"
+                            : resolved + "/**"
+                        : resolved,
+                },
+            ];
         }),
     }));
 }

@@ -1044,6 +1044,17 @@ test("environment paths are snapshotted on load while Bash patterns and messages
             matches: [{ path: variable + "/**", operations: ["write"] }],
             message: variable,
         },
+        {
+            matches: [{ path: "$CWD/**", operations: ["read"] }],
+            action: "allow",
+        },
+        {
+            matches: [
+                { path: variable + "/**", operations: ["read"] },
+                { path: "$CWD/secret", operations: ["read"] },
+            ],
+            action: "deny",
+        },
     ]);
     process.env[name] = "/not-the-loaded-root";
     assert.equal(
@@ -1067,9 +1078,33 @@ test("environment paths are snapshotted on load while Bash patterns and messages
             .action,
         "allow",
     );
-    for (const value of [undefined, "", "/tmp/*", "$" + "{OTHER}"]) {
+    for (const value of [undefined, ""]) {
         if (value === undefined) delete process.env[name];
         else process.env[name] = value;
+        const loaded = await loadPolicies({
+            cwd: h.root,
+            projectTrusted: false,
+        });
+        assert.ok("rules" in loaded);
+        assert.deepEqual(loaded.rules[0].matches, [
+            { bash: "echo " + variable },
+        ]);
+        assert.deepEqual(loaded.rules[1].matches, []);
+
+        await h.handlers.get("session_start")!({ reason: "reload" }, h.ctx);
+        assert.equal(
+            await h.call("bash", { command: "echo " + variable }),
+            undefined,
+        );
+        assert.equal(
+            (await h.call("write", { path: path.join(root, "file") })).block,
+            true,
+        );
+        assert.equal(await h.call("read", { path: "file" }), undefined);
+        assert.equal((await h.call("read", { path: "secret" })).block, true);
+    }
+    for (const value of ["/tmp/*", "$" + "{OTHER}"]) {
+        process.env[name] = value;
         const loaded = await loadPolicies({
             cwd: h.root,
             projectTrusted: false,
