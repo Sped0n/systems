@@ -12,10 +12,12 @@ import {
     encodeJsonLine,
     validateControlRequest,
     validateControlResponse,
-    type AssistantResult,
+    makeRunHandle,
+    parseRunHandle,
+    type CaptureResult,
+    type RunResult,
     type ControlRequest,
     type ControlResponse,
-    type PasteResult,
     type SendOptions,
     type SendResult,
     type SessionEndpoint,
@@ -27,8 +29,15 @@ const DEFAULT_RESPONSE_TIMEOUT_MS = 5_000;
 export interface SessionControlClient {
     list(options?: { cwd?: string }): Promise<SessionEndpoint[]>;
     send(target: string, options: SendOptions): Promise<SendResult>;
-    paste(target: string, text: string): Promise<PasteResult>;
-    getLastMessage(target: string): Promise<AssistantResult | null>;
+    run(target: string, options: SendOptions): Promise<RunResult>;
+    capture(
+        target: string,
+        options?: { run?: boolean; lines?: number },
+    ): Promise<CaptureResult>;
+    wait(
+        handle: string,
+        options?: { timeoutMs?: number; signal?: AbortSignal },
+    ): Promise<RunResult>;
 }
 
 export type SessionControlClientOptions = {
@@ -100,34 +109,30 @@ function requireString(value: unknown, description: string): string {
     return value;
 }
 
-function requireAssistantResult(value: unknown): AssistantResult {
-    const result = requireObject(value, "Assistant result");
-    const text = requireString(result.text, "Assistant text");
+function requireRunResult(value: unknown): RunResult {
+    const data = requireObject(value, "Run result");
+    parseRunHandle(data.handle);
     if (
-        typeof result.timestamp !== "number" ||
-        !Number.isFinite(result.timestamp)
-    ) {
+        !["starting", "running", "completed", "failed", "aborted"].includes(
+            String(data.status),
+        ) ||
+        typeof data.startedAt !== "string" ||
+        !Number.isFinite(Date.parse(data.startedAt)) ||
+        (data.finishedAt !== undefined &&
+            (typeof data.finishedAt !== "string" ||
+                !Number.isFinite(Date.parse(data.finishedAt)))) ||
+        (data.error !== undefined && typeof data.error !== "string")
+    )
+        throw new ClientControlError("protocol_error", "Invalid run result");
+    const terminal = ["completed", "failed", "aborted"].includes(
+        String(data.status),
+    );
+    if (terminal !== (data.finishedAt !== undefined))
         throw new ClientControlError(
             "protocol_error",
-            "Assistant timestamp must be a finite number",
+            "Inconsistent run completion",
         );
-    }
-    if (
-        result.messageId !== undefined &&
-        typeof result.messageId !== "string"
-    ) {
-        throw new ClientControlError(
-            "protocol_error",
-            "Assistant messageId must be a string",
-        );
-    }
-    return {
-        text,
-        timestamp: result.timestamp,
-        ...(result.messageId === undefined
-            ? {}
-            : { messageId: result.messageId }),
-    };
+    return data as RunResult;
 }
 
 function responseData(response: ControlResponse): unknown {
@@ -171,57 +176,105 @@ export class UnixSessionControlClient implements SessionControlClient {
         const response = await this.request(target, {
             id: requestId(),
             type: "send",
-            message: options.message,
-            ...(options.sender === undefined ? {} : { sender: options.sender }),
+            ...options,
         });
-        const data = requireObject(
-            responseData(response),
-            "Send response data",
-        );
-        if (data.accepted !== true) {
+        const data = requireObject(responseData(response), "Send response");
+        if (data.accepted !== true || data.draft !== (options.draft === true))
             throw new ClientControlError(
                 "protocol_error",
-                "Send response was not accepted",
+                "Invalid send response",
             );
-        }
-        return { accepted: true };
+        return { accepted: true, draft: data.draft };
     }
 
-    async paste(target: string, text: string): Promise<PasteResult> {
-        const response = await this.request(target, {
-            id: requestId(),
-            type: "paste",
-            text,
-        });
-        const data = requireObject(
-            responseData(response),
-            "Paste response data",
+    async run(target: string, options: SendOptions): Promise<RunResult> {
+        const endpoint = resolveSessionTarget(await this.list(), target);
+        const id = requestId();
+        const handle = makeRunHandle(
+            endpoint.sessionId,
+            endpoint.instanceId,
+            id,
         );
-        if (data.pasted !== true) {
+        try {
+            const request: ControlRequest = {
+                id,
+                type: "run",
+                message: options.message,
+                ...(options.sender ? { sender: options.sender } : {}),
+            };
+            validateControlRequest(request);
+            const result = requireRunResult(
+                responseData(await this.exchange(endpoint, request)),
+            );
+            if (result.handle !== handle)
+                throw new ClientControlError(
+                    "protocol_error",
+                    "Mismatched run handle",
+                );
+            return result;
+        } catch (error) {
+            if (error instanceof ClientControlError)
+                error.message += `; submission may have started. Recover with pontrol capture --run ${handle}`;
+            throw error;
+        }
+    }
+
+    async capture(
+        target: string,
+        options: { run?: boolean; lines?: number } = {},
+    ): Promise<CaptureResult> {
+        const response = await this.request(
+            options.run ? parseRunHandle(target).sessionId : target,
+            {
+                id: requestId(),
+                type: "capture",
+                lines: options.lines ?? 100,
+                ...(options.run ? { run: target } : {}),
+            },
+        );
+        const data = requireObject(responseData(response), "Capture response");
+        requireString(data.sessionId, "Capture session ID");
+        requireString(data.capturedAt, "Capture timestamp");
+        requireString(data.text, "Capture text");
+        if (
+            !["busy", "idle"].includes(String(data.state)) ||
+            typeof data.truncated !== "boolean"
+        )
             throw new ClientControlError(
                 "protocol_error",
-                "Paste response was not confirmed",
+                "Invalid capture response",
             );
-        }
-        return { pasted: true };
+        if (data.run !== undefined) requireRunResult(data.run);
+        if (options.run && (!isObject(data.run) || data.run.handle !== target))
+            throw new ClientControlError(
+                "protocol_error",
+                "Mismatched captured run",
+            );
+        return data as CaptureResult;
     }
 
-    async getLastMessage(target: string): Promise<AssistantResult | null> {
-        const response = await this.request(target, {
-            id: requestId(),
-            type: "last_message",
-        });
-        const data = requireObject(
-            responseData(response),
-            "Last message response data",
+    async wait(
+        handle: string,
+        options: { timeoutMs?: number; signal?: AbortSignal } = {},
+    ): Promise<RunResult> {
+        const response = await this.request(
+            parseRunHandle(handle).sessionId,
+            { id: requestId(), type: "wait", run: handle },
+            options,
         );
-        if (data.message === null) return null;
-        return requireAssistantResult(data.message);
+        const result = requireRunResult(responseData(response));
+        if (result.handle !== handle || result.finishedAt === undefined)
+            throw new ClientControlError(
+                "protocol_error",
+                "Invalid wait result",
+            );
+        return result;
     }
 
     private async request(
         target: string,
         request: ControlRequest,
+        options: { timeoutMs?: number; signal?: AbortSignal } = {},
     ): Promise<ControlResponse> {
         const endpoints = await this.list();
         const endpoint = resolveSessionTarget(endpoints, target);
@@ -232,18 +285,20 @@ export class UnixSessionControlClient implements SessionControlClient {
                 throw mapProtocolError(error);
             throw error;
         }
-        return await this.exchange(endpoint, request);
+        return await this.exchange(endpoint, request, options);
     }
 
     private async exchange(
         endpoint: SessionEndpoint,
         request: ControlRequest,
+        options: { timeoutMs?: number; signal?: AbortSignal } = {},
     ): Promise<ControlResponse> {
         return await new Promise<ControlResponse>((resolve, reject) => {
             const socket = net.createConnection(endpoint.socketPath);
             const decoder = new JsonLineDecoder();
             let completed = false;
             let connected = false;
+            let accepted = false;
             let responseTimer: ReturnType<typeof setTimeout> | undefined;
 
             const connectionTimer = setTimeout(() => {
@@ -257,6 +312,7 @@ export class UnixSessionControlClient implements SessionControlClient {
             const cleanup = () => {
                 clearTimeout(connectionTimer);
                 if (responseTimer) clearTimeout(responseTimer);
+                options.signal?.removeEventListener("abort", abort);
                 socket.destroy();
             };
             const succeed = (response: ControlResponse) => {
@@ -270,6 +326,14 @@ export class UnixSessionControlClient implements SessionControlClient {
                 completed = true;
                 cleanup();
                 reject(error);
+            }
+
+            const abort = () =>
+                fail(options.signal?.reason ?? new Error("Interrupted"));
+            options.signal?.addEventListener("abort", abort, { once: true });
+            if (options.signal?.aborted) {
+                abort();
+                return;
             }
 
             socket.once("connect", () => {
@@ -288,7 +352,42 @@ export class UnixSessionControlClient implements SessionControlClient {
             socket.on("data", (chunk: Buffer) => {
                 try {
                     for (const value of decoder.push(chunk)) {
+                        if (isObject(value) && value.type === "accepted") {
+                            if (
+                                request.type !== "wait" ||
+                                accepted ||
+                                value.id !== request.id ||
+                                Object.keys(value).length !== 2
+                            )
+                                throw new ClientControlError(
+                                    "protocol_error",
+                                    "Invalid wait acknowledgement",
+                                );
+                            accepted = true;
+                            clearTimeout(responseTimer);
+                            if (options.timeoutMs !== undefined)
+                                responseTimer = setTimeout(
+                                    () =>
+                                        fail(
+                                            new ClientControlError(
+                                                "timeout",
+                                                "Wait deadline expired; run continues",
+                                            ),
+                                        ),
+                                    options.timeoutMs,
+                                );
+                            continue;
+                        }
                         const response = validateControlResponse(value);
+                        if (
+                            request.type === "wait" &&
+                            response.success &&
+                            !accepted
+                        )
+                            throw new ClientControlError(
+                                "protocol_error",
+                                "Wait result arrived without acknowledgement",
+                            );
                         if (response.id !== request.id) {
                             throw new ClientControlError(
                                 "protocol_error",

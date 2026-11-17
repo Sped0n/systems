@@ -25,7 +25,7 @@ in
 {
   options.programs.my-pi = {
     enable = mkEnableOption "Pi coding agent";
-    pcommit = {
+    pommit = {
       enable = mkEnableOption "Pi commit message generation" // {
         default = true;
       };
@@ -53,7 +53,7 @@ in
         description = "Thinking level used to generate commit messages.";
       };
     };
-    pcontrol.enable = mkEnableOption "Pi session control" // {
+    pontrol.enable = mkEnableOption "Pi session control" // {
       default = true;
     };
   };

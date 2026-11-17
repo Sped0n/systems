@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
 import { promises as fs } from "node:fs";
+import * as net from "node:net";
 import * as path from "node:path";
 import test from "node:test";
-
-import { ClientControlError, UnixSessionControlClient } from "./client.ts";
+import {
+    ClientControlError,
+    ServerControlError,
+    UnixSessionControlClient,
+} from "./client.ts";
 import {
     ensureSessionControlDirectory,
     getSessionEndpointPaths,
@@ -24,354 +28,425 @@ import {
     type SendOptions,
     type SessionEndpoint,
 } from "./protocol.ts";
+import { Runs, visibleMessageText } from "./runs.ts";
 import { SessionControlServer, type ControlledSession } from "./server.ts";
 
 const sessionId = "0195f052-ef3b-7aaa-8000-0123456789ab";
+const otherId = "0195f052-ef3b-7aaa-8000-fedcba987654";
 
-function assertProtocolError(
+function protocolError(
     callback: () => unknown,
-    code: ControlProtocolError["code"],
-    message?: RegExp,
+    code: ControlProtocolError["code"] = "invalid_record",
 ): void {
-    assert.throws(callback, (error: unknown) => {
-        assert.ok(error instanceof ControlProtocolError);
-        assert.equal(error.code, code);
-        if (message) assert.match(error.message, message);
-        return true;
-    });
+    assert.throws(
+        callback,
+        (error: unknown) =>
+            error instanceof ControlProtocolError && error.code === code,
+    );
 }
 
-test("control protocol accepts only one-off text operations", () => {
-    const requests = [
-        { id: "last-1", type: "last_message" },
-        { id: "paste-1", type: "paste", text: "draft context" },
+test("protocol validates run, capture, send, and wait boundaries", () => {
+    const handle = new Runs(sessionId, sessionId).start("run-1", "work").handle;
+    for (const request of [
+        { id: "r", type: "run", message: "work" },
+        { id: "c", type: "capture", lines: 100 },
+        { id: "c", type: "capture", lines: 100, run: handle },
+        { id: "w", type: "wait", run: handle },
         {
-            id: "send-1",
+            id: "s",
             type: "send",
-            message: "Check this",
-            sender: { sessionId, sessionName: "source" },
+            message: "draft",
+            draft: true,
+            sender: { sessionId },
         },
-    ];
-    for (const request of requests) {
+    ])
         assert.equal(validateControlRequest(request), request);
-    }
-    for (const type of ["subscribe", "summary", "abort", "clear"]) {
-        assertProtocolError(
-            () => validateControlRequest({ id: "x", type }),
-            "invalid_record",
-            /Unsupported request type/u,
-        );
-    }
-    assertProtocolError(
-        () => validateControlRequest({ id: "x", type: "paste", text: " " }),
-        "invalid_record",
-        /must not be empty/u,
-    );
+    for (const request of [
+        { id: "x", type: "run", message: " " },
+        { id: "x", type: "capture", lines: 0 },
+        { id: "x", type: "capture", lines: 1001 },
+        { id: "x", type: "wait", run: "invalid" },
+        { id: "x", type: "send", message: "ok", draft: "yes" },
+        { id: "x", type: "run", message: "ok", surprise: true },
+    ])
+        protocolError(() => validateControlRequest(request));
 });
 
-test("response validation preserves success and error invariants", () => {
+test("responses preserve success and error invariants", () => {
     const success = {
-        id: "send-1",
+        id: "s",
         type: "response",
         success: true,
         data: { accepted: true },
     };
     assert.equal(validateControlResponse(success), success);
-    assertProtocolError(
-        () => validateControlResponse({ ...success, type: "settled" }),
-        "invalid_record",
-        /must be response/u,
+    protocolError(() =>
+        validateControlResponse({ ...success, type: "settled" }),
     );
-    assertProtocolError(
-        () =>
-            validateControlResponse({
-                id: "x",
-                type: "response",
-                success: false,
-            }),
-        "invalid_record",
-        /must contain an error/u,
+    protocolError(() =>
+        validateControlResponse({ id: "s", type: "response", success: false }),
     );
 });
 
-test("JSONL framing handles fragmentation and bounded UTF-8 payloads", () => {
+test("JSONL framing handles fragmented UTF-8 and bounded payloads", () => {
     const decoder = new JsonLineDecoder();
-    const bytes = Buffer.from('{"message":"héllo"}\n{"ok":true}\n', "utf8");
-    const splitInsideAccent = bytes.indexOf(Buffer.from("é")) + 1;
-    assert.deepEqual(decoder.push(bytes.subarray(0, splitInsideAccent)), []);
-    assert.deepEqual(decoder.push(bytes.subarray(splitInsideAccent)), [
+    const bytes = Buffer.from('{"message":"héllo"}\n{"ok":true}\n');
+    const split = bytes.indexOf(Buffer.from("é")) + 1;
+    assert.deepEqual(decoder.push(bytes.subarray(0, split)), []);
+    assert.deepEqual(decoder.push(bytes.subarray(split)), [
         { message: "héllo" },
         { ok: true },
     ]);
     decoder.finish();
-    assertProtocolError(
+    protocolError(
         () => encodeJsonLine("é".repeat(MAX_RECORD_BYTES)),
         "record_too_large",
     );
 });
 
-async function withTemporaryControlDirectory(
-    callback: (
-        controlDirectory: string,
-        rootDirectory: string,
-    ) => Promise<void>,
+async function withDirectory(
+    callback: (directory: string, root: string) => Promise<void>,
 ): Promise<void> {
-    // Unix socket paths are short (107 bytes on Linux); Nix CI can provide a
-    // much longer TMPDIR than the production agent path.
-    const rootDirectory = await fs.mkdtemp("/tmp/pi-ctl-");
-    const controlDirectory = path.join(rootDirectory, "session-control");
+    const root = await fs.mkdtemp("/tmp/pi-ctl-");
     try {
-        await callback(controlDirectory, rootDirectory);
+        await callback(path.join(root, "session-control"), root);
     } finally {
-        await fs.rm(rootDirectory, { recursive: true, force: true });
+        await fs.rm(root, { recursive: true, force: true });
     }
 }
 
 function endpointFor(
-    controlDirectory: string,
+    directory: string,
     id: string,
-    name: string | undefined,
+    name: string,
     cwd: string,
 ): SessionEndpoint {
     return {
         sessionId: id,
-        ...(name === undefined ? {} : { sessionName: name }),
+        instanceId: sessionId,
+        sessionName: name,
         cwd,
         mode: "tui",
         pid: process.pid,
         state: "idle",
         startedAt: "2026-08-20T09:10:42.868Z",
-        socketPath: getSessionEndpointPaths(controlDirectory, id).socketPath,
+        socketPath: getSessionEndpointPaths(directory, id).socketPath,
     };
 }
 
-test("discovery publishes owner-only metadata and resolves unique targets", async () => {
-    await withTemporaryControlDirectory(
-        async (controlDirectory, rootDirectory) => {
-            const endpoint = endpointFor(
-                controlDirectory,
-                sessionId,
-                "build",
-                rootDirectory,
-            );
-            await publishSessionEndpoint(controlDirectory, endpoint);
-            assert.equal((await fs.stat(controlDirectory)).mode & 0o777, 0o700);
-            assert.equal(
-                (
-                    await fs.stat(
-                        getSessionEndpointPaths(controlDirectory, sessionId)
-                            .metadataPath,
-                    )
-                ).mode & 0o777,
-                0o600,
-            );
-            const listed = await listSessionEndpoints(controlDirectory, {
-                cwd: rootDirectory,
-                probe: async () => true,
-            });
-            assert.deepEqual(resolveSessionTarget(listed, "build"), endpoint);
-
-            const duplicate = endpointFor(
-                controlDirectory,
-                "0195f052-ef3b-7aaa-8000-fedcba987654",
-                "build",
-                rootDirectory,
-            );
-            assert.throws(
-                () => resolveSessionTarget([endpoint, duplicate], "build"),
-                (error: unknown) => {
-                    assert.ok(error instanceof SessionTargetError);
-                    assert.equal(error.code, "target_ambiguous");
-                    return true;
-                },
-            );
-        },
-    );
-});
-
-test("external draft paste requests an immediate TUI render", () => {
-    const calls: string[] = [];
-    pasteEditorDraft(
-        {
-            pasteToEditor(text) {
-                calls.push(`paste:${text}`);
-            },
-            setStatus(key, text) {
-                calls.push(`status:${key}:${String(text)}`);
-            },
-        },
-        "draft context",
-    );
-    assert.deepEqual(calls, [
-        "paste:draft context",
-        "status:pcontrol-paste-refresh:undefined",
-    ]);
-});
-
-class FakeControlledSession implements ControlledSession {
-    readonly sent: SendOptions[] = [];
-    readonly pasted: string[] = [];
-    lastMessage = {
-        text: "Latest result",
-        timestamp: 123,
-        messageId: "assistant-1",
-    };
-
-    constructor(private readonly endpoint: SessionEndpoint) {}
-
-    describe(): SessionEndpoint {
-        return this.endpoint;
-    }
-
-    async send(options: SendOptions) {
-        this.sent.push(options);
-        return { accepted: true as const };
-    }
-
-    async paste(text: string) {
-        this.pasted.push(text);
-        return { pasted: true as const };
-    }
-
-    getLastMessage() {
-        return this.lastMessage;
-    }
-}
-
-async function withControlServer(
-    callback: (
-        client: UnixSessionControlClient,
-        session: FakeControlledSession,
-        rootDirectory: string,
-    ) => Promise<void>,
-): Promise<void> {
-    await withTemporaryControlDirectory(
-        async (controlDirectory, rootDirectory) => {
-            await ensureSessionControlDirectory(controlDirectory);
-            const endpoint = endpointFor(
-                controlDirectory,
-                sessionId,
-                "build",
-                rootDirectory,
-            );
-            const session = new FakeControlledSession(endpoint);
-            const server = new SessionControlServer({
-                socketPath: endpoint.socketPath,
-                session,
-            });
-            await server.start();
-            await publishSessionEndpoint(controlDirectory, endpoint);
-            const client = new UnixSessionControlClient({ controlDirectory });
-            try {
-                await callback(client, session, rootDirectory);
-            } finally {
-                await server.stop();
-            }
-        },
-    );
-}
-
-test("client and server expose list, send, paste, and last as one-off operations", async () => {
-    await withControlServer(async (client, session) => {
-        assert.deepEqual(
-            (await client.list()).map((endpoint) => endpoint.sessionName),
-            ["build"],
+test("discovery preserves owner-only permissions and rejects ambiguous names", async () => {
+    await withDirectory(async (directory, root) => {
+        const endpoint = endpointFor(directory, sessionId, "build", root);
+        await publishSessionEndpoint(directory, endpoint);
+        assert.equal((await fs.stat(directory)).mode & 0o777, 0o700);
+        assert.equal(
+            (
+                await fs.stat(
+                    getSessionEndpointPaths(directory, sessionId).metadataPath,
+                )
+            ).mode & 0o777,
+            0o600,
         );
-        assert.deepEqual(
-            await client.send("build", {
-                message: "Review this",
-                sender: { sessionId, sessionName: "source" },
-            }),
-            { accepted: true },
-        );
-        assert.deepEqual(await client.paste("build", "draft text"), {
-            pasted: true,
+        const listed = await listSessionEndpoints(directory, {
+            cwd: root,
+            probe: async () => true,
         });
+        assert.deepEqual(resolveSessionTarget(listed, "build"), endpoint);
         assert.deepEqual(
-            await client.getLastMessage("build"),
-            session.lastMessage,
+            resolveSessionTarget(listed, sessionId.slice(-8)),
+            endpoint,
         );
-        assert.deepEqual(session.sent, [
-            {
-                message: "Review this",
-                sender: { sessionId, sessionName: "source" },
-            },
-        ]);
-        assert.deepEqual(session.pasted, ["draft text"]);
+        assert.throws(
+            () =>
+                resolveSessionTarget(
+                    [
+                        endpoint,
+                        {
+                            ...endpoint,
+                            sessionId: otherId,
+                            sessionName: sessionId.slice(-8),
+                        },
+                    ],
+                    sessionId.slice(-8),
+                ),
+            SessionTargetError,
+        );
+        assert.throws(
+            () =>
+                resolveSessionTarget(
+                    [endpoint, endpointFor(directory, otherId, "build", root)],
+                    "build",
+                ),
+            SessionTargetError,
+        );
     });
 });
 
-test("client rejects a mismatched response id", async () => {
-    await withTemporaryControlDirectory(
-        async (controlDirectory, rootDirectory) => {
-            await ensureSessionControlDirectory(controlDirectory);
-            const endpoint = endpointFor(
-                controlDirectory,
-                sessionId,
-                "build",
-                rootDirectory,
-            );
-            const server = await import("node:net").then(({ createServer }) =>
-                createServer((socket) => {
-                    socket.once("data", () => {
-                        socket.end(
-                            encodeJsonLine({
-                                id: "wrong-id",
-                                type: "response",
-                                success: true,
-                                data: { message: null },
-                            }),
-                        );
-                    });
-                }),
-            );
-            await new Promise<void>((resolve, reject) => {
-                server.once("error", reject);
-                server.listen(endpoint.socketPath, resolve);
-            });
-            await publishSessionEndpoint(controlDirectory, endpoint);
-            const client = new UnixSessionControlClient({ controlDirectory });
-            try {
-                await assert.rejects(
-                    client.getLastMessage("build"),
-                    (error: unknown) => {
-                        assert.ok(error instanceof ClientControlError);
-                        assert.equal(error.code, "protocol_error");
-                        return true;
-                    },
-                );
-            } finally {
-                await new Promise<void>((resolve) =>
-                    server.close(() => resolve()),
-                );
-            }
+test("external draft paste requests an immediate render", () => {
+    const calls: string[] = [];
+    pasteEditorDraft(
+        {
+            pasteToEditor: (text) => {
+                calls.push(`paste:${text}`);
+            },
+            setStatus: (key, text) => {
+                calls.push(`status:${key}:${String(text)}`);
+            },
         },
+        "draft",
+    );
+    assert.deepEqual(calls, [
+        "paste:draft",
+        "status:pontrol-paste-refresh:undefined",
+    ]);
+});
+
+class FakeSession implements ControlledSession {
+    readonly sent: SendOptions[] = [];
+    readonly pasted: string[] = [];
+    readonly runs = new Runs(sessionId, sessionId);
+    constructor(private readonly endpoint: SessionEndpoint) {}
+    describe(): SessionEndpoint {
+        return this.endpoint;
+    }
+    async send(options: SendOptions) {
+        if (options.draft) this.pasted.push(options.message);
+        else this.sent.push(options);
+        return { accepted: true as const, draft: options.draft === true };
+    }
+    run(id: string, options: SendOptions) {
+        return this.runs.start(id, options.message);
+    }
+    capture(run: string | undefined, _lines: number) {
+        return {
+            sessionId,
+            capturedAt: new Date().toISOString(),
+            state: this.runs.busy ? ("busy" as const) : ("idle" as const),
+            ...(run
+                ? this.runs.capture(run)
+                : { text: "Latest result", truncated: false }),
+        };
+    }
+    wait(run: string, signal: AbortSignal) {
+        return this.runs.wait(run, signal);
+    }
+}
+
+async function withServer(
+    callback: (
+        client: UnixSessionControlClient,
+        session: FakeSession,
+        root: string,
+        server: SessionControlServer,
+    ) => Promise<void>,
+): Promise<void> {
+    await withDirectory(async (directory, root) => {
+        await ensureSessionControlDirectory(directory);
+        const endpoint = endpointFor(directory, sessionId, "build", root);
+        const session = new FakeSession(endpoint);
+        const server = new SessionControlServer({
+            socketPath: endpoint.socketPath,
+            session,
+            maxConnections: 4,
+        });
+        await server.start();
+        await publishSessionEndpoint(directory, endpoint);
+        try {
+            await callback(
+                new UnixSessionControlClient({ controlDirectory: directory }),
+                session,
+                root,
+                server,
+            );
+        } finally {
+            await server.stop();
+        }
+    });
+}
+
+test("client and server capture sessions and runs and send drafts", async () => {
+    await withServer(async (client, session) => {
+        assert.equal((await client.list())[0].sessionName, "build");
+        assert.deepEqual(
+            await client.send("build", {
+                message: "Review",
+                sender: { sessionId },
+            }),
+            { accepted: true, draft: false },
+        );
+        assert.deepEqual(
+            await client.send("build", { message: "draft", draft: true }),
+            { accepted: true, draft: true },
+        );
+        assert.equal((await client.capture("build")).text, "Latest result");
+        const run = await client.run("build", { message: "task" });
+        assert.equal(
+            (await client.capture(run.handle, { run: true })).run?.handle,
+            run.handle,
+        );
+        assert.deepEqual(session.pasted, ["draft"]);
+    });
+});
+
+test("wait recovers after timeout or interruption without cancelling work", async () => {
+    await withServer(async (client, session) => {
+        const run = await client.run("build", { message: "task" });
+        await assert.rejects(
+            client.run("build", { message: "competing" }),
+            ServerControlError,
+        );
+        await assert.rejects(
+            client.wait(run.handle, { timeoutMs: 20 }),
+            (error: unknown) =>
+                error instanceof ClientControlError && error.code === "timeout",
+        );
+        assert.equal(session.runs.busy, true);
+        const controller = new AbortController();
+        const abandoned = client.wait(run.handle, {
+            signal: controller.signal,
+        });
+        controller.abort(new Error("stop waiting"));
+        await assert.rejects(abandoned, /stop waiting/);
+        assert.equal((await client.capture("build")).state, "busy");
+        session.runs.update("completed output", false);
+        session.runs.finish("completed");
+        assert.equal((await client.wait(run.handle)).status, "completed");
+        assert.equal(
+            (await client.capture(run.handle, { run: true })).text,
+            "completed output",
+        );
+        assert.equal((await client.wait(run.handle)).status, "completed");
+    });
+});
+
+test("multiple acknowledged waits do not block capture or send", async () => {
+    await withServer(async (client, session) => {
+        const run = await client.run("build", { message: "task" });
+        const controller = new AbortController();
+        const waiting = [];
+        for (let i = 0; i < 8; i++) {
+            const pending = client.wait(run.handle, {
+                signal: controller.signal,
+            });
+            void pending.catch(() => {});
+            waiting.push(pending);
+            await client.capture("build");
+        }
+        await client.send("build", { message: "input" });
+        session.runs.finish("completed");
+        assert.ok(
+            (await Promise.all(waiting)).every(
+                (result) => result.status === "completed",
+            ),
+        );
+    });
+});
+
+test("run results distinguish failure, abortion, expiry, and server replacement", async () => {
+    await withServer(async (client, session) => {
+        const failed = await client.run("build", { message: "task" });
+        session.runs.finish("failed", "provider failed");
+        assert.equal(
+            (await client.wait(failed.handle)).error,
+            "provider failed",
+        );
+        const aborted = await client.run("build", { message: "task" });
+        session.runs.finish("aborted");
+        assert.equal((await client.wait(aborted.handle)).status, "aborted");
+        for (let i = 0; i < 65; i++) {
+            session.runs.start("extra-" + i, "task");
+            session.runs.finish("completed");
+        }
+        await assert.rejects(client.wait(failed.handle), /expired/);
+        assert.throws(
+            () => new Runs(sessionId, otherId).capture(aborted.handle),
+            /another session or server instance/,
+        );
+    });
+});
+
+test("capture excludes hidden reasoning and includes visible tool activity", () => {
+    const text = visibleMessageText({
+        role: "assistant",
+        content: [
+            { type: "thinking", thinking: "secret reasoning" },
+            { type: "text", text: "answer" },
+            { type: "toolCall", name: "read", arguments: { private: "args" } },
+        ],
+    });
+    assert.match(text, /answer/);
+    assert.match(text, /tool: read/);
+    assert.doesNotMatch(text, /secret reasoning|private/);
+    assert.equal(
+        visibleMessageText({ role: "system", content: "system prompt" }),
+        "",
     );
 });
 
-type CliResult = { code: number | null; stdout: string; stderr: string };
+test("client rejects mismatched response IDs and reports server disconnection", async () => {
+    await withDirectory(async (directory, root) => {
+        await ensureSessionControlDirectory(directory);
+        const endpoint = endpointFor(directory, sessionId, "build", root);
+        const server = net.createServer((socket) =>
+            socket.once("data", () =>
+                socket.end(
+                    encodeJsonLine({
+                        id: "wrong-id",
+                        type: "response",
+                        success: true,
+                        data: {},
+                    }),
+                ),
+            ),
+        );
+        await new Promise<void>((resolve) =>
+            server.listen(endpoint.socketPath, resolve),
+        );
+        await publishSessionEndpoint(directory, endpoint);
+        try {
+            await assert.rejects(
+                new UnixSessionControlClient({
+                    controlDirectory: directory,
+                }).capture("build"),
+                (error: unknown) =>
+                    error instanceof ClientControlError &&
+                    error.code === "protocol_error",
+            );
+        } finally {
+            await new Promise<void>((resolve) => server.close(() => resolve()));
+        }
+    });
+    await withServer(async (client, _session, _root, server) => {
+        const run = await client.run("build", { message: "task" });
+        const waiting = client.wait(run.handle);
+        const rejection = assert.rejects(waiting, ClientControlError);
+        await client.capture("build");
+        await server.stop();
+        await rejection;
+    });
+});
 
-async function runControlCli(
-    agentDirectory: string,
+type CliResult = { code: number | null; stdout: string; stderr: string };
+async function cli(
+    root: string,
     args: string[],
     stdin?: string,
 ): Promise<CliResult> {
-    return await new Promise<CliResult>((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
         const child = spawn(
             process.execPath,
-            ["--import", "tsx", "scripts/pcontrol.ts", ...args],
+            ["--import", "tsx", "scripts/pontrol.ts", ...args],
             {
-                cwd: process.cwd(),
                 env: {
                     ...process.env,
-                    PI_CODING_AGENT_DIR: agentDirectory,
+                    PI_CODING_AGENT_DIR: root,
                     PI_SESSION_ID: "",
                 },
                 stdio: ["pipe", "pipe", "pipe"],
             },
         );
-        let stdout = "";
-        let stderr = "";
+        let stdout = "",
+            stderr = "";
         child.stdout.setEncoding("utf8").on("data", (chunk: string) => {
             stdout += chunk;
         });
@@ -384,55 +459,298 @@ async function runControlCli(
     });
 }
 
-test("CLI exposes only asynchronous text bridge commands", async () => {
-    await withControlServer(async (_client, session, rootDirectory) => {
-        const help = await runControlCli(rootDirectory, ["--help"]);
-        assert.equal(help.code, 0);
-        assert.match(help.stdout, /pcontrol paste TARGET/u);
-        assert.doesNotMatch(help.stdout, /watch|wait|summary|abort|clear/u);
-
-        const listed = await runControlCli(rootDirectory, ["list", "--json"]);
-        assert.equal(listed.code, 0, listed.stderr);
-        assert.equal(
-            (JSON.parse(listed.stdout) as SessionEndpoint[])[0].sessionName,
-            "build",
+test("CLI uses positional text, stdin drafts, and explicit run capture", async () => {
+    await withServer(async (_client, session, root) => {
+        assert.match(
+            (await cli(root, ["--help"])).stdout,
+            /pontrol capture --run RUN/u,
         );
-
-        const sent = await runControlCli(
-            rootDirectory,
-            ["send", "build", "--stdin", "--json"],
+        assert.equal((await cli(root, ["list", "--json"])).code, 0);
+        const sent = await cli(root, [
+            "send",
+            "build",
             "message text",
-        );
-        assert.equal(sent.code, 0, sent.stderr);
-        assert.deepEqual(JSON.parse(sent.stdout), { accepted: true });
-
-        const pasted = await runControlCli(
-            rootDirectory,
-            ["paste", "build", "--stdin", "--json"],
-            "draft text",
-        );
-        assert.equal(pasted.code, 0, pasted.stderr);
-        assert.deepEqual(JSON.parse(pasted.stdout), { pasted: true });
-
-        const last = await runControlCli(rootDirectory, [
-            "last",
-            "build",
             "--json",
         ]);
-        assert.equal(last.code, 0, last.stderr);
+        assert.equal(sent.code, 0, sent.stderr);
+        assert.deepEqual(JSON.parse(sent.stdout), {
+            accepted: true,
+            draft: false,
+        });
+        const drafted = await cli(
+            root,
+            ["send", "build", "--draft", "--stdin", "--json"],
+            "draft text",
+        );
+        assert.equal(drafted.code, 0, drafted.stderr);
+        assert.deepEqual(session.pasted, ["draft text"]);
         assert.equal(
-            (JSON.parse(last.stdout) as { text: string }).text,
+            JSON.parse((await cli(root, ["capture", "build", "--json"])).stdout)
+                .text,
             "Latest result",
         );
-        assert.deepEqual(
-            session.sent.map((item) => item.message),
-            ["message text"],
-        );
-        assert.deepEqual(session.pasted, ["draft text"]);
-
+        const run = await cli(root, ["run", "build", "task"]);
+        assert.equal(run.code, 0, run.stderr);
+        const scoped = await cli(root, [
+            "capture",
+            "--run",
+            run.stdout.trim(),
+            "--json",
+        ]);
+        assert.equal(scoped.code, 0, scoped.stderr);
+        assert.equal(JSON.parse(scoped.stdout).run.handle, run.stdout.trim());
         assert.equal(
-            (await runControlCli(rootDirectory, ["watch", "build"])).code,
+            (await cli(root, ["capture", "build", "--run", run.stdout.trim()]))
+                .code,
             2,
         );
+        assert.equal(
+            (await cli(root, ["send", "build", "text", "--stdin"], "other"))
+                .code,
+            2,
+        );
+        assert.equal(
+            (await cli(root, ["send", "build", "--", "--literal"])).code,
+            0,
+        );
+        assert.equal(
+            (await cli(root, ["wait", run.stdout.trim(), "--for", "10ms"]))
+                .code,
+            124,
+        );
+        session.runs.finish("failed", "failure");
+        assert.equal((await cli(root, ["wait", run.stdout.trim()])).code, 1);
+    });
+});
+
+test("Pi lifecycle correlates runs, captures partial output, and survives client reconnects", async () => {
+    const { SessionManager } = await import("@earendil-works/pi-coding-agent");
+    const { default: extension } = await import("./index.ts");
+    await withDirectory(async (_directory, root) => {
+        const previousDir = process.env.PI_CODING_AGENT_DIR;
+        const previousId = process.env.PI_SESSION_ID;
+        process.env.PI_CODING_AGENT_DIR = root;
+        const handlers = new Map<string, (...args: any[]) => any>();
+        const manager = SessionManager.create(
+            root,
+            path.join(root, "sessions"),
+        );
+        let idle = true;
+        let editor: string | undefined = "";
+        let submitted: any;
+        const pi = {
+            registerFlag() {},
+            registerMessageRenderer() {},
+            getFlag() {
+                return false;
+            },
+            on(name: string, handler: (...args: any[]) => any) {
+                handlers.set(name, handler);
+            },
+            sendMessage(message: any) {
+                manager.appendCustomMessageEntry(
+                    message.customType,
+                    message.content,
+                    message.display,
+                    message.details,
+                );
+                submitted = {
+                    ...message,
+                    role: "custom",
+                    timestamp: Date.parse(manager.getLeafEntry()!.timestamp),
+                };
+            },
+        };
+        const ctx = {
+            cwd: root,
+            mode: "tui",
+            hasUI: true,
+            sessionManager: manager,
+            isIdle: () => idle,
+            ui: {
+                getEditorText: () => editor,
+                pasteToEditor: (text: string) => {
+                    editor += text;
+                },
+                setStatus() {},
+                notify(message: string) {
+                    assert.fail(message);
+                },
+            },
+        };
+        const emit = (name: string, event: unknown = {}) =>
+            handlers.get(name)!(event, ctx);
+        await extension(pi as unknown as Parameters<typeof extension>[0]);
+        try {
+            await emit("session_start");
+            const client = new UnixSessionControlClient({
+                controlDirectory: path.join(root, "session-control"),
+            });
+            const target = manager.getSessionId();
+            assert.equal((await client.capture(target)).text, "");
+            await client.send(target, { message: "draft", draft: true });
+            assert.equal(editor, "draft");
+            editor = undefined;
+            await assert.rejects(
+                client.send(target, {
+                    message: "unavailable draft",
+                    draft: true,
+                }),
+                /unavailable/,
+            );
+            for (const outcome of ["completed", "error", "aborted"] as const) {
+                const run = await client.run(target, {
+                    message: "task " + outcome,
+                });
+                await assert.rejects(
+                    client.run(target, { message: "overlap" }),
+                    /active run/,
+                );
+                assert.doesNotMatch(
+                    (await client.capture(run.handle, { run: true })).text,
+                    /partial /,
+                );
+                await emit("before_agent_start", {
+                    messageType: "custom",
+                    message: submitted,
+                });
+                idle = false;
+                await emit("agent_start");
+                const assistant = {
+                    role: "assistant" as const,
+                    content: [
+                        {
+                            type: "thinking" as const,
+                            thinking: "hidden reasoning",
+                        },
+                        { type: "text" as const, text: "partial " + outcome },
+                    ],
+                    api: "openai-responses" as const,
+                    provider: "openai",
+                    model: "test",
+                    usage: {
+                        input: 0,
+                        output: 0,
+                        cacheRead: 0,
+                        cacheWrite: 0,
+                        totalTokens: 0,
+                        cost: {
+                            input: 0,
+                            output: 0,
+                            cacheRead: 0,
+                            cacheWrite: 0,
+                            total: 0,
+                        },
+                    },
+                    timestamp: Date.now(),
+                    stopReason:
+                        outcome === "error"
+                            ? ("error" as const)
+                            : ("stop" as const),
+                    ...(outcome === "error"
+                        ? { errorMessage: "provider failed" }
+                        : {}),
+                };
+                await emit("message_update", { message: assistant });
+                const partial = await client.capture(run.handle, { run: true });
+                assert.match(partial.text, new RegExp("partial " + outcome));
+                assert.doesNotMatch(
+                    partial.text,
+                    /hidden reasoning|sender_info/,
+                );
+                assert.equal(partial.run?.status, "running");
+                assert.equal(partial.state, "busy");
+                manager.appendMessage(assistant);
+                await emit("message_end", { message: assistant });
+                await emit("agent_before_settle", { outcome });
+                idle = true;
+                await emit("agent_settled", { aborted: outcome === "aborted" });
+                const result = await client.wait(run.handle);
+                assert.equal(
+                    result.status,
+                    outcome === "error" ? "failed" : outcome,
+                );
+                if (outcome === "error")
+                    assert.equal(result.error, "provider failed");
+                const captured = await client.capture(run.handle, {
+                    run: true,
+                });
+                assert.equal(
+                    (captured.text.match(/partial /gu) ?? []).length,
+                    1,
+                );
+                assert.equal(captured.state, "idle");
+                if (outcome === "aborted") {
+                    await emit("session_start");
+                    await assert.rejects(
+                        client.wait(run.handle),
+                        /another session or server instance/,
+                    );
+                }
+            }
+        } finally {
+            await emit("session_shutdown");
+            if (previousDir === undefined)
+                delete process.env.PI_CODING_AGENT_DIR;
+            else process.env.PI_CODING_AGENT_DIR = previousDir;
+            if (previousId === undefined) delete process.env.PI_SESSION_ID;
+            else process.env.PI_SESSION_ID = previousId;
+        }
+    });
+});
+
+test("framing rejects malformed, oversized, and incomplete records", () => {
+    protocolError(
+        () => new JsonLineDecoder().push(Buffer.from("not-json\n")),
+        "malformed_json",
+    );
+    protocolError(
+        () =>
+            new JsonLineDecoder().push(
+                Buffer.alloc(MAX_RECORD_BYTES + 2, 0x78),
+            ),
+        "record_too_large",
+    );
+    const partial = new JsonLineDecoder();
+    partial.push(Buffer.from('{"id":'));
+    protocolError(() => partial.finish(), "malformed_json");
+    for (const sender of [
+        { sessionId: "invalid" },
+        { sessionId, extra: true },
+        { sessionId, sessionName: " " },
+    ]) {
+        protocolError(() =>
+            validateControlRequest({
+                id: "s",
+                type: "send",
+                message: "ok",
+                sender,
+            }),
+        );
+    }
+});
+
+test("discovery ignores malformed metadata and removes stale endpoints", async () => {
+    await withDirectory(async (directory, root) => {
+        const endpoint = endpointFor(directory, sessionId, "build", root);
+        await publishSessionEndpoint(directory, endpoint);
+        const metadata = getSessionEndpointPaths(
+            directory,
+            sessionId,
+        ).metadataPath;
+        await fs.writeFile(
+            metadata,
+            JSON.stringify({ ...endpoint, socketPath: "/unexpected/socket" }),
+        );
+        assert.deepEqual(
+            await listSessionEndpoints(directory, { probe: async () => true }),
+            [],
+        );
+        await publishSessionEndpoint(directory, endpoint);
+        assert.deepEqual(
+            await listSessionEndpoints(directory, { probe: async () => false }),
+            [],
+        );
+        await assert.rejects(fs.stat(metadata), { code: "ENOENT" });
     });
 });

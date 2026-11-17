@@ -6,13 +6,13 @@
 }:
 let
   cfg = config.programs.my-pi;
-  pcommitModelFlags = lib.escapeShellArgs [
+  pommitModelFlags = lib.escapeShellArgs [
     "--provider"
-    cfg.pcommit.provider
+    cfg.pommit.provider
     "--model"
-    cfg.pcommit.model
+    cfg.pommit.model
     "--thinking"
-    cfg.pcommit.thinking
+    cfg.pommit.thinking
   ];
   runtimeEnvironment = ''
     export CIRCE_API_KEY="$(${pkgs.coreutils}/bin/cat ${config.age.secrets."circe-api-key".path})"
@@ -47,18 +47,18 @@ in
     ''
   ))
 ]
-++ lib.optional cfg.pcontrol.enable (
-  pkgs.writeShellScriptBin "pcontrol" ''
+++ lib.optional cfg.pontrol.enable (
+  pkgs.writeShellScriptBin "pontrol" ''
     set -euo pipefail
     export PI_CODING_AGENT_DIR="${configDir}"
     exec ${lib.getExe pkgs.nodejs} ${
-      pkgs.runCommand "pcontrol.mjs" { nativeBuildInputs = [ pkgs.esbuild ]; } ''
+      pkgs.runCommand "pontrol.mjs" { nativeBuildInputs = [ pkgs.esbuild ]; } ''
         mkdir -p source/scripts source/extensions/control
-        cp ${./scripts/pcontrol.ts} source/scripts/pcontrol.ts
+        cp ${./scripts/pontrol.ts} source/scripts/pontrol.ts
         cp ${./extensions/control/client.ts} source/extensions/control/client.ts
         cp ${./extensions/control/discovery.ts} source/extensions/control/discovery.ts
         cp ${./extensions/control/protocol.ts} source/extensions/control/protocol.ts
-        esbuild source/scripts/pcontrol.ts \
+        esbuild source/scripts/pontrol.ts \
           --bundle \
           --platform=node \
           --format=esm \
@@ -67,24 +67,24 @@ in
     } "$@"
   ''
 )
-++ lib.optional cfg.pcommit.enable (
-  pkgs.writeShellScriptBin "pcommit" ''
+++ lib.optional cfg.pommit.enable (
+  pkgs.writeShellScriptBin "pommit" ''
     set -euo pipefail
     ${runtimeEnvironment}
-    message_file="$(${pkgs.coreutils}/bin/mktemp -t pcommit-message.XXXXXX)"
+    message_file="$(${pkgs.coreutils}/bin/mktemp -t pommit-message.XXXXXX)"
     trap '${pkgs.coreutils}/bin/rm -f "$message_file"' EXIT
     # Pi's custom boolean flag parser consumes a following positional value,
-    # so the print-mode prompt must precede --pcommit.
+    # so the print-mode prompt must precede --pommit.
     if [ "$#" -gt 0 ]; then
-      message="$(${lib.getExe pkgs.llm-agents.pi} ${pcommitModelFlags} --no-session --print \
+      message="$(${lib.getExe pkgs.llm-agents.pi} ${pommitModelFlags} --no-session --print \
         "Inspect the staged changes and generate their Git commit message." \
-        --pcommit --pcommit-hint "$*")"
+        --pommit --pommit-hint "$*")"
     else
-      message="$(${lib.getExe pkgs.llm-agents.pi} ${pcommitModelFlags} --no-session --print \
-        "Inspect the staged changes and generate their Git commit message." --pcommit)"
+      message="$(${lib.getExe pkgs.llm-agents.pi} ${pommitModelFlags} --no-session --print \
+        "Inspect the staged changes and generate their Git commit message." --pommit)"
     fi
     if [ -z "$message" ]; then
-      echo "pcommit: the agent returned an empty commit message" >&2
+      echo "pommit: the agent returned an empty commit message" >&2
       exit 1
     fi
     printf '%s\n' "$message" > "$message_file"

@@ -38,7 +38,7 @@
         "^(sudo\\s+)?bat(\\s|$)"
         "(?i)^clear(\\s|$)"
         "^open(\\s|$)"
-        "^pcommit(\\s|$)"
+        "^pommit(\\s|$)"
         "^nvim\\s*$"
         "^tldr\\s+"
         "^atuin\\s+key\\s*$"

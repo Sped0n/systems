@@ -3,32 +3,32 @@ import type {
     ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
 
-const PCOMMIT_ACTIVITY_CHARACTERS_MAX = 120;
+const POMMIT_ACTIVITY_CHARACTERS_MAX = 120;
 
-function formatPcommitActivityValue(value: unknown): string {
+function formatPommitActivityValue(value: unknown): string {
     const singleLine =
         typeof value === "string" ? value.replace(/\s+/gu, " ").trim() : "";
     if (!singleLine) return "...";
-    if (singleLine.length <= PCOMMIT_ACTIVITY_CHARACTERS_MAX) return singleLine;
-    return `${singleLine.slice(0, PCOMMIT_ACTIVITY_CHARACTERS_MAX - 3)}...`;
+    if (singleLine.length <= POMMIT_ACTIVITY_CHARACTERS_MAX) return singleLine;
+    return `${singleLine.slice(0, POMMIT_ACTIVITY_CHARACTERS_MAX - 3)}...`;
 }
 
-export function formatPcommitToolActivity(
+export function formatPommitToolActivity(
     toolName: string,
     args: Record<string, unknown>,
 ): string {
     if (toolName === "read")
-        return `→ read ${formatPcommitActivityValue(args.path)}`;
+        return `→ read ${formatPommitActivityValue(args.path)}`;
     if (toolName === "rogt")
-        return `→ rogt ${formatPcommitActivityValue(args.operation)}`;
+        return `→ rogt ${formatPommitActivityValue(args.operation)}`;
     if (toolName === "grep")
-        return `→ grep ${formatPcommitActivityValue(args.pattern)}`;
+        return `→ grep ${formatPommitActivityValue(args.pattern)}`;
     if (toolName === "find" || toolName === "ls")
-        return `→ ${toolName} ${formatPcommitActivityValue(args.path ?? args.pattern)}`;
-    return `→ ${formatPcommitActivityValue(toolName)}`;
+        return `→ ${toolName} ${formatPommitActivityValue(args.path ?? args.pattern)}`;
+    return `→ ${formatPommitActivityValue(toolName)}`;
 }
 
-export function buildPcommitSystemPrompt(hint: string): string {
+export function buildPommitSystemPrompt(hint: string): string {
     return [
         "You write accurate Git commit messages for staged changes.",
         "Use rogt to inspect Git status, recent commit style, and staged diffs before answering.",
@@ -65,17 +65,17 @@ async function git(
 }
 
 function printAfterShutdown(message: string): void {
-    process.once("exit", () => process.stderr.write(`pcommit: ${message}\n`));
+    process.once("exit", () => process.stderr.write(`pommit: ${message}\n`));
     process.exitCode = 1;
 }
 
-export default function pcommit(pi: ExtensionAPI): void {
-    pi.registerFlag("pcommit", {
+export default function pommit(pi: ExtensionAPI): void {
+    pi.registerFlag("pommit", {
         description: "Generate a staged commit message in a headless session",
         type: "boolean",
         default: false,
     });
-    pi.registerFlag("pcommit-hint", {
+    pi.registerFlag("pommit-hint", {
         description: "Optional guidance for the generated commit message",
         type: "string",
     });
@@ -91,16 +91,16 @@ export default function pcommit(pi: ExtensionAPI): void {
 
     pi.on("before_agent_start", async (event) => {
         if (!active) return;
-        const hint = String(pi.getFlag("pcommit-hint") ?? "").trim();
+        const hint = String(pi.getFlag("pommit-hint") ?? "").trim();
         return {
-            systemPrompt: `${event.systemPrompt}\n\n${buildPcommitSystemPrompt(hint)}`,
+            systemPrompt: `${event.systemPrompt}\n\n${buildPommitSystemPrompt(hint)}`,
         };
     });
 
     pi.on("tool_execution_start", async (event) => {
         if (!active) return;
         process.stderr.write(
-            `pcommit: ${formatPcommitToolActivity(event.toolName, event.args)}\n`,
+            `pommit: ${formatPommitToolActivity(event.toolName, event.args)}\n`,
         );
     });
 
@@ -109,15 +109,15 @@ export default function pcommit(pi: ExtensionAPI): void {
         const updateType = event.assistantMessageEvent.type;
         if (updateType !== "text_start" && updateType !== "text_delta") return;
         writingMessageAnnounced = true;
-        process.stderr.write("pcommit: writing commit message…\n");
+        process.stderr.write("pommit: writing commit message…\n");
     });
 
     pi.on("session_start", async (_event, ctx) => {
-        if (pi.getFlag("pcommit") !== true) return;
+        if (pi.getFlag("pommit") !== true) return;
         try {
             if (!hasNoSessionFlag(process.argv))
-                throw new Error("--pcommit requires --no-session");
-            if (ctx.hasUI) throw new Error("--pcommit requires --print");
+                throw new Error("--pommit requires --no-session");
+            if (ctx.hasUI) throw new Error("--pommit requires --print");
             await git(pi, ctx.cwd, ["rev-parse", "--is-inside-work-tree"]);
             const staged = await pi.exec(
                 "git",

@@ -15,6 +15,7 @@ const ISO_TIMESTAMP_PATTERN =
 
 export type SessionEndpoint = {
     sessionId: string;
+    instanceId: string;
     sessionName?: string;
     cwd: string;
     mode: "tui" | "rpc";
@@ -29,25 +30,63 @@ export type SenderMetadata = {
     sessionName?: string;
 };
 
-export type SendRequest = {
-    id: string;
-    type: "send";
+export type SendOptions = {
     message: string;
+    draft?: boolean;
     sender?: SenderMetadata;
 };
-
-export type PasteRequest = {
-    id: string;
-    type: "paste";
+export type ControlRequest =
+    | ({ id: string; type: "send" } & SendOptions)
+    | { id: string; type: "run"; message: string; sender?: SenderMetadata }
+    | { id: string; type: "capture"; run?: string; lines: number }
+    | { id: string; type: "wait"; run: string };
+export type RunStatus =
+    | "starting"
+    | "running"
+    | "completed"
+    | "failed"
+    | "aborted";
+export type RunResult = {
+    handle: string;
+    status: RunStatus;
+    startedAt: string;
+    finishedAt?: string;
+    error?: string;
+};
+export type CaptureResult = {
+    sessionId: string;
+    state: "idle" | "busy";
+    capturedAt: string;
     text: string;
+    truncated: boolean;
+    run?: RunResult;
 };
-
-export type LastMessageRequest = {
+export type SendResult = { accepted: true; draft: boolean };
+export type WaitAccepted = { id: string; type: "accepted" };
+export function makeRunHandle(
+    sessionId: string,
+    instanceId: string,
+    id: string,
+): string {
+    return `run:${sessionId}:${instanceId}:${id}`;
+}
+export function parseRunHandle(value: unknown): {
+    sessionId: string;
+    instanceId: string;
     id: string;
-    type: "last_message";
-};
-
-export type ControlRequest = SendRequest | PasteRequest | LastMessageRequest;
+} {
+    const parts = typeof value === "string" ? value.split(":") : [];
+    if (
+        parts.length !== 4 ||
+        parts[0] !== "run" ||
+        !isValidSessionId(parts[1]) ||
+        !isValidSessionId(parts[2]) ||
+        !isValidRequestId(parts[3])
+    ) {
+        throw new ControlProtocolError("invalid_record", "Invalid run handle");
+    }
+    return { sessionId: parts[1], instanceId: parts[2], id: parts[3] };
+}
 
 export type ControlError = {
     code: string;
@@ -60,25 +99,6 @@ export type ControlResponse = {
     success: boolean;
     data?: unknown;
     error?: ControlError;
-};
-
-export type AssistantResult = {
-    text: string;
-    timestamp: number;
-    messageId?: string;
-};
-
-export type SendOptions = {
-    message: string;
-    sender?: SenderMetadata;
-};
-
-export type SendResult = {
-    accepted: true;
-};
-
-export type PasteResult = {
-    pasted: true;
 };
 
 export type ControlProtocolErrorCode =
@@ -202,17 +222,37 @@ export function validateControlRequest(value: unknown): ControlRequest {
     }
 
     switch (value.type) {
-        case "last_message":
-            assertExactFields(value, ["id", "type"]);
+        case "capture":
+            assertExactFields(value, ["id", "type", "lines"], ["run"]);
+            if (
+                !Number.isSafeInteger(value.lines) ||
+                (value.lines as number) < 1 ||
+                (value.lines as number) > 1000
+            )
+                throw new ControlProtocolError(
+                    "invalid_record",
+                    "Capture lines must be between 1 and 1000",
+                );
+            if (value.run !== undefined) parseRunHandle(value.run);
             break;
+        case "wait":
+            assertExactFields(value, ["id", "type", "run"]);
+            parseRunHandle(value.run);
+            break;
+        case "run":
         case "send":
-            assertExactFields(value, ["id", "type", "message"], ["sender"]);
-            assertNonEmptyText(value.message, "Send message");
+            assertExactFields(
+                value,
+                ["id", "type", "message"],
+                value.type === "send" ? ["sender", "draft"] : ["sender"],
+            );
+            assertNonEmptyText(value.message, "Message");
             if (value.sender !== undefined) assertSenderMetadata(value.sender);
-            break;
-        case "paste":
-            assertExactFields(value, ["id", "type", "text"]);
-            assertNonEmptyText(value.text, "Paste text");
+            if (value.draft !== undefined && typeof value.draft !== "boolean")
+                throw new ControlProtocolError(
+                    "invalid_record",
+                    "Draft must be boolean",
+                );
             break;
         default:
             throw new ControlProtocolError(
@@ -277,9 +317,19 @@ export function validateControlResponse(value: unknown): ControlResponse {
 /** Validate endpoint metadata read from the local discovery directory. */
 export function validateSessionEndpoint(value: unknown): SessionEndpoint {
     assertObject(value, "Session endpoint");
+    assertSessionId(value.instanceId);
     assertExactFields(
         value,
-        ["sessionId", "cwd", "mode", "pid", "state", "startedAt", "socketPath"],
+        [
+            "sessionId",
+            "instanceId",
+            "cwd",
+            "mode",
+            "pid",
+            "state",
+            "startedAt",
+            "socketPath",
+        ],
         ["sessionName"],
     );
     assertSessionId(value.sessionId);

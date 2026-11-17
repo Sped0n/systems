@@ -187,7 +187,7 @@ export default function rogt(pi: ExtensionAPI): void {
     pi.registerTool({
         name: "rogt",
         label: "Read-only Git",
-        // Review and pcommit opt in through setActiveTools; ordinary sessions
+        // Review and pommit opt in through setActiveTools; ordinary sessions
         // must not expose this tool directly or through codemode.
         defaultActive: false,
         description:

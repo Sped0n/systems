@@ -2,16 +2,17 @@ import { promises as fs } from "node:fs";
 import * as net from "node:net";
 
 import { setSessionSocketPermissions } from "./discovery.ts";
+import { RunError } from "./runs.ts";
 import {
     ControlProtocolError,
     JsonLineDecoder,
     encodeJsonLine,
     isValidRequestId,
     validateControlRequest,
-    type AssistantResult,
+    type CaptureResult,
+    type RunResult,
     type ControlRequest,
     type ControlResponse,
-    type PasteResult,
     type SendOptions,
     type SendResult,
     type SessionEndpoint,
@@ -22,9 +23,13 @@ const DEFAULT_MAX_CONNECTIONS = 16;
 
 export interface ControlledSession {
     describe(): SessionEndpoint;
-    send(options: SendOptions): Promise<SendResult>;
-    paste(text: string): Promise<PasteResult>;
-    getLastMessage(): AssistantResult | null;
+    send(options: SendOptions): SendResult | Promise<SendResult>;
+    run(id: string, options: SendOptions): RunResult | Promise<RunResult>;
+    capture(
+        run: string | undefined,
+        lines: number,
+    ): CaptureResult | Promise<CaptureResult>;
+    wait(run: string, signal: AbortSignal): Promise<RunResult>;
 }
 
 export class ControlledSessionError extends Error {
@@ -42,12 +47,15 @@ export type SessionControlServerOptions = {
     session: ControlledSession;
     connectionIdleTimeoutMs?: number;
     maxConnections?: number;
+    maxWaiters?: number;
 };
 
 type ConnectionState = {
     socket: net.Socket;
     writer: SocketRecordWriter;
     requestId?: string;
+    waiting: boolean;
+    controller: AbortController;
 };
 
 /** One-request local JSONL server for a controlled Pi session. */
@@ -56,6 +64,7 @@ export class SessionControlServer {
     private readonly session: ControlledSession;
     private readonly connectionIdleTimeoutMs: number;
     private readonly maxConnections: number;
+    private readonly maxWaiters: number;
     private readonly connections = new Map<net.Socket, ConnectionState>();
     private server?: net.Server;
     private stopping = false;
@@ -67,6 +76,7 @@ export class SessionControlServer {
             options.connectionIdleTimeoutMs ??
             DEFAULT_CONNECTION_IDLE_TIMEOUT_MS;
         this.maxConnections = options.maxConnections ?? DEFAULT_MAX_CONNECTIONS;
+        this.maxWaiters = options.maxWaiters ?? 64;
         if (
             !Number.isSafeInteger(this.maxConnections) ||
             this.maxConnections <= 0
@@ -124,20 +134,25 @@ export class SessionControlServer {
             server.close(() => resolve()),
         );
         for (const connection of this.connections.values()) {
-            connection.socket.end();
+            connection.socket.destroy();
         }
         await closed;
         await fs.rm(this.socketPath, { force: true });
     }
 
     private accept(socket: net.Socket): void {
-        if (this.stopping || this.connections.size >= this.maxConnections) {
+        const ordinary = [...this.connections.values()].filter(
+            (connection) => !connection.waiting,
+        ).length;
+        if (this.stopping || ordinary >= this.maxConnections) {
             socket.destroy();
             return;
         }
         const state: ConnectionState = {
             socket,
             writer: new SocketRecordWriter(socket),
+            waiting: false,
+            controller: new AbortController(),
         };
         this.connections.set(socket, state);
         socket.setTimeout(this.connectionIdleTimeoutMs, () => socket.destroy());
@@ -179,7 +194,13 @@ export class SessionControlServer {
                 ).finally(() => socket.end());
             }
         });
-        socket.once("close", () => this.connections.delete(socket));
+        socket.once("close", () => {
+            this.connections.delete(socket);
+            state.controller.abort(new Error("Client disconnected"));
+        });
+        socket.once("end", () =>
+            state.controller.abort(new Error("Client disconnected")),
+        );
         socket.once("error", () => {});
     }
 
@@ -189,36 +210,73 @@ export class SessionControlServer {
     ): Promise<void> {
         try {
             switch (request.type) {
-                case "last_message":
-                    await this.writeSuccess(connection, request.id, {
-                        message: this.session.getLastMessage(),
-                    });
-                    break;
                 case "send":
                     await this.writeSuccess(
                         connection,
                         request.id,
                         await this.session.send({
                             message: request.message,
-                            ...(request.sender === undefined
-                                ? {}
-                                : { sender: request.sender }),
+                            sender: request.sender,
+                            draft: request.draft,
                         }),
                     );
                     break;
-                case "paste":
+                case "run":
                     await this.writeSuccess(
                         connection,
                         request.id,
-                        await this.session.paste(request.text),
+                        await this.session.run(request.id, {
+                            message: request.message,
+                            sender: request.sender,
+                        }),
                     );
                     break;
+                case "capture":
+                    await this.writeSuccess(
+                        connection,
+                        request.id,
+                        await this.session.capture(request.run, request.lines),
+                    );
+                    break;
+                case "wait": {
+                    if (
+                        [...this.connections.values()].filter(
+                            (state) => state.waiting,
+                        ).length >= this.maxWaiters
+                    )
+                        throw new ControlledSessionError(
+                            "too_many_waiters",
+                            "Too many waiting clients",
+                        );
+                    const pending = this.session.wait(
+                        request.run,
+                        connection.controller.signal,
+                    );
+                    connection.waiting = true;
+                    const result = pending.then(
+                        (data) => ({ data }),
+                        (error: unknown) => ({ error }),
+                    );
+                    await connection.writer.write({
+                        id: request.id,
+                        type: "accepted",
+                    });
+                    const settled = await result;
+                    if ("error" in settled) throw settled.error;
+                    await this.writeSuccess(
+                        connection,
+                        request.id,
+                        settled.data,
+                    );
+                    break;
+                }
             }
         } catch (error) {
             await this.writeError(
                 connection,
                 request.id,
-                error instanceof ControlledSessionError
+                error instanceof ControlledSessionError ||
+                    error instanceof RunError
                     ? error.code
                     : "operation_rejected",
                 error instanceof Error

@@ -1,3 +1,10 @@
+import { randomUUID } from "node:crypto";
+import {
+    CAPTURE_CHAR_LIMIT,
+    RunError,
+    Runs,
+    visibleMessageText,
+} from "./runs.ts";
 import type {
     ExtensionAPI,
     ExtensionContext,
@@ -18,7 +25,8 @@ import {
 } from "./discovery.ts";
 import {
     shortSessionId,
-    type AssistantResult,
+    type CaptureResult,
+    type SenderMetadata,
     type SendOptions,
     type SessionEndpoint,
 } from "./protocol.ts";
@@ -31,6 +39,10 @@ interface RuntimeState {
     server?: SessionControlServer;
     context?: ExtensionContext;
     endpoint?: SessionEndpoint;
+    runs?: Runs;
+    liveMessage?: unknown;
+    outcome?: "completed" | "aborted" | "error";
+    errorMessage?: string;
 }
 
 /** Paste into an editor draft and force Pi 0.84 to render the external update. */
@@ -40,7 +52,7 @@ export function pasteEditorDraft(
 ): void {
     ui.pasteToEditor(text);
     // pasteToEditor mutates the editor but does not request a render itself.
-    ui.setStatus("pcontrol-paste-refresh", undefined);
+    ui.setStatus("pontrol-paste-refresh", undefined);
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -57,26 +69,86 @@ function textContent(
         .join("\n");
 }
 
-function lastAssistantMessage(ctx: ExtensionContext): AssistantResult | null {
-    const branch = ctx.sessionManager.getBranch();
-    for (let index = branch.length - 1; index >= 0; index -= 1) {
-        const entry = branch[index];
-        if (entry.type !== "message" || entry.message.role !== "assistant")
-            continue;
-        if (
-            entry.message.stopReason !== "stop" &&
-            entry.message.stopReason !== "length"
-        )
-            continue;
-        const text = textContent(entry.message.content).trim();
-        if (!text) continue;
+function messageFromEntry(
+    entry: ReturnType<ExtensionContext["sessionManager"]["getBranch"]>[number],
+): unknown {
+    if (entry.type === "message") return entry.message;
+    if (entry.type === "custom_message")
         return {
-            text,
-            timestamp: entry.message.timestamp,
-            messageId: entry.id,
+            ...entry,
+            role: "custom",
+            timestamp: Date.parse(entry.timestamp),
         };
+    return undefined;
+}
+
+function entryRunHandle(value: unknown): string | undefined {
+    if (typeof value !== "object" || value === null) return undefined;
+    const message = value as Record<string, unknown>;
+    const details = message.details;
+    if (
+        message.customType !== SESSION_MESSAGE_TYPE ||
+        typeof details !== "object" ||
+        details === null
+    )
+        return undefined;
+    const handle = (details as Record<string, unknown>).runHandle;
+    return typeof handle === "string" ? handle : undefined;
+}
+
+function snapshot(
+    ctx: ExtensionContext,
+    liveMessage: unknown,
+    run?: string,
+): { text: string; truncated: boolean } | undefined {
+    const messages = ctx.sessionManager
+        .getBranch()
+        .map(messageFromEntry)
+        .filter((message) => message !== undefined);
+    let start = 0;
+    if (run) {
+        start = messages.findIndex(
+            (message) => entryRunHandle(message) === run,
+        );
+        if (start < 0) return undefined;
     }
-    return null;
+    if (liveMessage && !ctx.isIdle()) {
+        const live = liveMessage as { timestamp?: number; role?: string };
+        const last = messages.at(-1) as
+            | { timestamp?: number; role?: string }
+            | undefined;
+        if (
+            !last ||
+            last.timestamp !== live.timestamp ||
+            last.role !== live.role
+        )
+            messages.push(liveMessage);
+    }
+    const chunks: string[] = [];
+    let size = 0;
+    let truncated = false;
+    for (let i = messages.length - 1; i >= start; i--) {
+        const text = visibleMessageText(messages[i]);
+        if (!text) continue;
+        chunks.unshift(text.slice(-CAPTURE_CHAR_LIMIT));
+        size += text.length + 2;
+        if (size > CAPTURE_CHAR_LIMIT) {
+            truncated = true;
+            break;
+        }
+    }
+    return { text: chunks.join("\n\n").slice(-CAPTURE_CHAR_LIMIT), truncated };
+}
+
+function tail(
+    text: string,
+    lines: number,
+): { text: string; truncated: boolean } {
+    const all = text.split("\n");
+    return {
+        text: all.slice(-lines).join("\n"),
+        truncated: all.length > lines,
+    };
 }
 
 function senderSuffix(sender: SendOptions["sender"]): string {
@@ -89,29 +161,93 @@ function createControlledSession(
     state: RuntimeState,
     ctx: ExtensionContext,
 ): ControlledSession {
+    const runs = state.runs!;
+    const getLiveMessage = () => state.liveMessage;
+    const inject = (
+        message: string,
+        sender?: SenderMetadata,
+        runHandle?: string,
+    ) => {
+        const busy = !ctx.isIdle();
+        pi.sendMessage(
+            {
+                customType: SESSION_MESSAGE_TYPE,
+                content: message + senderSuffix(sender),
+                display: true,
+                details: { sender, ...(runHandle ? { runHandle } : {}) },
+            },
+            busy ? { deliverAs: "steer" } : { triggerTurn: true },
+        );
+    };
+    const updateRun = () => {
+        if (!runs.activeHandle) return;
+        const captured = snapshot(ctx, getLiveMessage(), runs.activeHandle);
+        if (captured) runs.update(captured.text, captured.truncated);
+    };
     return {
-        describe: () => {
-            if (!state.endpoint)
-                throw new Error("Session endpoint is unavailable");
-            return state.endpoint;
+        describe: () => state.endpoint!,
+        send(options) {
+            if (options.draft) {
+                if (!ctx.hasUI)
+                    throw new RunError(
+                        "draft_unavailable",
+                        "Target session has no editor",
+                    );
+                if (ctx.ui.getEditorText() === undefined)
+                    throw new RunError(
+                        "draft_unavailable",
+                        "Target editor is unavailable",
+                    );
+                pasteEditorDraft(ctx.ui, options.message);
+            } else {
+                if (runs.activeHandle && ctx.isIdle())
+                    throw new RunError(
+                        "session_busy",
+                        "A submitted run is starting",
+                    );
+                inject(options.message, options.sender);
+            }
+            return { accepted: true, draft: options.draft === true };
         },
-        async send(options) {
-            pi.sendMessage(
-                {
-                    customType: SESSION_MESSAGE_TYPE,
-                    content: options.message + senderSuffix(options.sender),
-                    display: true,
-                    details: { sender: options.sender },
-                },
-                { triggerTurn: true, deliverAs: "steer" },
-            );
-            return { accepted: true };
+        run(id, options) {
+            if (!ctx.isIdle())
+                throw new RunError(
+                    "session_busy",
+                    "Run requires an idle session; use send to steer busy work",
+                );
+            const result = runs.start(id, options.message);
+            try {
+                inject(options.message, options.sender, result.handle);
+            } catch (error) {
+                runs.finish(
+                    "failed",
+                    error instanceof Error ? error.message : String(error),
+                );
+                throw error;
+            }
+            return result;
         },
-        async paste(text) {
-            pasteEditorDraft(ctx.ui, text);
-            return { pasted: true };
+        capture(run, lines): CaptureResult {
+            updateRun();
+            const captured = run
+                ? runs.capture(run)
+                : (snapshot(ctx, getLiveMessage()) ?? {
+                      text: "",
+                      truncated: false,
+                  });
+            const sliced = tail(captured.text, lines);
+            return {
+                sessionId: ctx.sessionManager.getSessionId(),
+                state: !ctx.isIdle() || runs.busy ? "busy" : "idle",
+                capturedAt: new Date().toISOString(),
+                ...captured,
+                text: sliced.text,
+                truncated: captured.truncated || sliced.truncated,
+            };
         },
-        getLastMessage: () => lastAssistantMessage(ctx),
+        wait(handle, signal) {
+            return runs.wait(handle, signal);
+        },
     };
 }
 
@@ -157,17 +293,20 @@ function endpointFor(
     ctx: ExtensionContext,
     controlDirectory: string,
     startedAt: string,
+    instanceId: string,
+    busy = false,
 ): SessionEndpoint {
     const sessionId = ctx.sessionManager.getSessionId();
     return {
         sessionId,
+        instanceId,
         ...(ctx.sessionManager.getSessionName()?.trim()
             ? { sessionName: ctx.sessionManager.getSessionName()?.trim() }
             : {}),
         cwd: path.resolve(ctx.cwd),
         mode: ctx.mode as "tui" | "rpc",
         pid: process.pid,
-        state: ctx.isIdle() ? "idle" : "busy",
+        state: ctx.isIdle() && !busy ? "idle" : "busy",
         startedAt,
         socketPath: getSessionEndpointPaths(controlDirectory, sessionId)
             .socketPath,
@@ -180,6 +319,8 @@ async function refreshMetadata(state: RuntimeState): Promise<void> {
         state.context,
         path.dirname(state.endpoint.socketPath),
         state.endpoint.startedAt,
+        state.endpoint.instanceId,
+        state.runs?.busy,
     );
     await publishSessionEndpoint(
         path.dirname(state.endpoint.socketPath),
@@ -190,6 +331,9 @@ async function refreshMetadata(state: RuntimeState): Promise<void> {
 async function stopRuntime(state: RuntimeState): Promise<void> {
     const endpoint = state.endpoint;
     const server = state.server;
+    state.runs?.finish("aborted", "Session control stopped");
+    state.runs = undefined;
+    state.liveMessage = undefined;
     state.server = undefined;
     state.endpoint = undefined;
     state.context = undefined;
@@ -233,10 +377,12 @@ export default function controlExtension(pi: ExtensionAPI): void {
             ctx,
             controlDirectory,
             new Date().toISOString(),
+            randomUUID(),
         );
         await removeSessionEndpoint(controlDirectory, endpoint.sessionId);
         state.context = ctx;
         state.endpoint = endpoint;
+        state.runs = new Runs(endpoint.sessionId, endpoint.instanceId);
         state.server = new SessionControlServer({
             socketPath: endpoint.socketPath,
             session: createControlledSession(pi, state, ctx),
@@ -254,11 +400,48 @@ export default function controlExtension(pi: ExtensionAPI): void {
         state.context = ctx;
         await refreshMetadata(state);
     });
+    pi.on("before_agent_start", (event) => {
+        state.liveMessage = undefined;
+        if (event.messageType !== "custom") return;
+        const handle = entryRunHandle(event.message);
+        if (handle) state.runs?.began(handle);
+    });
     pi.on("agent_start", async (_event, ctx) => {
+        state.liveMessage = undefined;
+        state.outcome = "completed";
+        state.errorMessage = undefined;
         state.context = ctx;
         await refreshMetadata(state);
     });
-    pi.on("agent_settled", async (_event, ctx) => {
+    pi.on("message_update", (event) => {
+        state.liveMessage = event.message;
+    });
+    pi.on("message_end", (event) => {
+        state.liveMessage = event.message;
+        if (
+            event.message.role === "assistant" &&
+            event.message.stopReason === "error"
+        )
+            state.errorMessage = event.message.errorMessage;
+    });
+    pi.on("agent_before_settle", (event) => {
+        state.outcome = event.outcome;
+    });
+    pi.on("agent_settled", async (event, ctx) => {
+        const captured = state.runs?.activeHandle
+            ? snapshot(ctx, state.liveMessage, state.runs.activeHandle)
+            : undefined;
+        if (captured) state.runs?.update(captured.text, captured.truncated);
+        state.runs?.finish(
+            event.aborted || state.outcome === "aborted"
+                ? "aborted"
+                : state.outcome === "error"
+                  ? "failed"
+                  : "completed",
+            state.outcome === "error"
+                ? (state.errorMessage ?? "Agent failed")
+                : undefined,
+        );
         state.context = ctx;
         await refreshMetadata(state);
     });

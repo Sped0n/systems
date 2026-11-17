@@ -259,15 +259,20 @@ export function resolveSessionTarget(
     const exactId = endpoints.find((endpoint) => endpoint.sessionId === target);
     if (exactId) return exactId;
 
-    const matchingNames = endpoints.filter(
-        (endpoint) => endpoint.sessionName === target,
+    const matches = endpoints.filter(
+        (endpoint) =>
+            endpoint.sessionName === target ||
+            (/^[0-9a-f]{8}$/iu.test(target) &&
+                endpoint.sessionId
+                    .toLowerCase()
+                    .endsWith(target.toLowerCase())),
     );
-    if (matchingNames.length === 1) return matchingNames[0];
-    if (matchingNames.length > 1) {
+    if (matches.length === 1) return matches[0];
+    if (matches.length > 1) {
         throw new SessionTargetError(
             "target_ambiguous",
-            `Session target is ambiguous: ${formatEndpointMatches(matchingNames)}`,
-            matchingNames,
+            `Session target is ambiguous: ${formatEndpointMatches(matches)}`,
+            matches,
         );
     }
     throw new SessionTargetError(

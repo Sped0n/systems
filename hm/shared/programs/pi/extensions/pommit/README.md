@@ -1,7 +1,7 @@
-# Pcommit
+# Pommit
 
-Implements the `--pcommit` and `--pcommit-hint` flags used by the Home Manager
-`pcommit` wrapper. Pi runs headlessly with `--print --no-session` using the
+Implements the `--pommit` and `--pommit-hint` flags used by the Home Manager
+`pommit` wrapper. Pi runs headlessly with `--print --no-session` using the
 wrapper's configured provider, model, and thinking level, and activates only
 `read`, `grep`, `find`, `ls`, and [`rogt`](../rogt/README.md). Git inspection uses
 structured read-only operations; Bash is not active.
@@ -21,12 +21,12 @@ before creating the commit. The wrapper removes the temporary file on every exit
 Usage:
 
 ```bash
-pcommit
-pcommit "focus on permission changes"
+pommit
+pommit "focus on permission changes"
 ```
 
-Pcommit requires staged changes, never stages files, and never pushes. While Pi
-works, pcommit streams the current inspection-tool activity and the transition
+Pommit requires staged changes, never stages files, and never pushes. While Pi
+works, pommit streams the current inspection-tool activity and the transition
 to commit-message writing on stderr. The headless agent's stdout contains only
 the generated message; the wrapper also allows Git's normal console output.
 Model, inspection, or editor failures exit without committing.

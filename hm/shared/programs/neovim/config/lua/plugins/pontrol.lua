@@ -1,5 +1,5 @@
 local function notify(message, level)
-  vim.notify(message, level or vim.log.levels.INFO, { title = "pcontrol" })
+  vim.notify(message, level or vim.log.levels.INFO, { title = "pontrol" })
 end
 
 local function current_target()
@@ -111,12 +111,12 @@ end
 
 local function paste(target, text)
   vim.system(
-    { "pcontrol", "paste", target.sessionId, "--stdin", "--json" },
+    { "pontrol", "send", target.sessionId, "--draft", "--stdin", "--json" },
     { stdin = text, text = true },
     function(result)
       vim.schedule(function()
         if result.code ~= 0 then
-          notify(vim.trim(result.stderr or "pcontrol paste failed"), vim.log.levels.ERROR)
+          notify(vim.trim(result.stderr or "pontrol send --draft failed"), vim.log.levels.ERROR)
           return
         end
         notify("pasted context into " .. (target.sessionName or target.sessionId))
@@ -126,7 +126,7 @@ local function paste(target, text)
 end
 
 local function select_target(options, callback)
-  local command = { "pcontrol", "list", "--json" }
+  local command = { "pontrol", "list", "--json" }
   if not options.global then
     vim.list_extend(command, { "--cwd", vim.fn.getcwd() })
   end
@@ -136,12 +136,12 @@ local function select_target(options, callback)
     function(result)
       vim.schedule(function()
         if result.code ~= 0 then
-          notify(vim.trim(result.stderr or "pcontrol list failed"), vim.log.levels.ERROR)
+          notify(vim.trim(result.stderr or "pontrol list failed"), vim.log.levels.ERROR)
           return
         end
         local ok, sessions = pcall(vim.json.decode, result.stdout)
         if not ok or type(sessions) ~= "table" then
-          notify("invalid pcontrol session list", vim.log.levels.ERROR)
+          notify("invalid pontrol session list", vim.log.levels.ERROR)
           return
         end
         if #sessions == 0 then
