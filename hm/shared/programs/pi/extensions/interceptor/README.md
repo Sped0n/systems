@@ -6,7 +6,7 @@ Tool-call guard for `read`, `edit`, `write`, and `bash`; not an OS sandbox. File
 
 - Sources: global `interceptor.json`, then trusted-project `.pi/interceptor.json`.
 - The last matching permission rule wins. Actions are `allow`, `deny`, and `remind`. No permission match denies the call. Reminders never grant access or override a denial.
-- No approval dialogs or in-memory approvals; identical behavior in TUI, RPC, JSON, and print modes.
+- The interceptor makes the same permission decisions in TUI, RPC, JSON, and print modes. It does not prompt for approvals or store them in memory.
 - Each rule requires a non-empty `matches` list. Any matching entry makes the rule apply. Each entry contains either `path` and `operations` (`read`, `write`), or `bash`.
 - `message` is required for `remind`, optional for `deny`, and invalid for `allow`. It must be a non-blank string of at most 500 characters. Unknown fields are rejected.
 
@@ -53,7 +53,7 @@ Tool-call guard for `read`, `edit`, `write`, and `bash`; not an OS sandbox. File
 - A `remind` rule requires a stable `id`, unique within its file. Global and project IDs are independent. Other actions do not accept `id` or `once`.
 - `once` defaults to `true`. All matchers share one delivery per context window, including concurrent calls. Successful compaction allows delivery on the next match. Failed or cancelled compaction changes nothing. With `once: false`, every matching allowed call sends a reminder.
 - Pi restores delivery history from reminder messages in the active session branch. Reloading and resuming preserve it. A new session starts fresh. Changing an ID creates a new reminder identity.
-- Reminders enter the model's context without appearing in the TUI. The model receives them on its next request. Delivery does not force another turn, retry the command, or skip other calls. The tool still runs, so the reminder cannot change the current command.
+- When Pi sends a reminder, it shows `Interceptor: <message>` in dim text in the TUI and leaves out the rule ID. The model receives the reminder on its next request. A reminder does not start another turn, change or retry the current command, or skip other tool calls.
 - Path reminders check original and resolved paths. Bash reminders check the whole source and each parsed command. They match text, not filesystem effects. Patterns may match read-only commands and miss paths supplied through variables or scripts.
 - Reminder failures warn without denying an allowed operation.
 

@@ -837,7 +837,11 @@ test("placeholders and symlinks retain sensitive lexical matching without allowi
     );
 });
 
-async function policyHarness(t: TestContext, rules: unknown[]) {
+async function policyHarness(
+    t: TestContext,
+    rules: unknown[],
+    mode: "tui" | "print" = "print",
+) {
     const root = await tempRoot(t);
     const previousConfig = process.env.PI_CODING_AGENT_DIR;
     process.env.PI_CODING_AGENT_DIR = root;
@@ -851,7 +855,15 @@ async function policyHarness(t: TestContext, rules: unknown[]) {
         JSON.stringify({ rules }),
     );
     const harness = await interceptorLifecycleHarness();
-    const ctx = { cwd: root, hasUI: false, isProjectTrusted: () => false };
+    const ctx = {
+        cwd: root,
+        mode,
+        hasUI: mode === "tui",
+        ui: {
+            notify: (message: string) => harness.notifications.push(message),
+        },
+        isProjectTrusted: () => false,
+    };
     await harness.handlers.get("session_start")!({ reason: "startup" }, ctx);
     const call = (toolName: string, input: unknown) =>
         harness.handlers.get("tool_call")!({ toolName, input }, ctx);
@@ -933,17 +945,21 @@ test("mixed OR matchers preserve permission ordering and reminders cannot author
     );
 });
 
-test("allowed file and Bash calls share one non-blocking model-visible reminder", async (t) => {
-    const h = await policyHarness(t, [
-        {
-            matches: [
-                { path: "$CWD/**", operations: ["write"] },
-                { bash: "*" },
-            ],
-            action: "allow",
-        },
-        tmpReminder,
-    ]);
+test("allowed file and Bash calls share one non-blocking model-visible reminder and TUI notice", async (t) => {
+    const h = await policyHarness(
+        t,
+        [
+            {
+                matches: [
+                    { path: "$CWD/**", operations: ["write"] },
+                    { bash: "*" },
+                ],
+                action: "allow",
+            },
+            tmpReminder,
+        ],
+        "tui",
+    );
     assert.equal(
         await h.call("write", { path: path.join(h.root, "new") }),
         undefined,
@@ -957,6 +973,7 @@ test("allowed file and Bash calls share one non-blocking model-visible reminder"
     assert.equal(h.messages.length, 1);
     assert.equal(h.messages[0].content, tmpReminder.message);
     assert.deepEqual(h.messages[0].options, { triggerTurn: false });
+    assert.deepEqual(h.notifications, [`Interceptor: ${tmpReminder.message}`]);
     const context = h.sessionManager.buildSessionContext();
     assert.ok(
         context.messages.some(
@@ -968,15 +985,27 @@ test("allowed file and Bash calls share one non-blocking model-visible reminder"
 });
 
 test("once false emits on every matching allowed call but never on denied calls", async (t) => {
-    const h = await policyHarness(t, [
-        { matches: [{ bash: "*" }], action: "allow" },
-        { ...tmpReminder, once: false },
-        { matches: [{ bash: "rm *" }], action: "deny" },
-    ]);
+    const h = await policyHarness(
+        t,
+        [
+            { matches: [{ bash: "*" }], action: "allow" },
+            { ...tmpReminder, once: false },
+            {
+                ...tmpReminder,
+                id: "cleanup",
+                message: "Clean up\n\u001b[1mafterward\u001b[0m.",
+                once: false,
+            },
+            { matches: [{ bash: "rm *" }], action: "deny" },
+        ],
+        "tui",
+    );
     assert.equal(await h.call("bash", { command: "echo /tmp/a" }), undefined);
     assert.equal(await h.call("bash", { command: "echo /tmp/b" }), undefined);
     assert.equal((await h.call("bash", { command: "rm /tmp/c" })).block, true);
-    assert.equal(h.messages.length, 2);
+    assert.equal(h.messages.length, 4);
+    const notice = `Interceptor: ${tmpReminder.message}\nInterceptor: Clean up afterward.`;
+    assert.deepEqual(h.notifications, [notice, notice]);
 });
 
 test("concurrent matches emit once and successful compaction re-arms persisted suppression", async (t) => {
@@ -1255,10 +1284,11 @@ test("real tool execution delivers reminders on the next request without skippin
 });
 
 test("reminder delivery failure neither blocks execution nor consumes once", async (t) => {
-    const h = await policyHarness(t, [
-        { matches: [{ bash: "*" }], action: "allow" },
-        tmpReminder,
-    ]);
+    const h = await policyHarness(
+        t,
+        [{ matches: [{ bash: "*" }], action: "allow" }, tmpReminder],
+        "tui",
+    );
     const warnings: string[] = [];
     const stderr = t.mock.method(process.stderr, "write", (value: string) => {
         warnings.push(value);
@@ -1269,6 +1299,7 @@ test("reminder delivery failure neither blocks execution nor consumes once", asy
     });
     assert.equal(await h.call("bash", { command: "echo /tmp/a" }), undefined);
     assert.equal(h.messages.length, 0);
+    assert.deepEqual(h.notifications, []);
     assert.match(warnings[0], /delivery unavailable/);
     send.mock.restore();
     stderr.mock.restore();

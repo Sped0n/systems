@@ -2,6 +2,7 @@ import { existsSync, promises as fs } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { stripVTControlCharacters } from "node:util";
 import type { Parser as TreeSitterParser } from "web-tree-sitter";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
@@ -668,6 +669,14 @@ function block(reason: string) {
     };
 }
 
+function warnReminderFailure(error: unknown): void {
+    process.stderr.write(
+        "Interceptor reminder failed: " +
+            (error instanceof Error ? error.message : "unknown error") +
+            "\n",
+    );
+}
+
 export default async function interceptor(pi: ExtensionAPI): Promise<void> {
     let fileRules: ScopedRule[] = [];
     const delivered = new Set<string>();
@@ -753,6 +762,7 @@ export default async function interceptor(pi: ExtensionAPI): Promise<void> {
                     ")",
             );
         }
+        const notices: string[] = [];
         for (const rule of fileRules) {
             if (rule.action !== "remind") continue;
             const key = JSON.stringify([rule.source, rule.id]);
@@ -773,16 +783,23 @@ export default async function interceptor(pi: ExtensionAPI): Promise<void> {
                 );
                 // sendMessage is synchronous; no competing match can interleave here.
                 delivered.add(key);
+                if (ctx.mode === "tui") {
+                    const message = stripVTControlCharacters(rule.message)
+                        .replace(/[\s\p{Cc}]+/gu, " ")
+                        .trim();
+                    notices.push(`Interceptor: ${message}`);
+                }
             } catch (error) {
                 // Advisory failures must not turn allowed operations into denials.
-                process.stderr.write(
-                    "Interceptor reminder failed: " +
-                        (error instanceof Error
-                            ? error.message
-                            : "unknown error") +
-                        "\n",
-                );
+                warnReminderFailure(error);
             }
+        }
+        if (notices.length === 0) return;
+        try {
+            // Pi replaces consecutive info notifications, so show matches together.
+            ctx.ui.notify(notices.join("\n"), "info");
+        } catch (error) {
+            warnReminderFailure(error);
         }
     });
 }
