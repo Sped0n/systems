@@ -36,7 +36,7 @@ in
       };
       model = mkOption {
         type = types.str;
-        default = "gpt-6.1-sol";
+        default = "gpt-6.2-sol";
         description = "Model used to generate commit messages.";
       };
       thinking = mkOption {
