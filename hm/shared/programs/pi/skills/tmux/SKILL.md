@@ -21,16 +21,15 @@ The executable helper requires Python 3.10+, tmux, and POSIX `grep`.
 ```bash
 SOCKET_NAME=firmware
 PANE=$("$CTL" --socket "$SOCKET_NAME" run --session work --window build -- make)
-"$CTL" --socket "$SOCKET_NAME" info "$PANE"                 # copy/paste attach command
+"$CTL" --socket "$SOCKET_NAME" info "$PANE"                # print the attach command
 "$CTL" --socket "$SOCKET_NAME" capture "$PANE" --lines 200 # watch output
 "$CTL" --socket "$SOCKET_NAME" wait "$PANE" --for 5m       # real process exit status
 "$CTL" --socket "$SOCKET_NAME" close "$PANE"               # clean up after inspection
 ```
 
-After starting a terminal, **always give the user the copy/paste attach command**
-from `info`. Repeat it at the end of the tool loop if the terminal is still running.
-Also provide a one-shot capture command when useful; do not assume the user
-remembers the socket or target.
+For interactive or long-running work, share the attach command from `info`.
+For a short smoke test, report the result or show the captured output. Share
+the attach command only if the user asks and the target is still available.
 
 ## Socket convention
 
@@ -174,6 +173,31 @@ printing the marker, the wait times out. Use `capture` to inspect the error.
   yours and finished. Do not kill unrelated work on an explicitly shared socket.
 - Exited panes retain output and status until closed. A creation timeout may occur
   after launch; use `list` to recover rather than starting a duplicate.
+
+### Stale socket files
+
+`close` can succeed and leave the server's socket file behind. `sockets` can
+omit unreachable servers, so do not use that list alone to decide whether a
+socket is stale.
+
+1. Set `SOCKET` to the exact `socketPath` from `info` or to the full path of
+   `<name>.sock` in the configured socket directory. Run
+   `ls -ld -- "$(dirname "$SOCKET")" "$SOCKET"`. Check that you own the
+   directory and that its mode is `0700`. Check that you also own the socket
+   and that `ls` shows type `s`, not a symlink.
+2. Wait for your server to exit. If another agent could start a server at that
+   path during cleanup, leave the socket alone and use a fresh name. Otherwise,
+   check the socket without starting a server:
+
+   ```bash
+   env -u TMUX -u TMUX_PANE tmux -f "${PI_TMUX_CONFIG:-/dev/null}" -S "$SOCKET" list-sessions
+   ```
+
+3. If the check reports `no server running` or `Connection refused` and the
+   socket you checked in step 1 is still there, remove only that socket with
+   `rm -- "$SOCKET"`. If the check returns any other result or you cannot rule
+   out another server starting at that path, leave it alone and use a fresh
+   name.
 
 ## Helper: control.py
 
