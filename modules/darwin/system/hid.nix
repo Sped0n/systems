@@ -79,18 +79,7 @@
           "31".enabled = false; # Copy picture of selected area to the clipboard
           "184".enabled = true; # Screenshot and recording options
 
-          # Spotlight search via command + space
-          "64" = {
-            enabled = true;
-            value = {
-              parameters = [
-                32
-                49
-                1048576
-              ];
-              type = "standard";
-            };
-          };
+          "64".enabled = false; # Spotlight search
           "65".enabled = true; # Show Finder search window
         };
       };

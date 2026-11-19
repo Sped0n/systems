@@ -1,7 +1,7 @@
 { ... }:
 {
   imports = [
-    ./spotlight
+    ./alfred
 
     ./gh.nix
     ./ghostty.nix

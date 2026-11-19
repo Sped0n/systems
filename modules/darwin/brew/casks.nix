@@ -15,6 +15,7 @@
     "keka"
     "keyboardcleantool"
     "iina"
+    "alfred"
 
     # productivity
     "obsidian"
