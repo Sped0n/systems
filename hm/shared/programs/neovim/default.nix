@@ -12,6 +12,7 @@
     extraPackages =
       (with pkgs; [
         (if stdenv.isDarwin then llvmPackages.clang else gcc)
+        clice
         tree-sitter
       ])
       ++ (with pkgs-unstable; [

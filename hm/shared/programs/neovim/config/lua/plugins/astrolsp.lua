@@ -27,9 +27,6 @@ return {
       "pyrefly",
       -- golang
       "gopls",
-      -- c/cpp
-      "clangd",
-      "neocmake",
       -- zig
       "zls",
       -- typescript

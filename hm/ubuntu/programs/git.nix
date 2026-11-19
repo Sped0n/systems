@@ -28,6 +28,7 @@ in
       ".envrc"
       ".cache/"
       ".clangd"
+      "clice.toml"
       "flake.nix"
       "flake.lock"
       ".pi"
