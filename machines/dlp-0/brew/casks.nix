@@ -23,9 +23,7 @@
 
     # productivity
     "drawio"
-    "typora"
     "onlyoffice"
-    "chatgpt"
 
     # creativity
     "affinity"
