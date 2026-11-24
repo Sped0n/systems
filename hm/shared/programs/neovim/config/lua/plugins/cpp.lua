@@ -6,9 +6,6 @@ return {
       servers = { "clice", "neocmake" },
       config = {
         clice = {
-          on_attach = function(client, bufnr)
-            vim.lsp.semantic_tokens.enable(false, { bufnr = bufnr, client_id = client.id })
-          end,
           root_dir = function(bufnr, on_dir)
             local root = vim.fs.root(bufnr, "clice.toml")
               or vim.fs.root(
