@@ -9,26 +9,26 @@ let
   releases = {
     x86_64-linux = {
       target = "x86_64-unknown-linux-gnu";
-      hash = "sha256-ndGBqsnIHK52slXpU9ohyeYD/FtAZEfrJsler2ftlpo=";
+      hash = "sha256-f5faPepym06xWgoXCOlBz9CU/vRN6dsdtLf9vKIxeS8=";
     };
     aarch64-linux = {
       target = "aarch64-unknown-linux-gnu";
-      hash = "sha256-t+ts5lr7nNxSKdrfGxpWFIXc2ykqBtaIV81gl3FvCLo=";
+      hash = "sha256-SjphSfREYj3ck4pDu+RXHld496ITDjM9DTqMO3jsZXc=";
     };
     x86_64-darwin = {
       target = "x86_64-apple-darwin";
-      hash = "sha256-KKlB2tZAzyS219dkd+4Xg1PmeoSQ7HuHv+W2EumZ7OI=";
+      hash = "sha256-pYMehcfViZtzZHSq9cLxWy+GVEOk1IWDXut2JfGomGc=";
     };
     aarch64-darwin = {
       target = "aarch64-apple-darwin";
-      hash = "sha256-lBrNbsTHRkRKVABkUiCc0O+Y9aNO7lCJUgAWxApB+Cw=";
+      hash = "sha256-KoiUULw2w83b7NvQHIsYKK9JYG6dY6i39aKUxItZMRA=";
     };
   };
   release = releases.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "clice";
-  version = "1.0.0";
+  version = "1.1.2026112412";
 
   src = fetchurl {
     url = "https://github.com/clice-io/clice/releases/download/v${finalAttrs.version}/clice-${finalAttrs.version}.${release.target}.tar.gz";
