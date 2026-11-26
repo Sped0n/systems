@@ -17,7 +17,6 @@ import {
     resolveSessionTarget,
     SessionTargetError,
 } from "./discovery.ts";
-import { pasteEditorDraft } from "./index.ts";
 import {
     ControlProtocolError,
     JsonLineDecoder,
@@ -180,25 +179,6 @@ test("discovery preserves owner-only permissions and rejects ambiguous names", a
             SessionTargetError,
         );
     });
-});
-
-test("external draft paste requests an immediate render", () => {
-    const calls: string[] = [];
-    pasteEditorDraft(
-        {
-            pasteToEditor: (text) => {
-                calls.push(`paste:${text}`);
-            },
-            setStatus: (key, text) => {
-                calls.push(`status:${key}:${String(text)}`);
-            },
-        },
-        "draft",
-    );
-    assert.deepEqual(calls, [
-        "paste:draft",
-        "status:pontrol-paste-refresh:undefined",
-    ]);
 });
 
 class FakeSession implements ControlledSession {

@@ -45,16 +45,6 @@ interface RuntimeState {
     errorMessage?: string;
 }
 
-/** Paste into an editor draft and force Pi 0.84 to render the external update. */
-export function pasteEditorDraft(
-    ui: Pick<ExtensionContext["ui"], "pasteToEditor" | "setStatus">,
-    text: string,
-): void {
-    ui.pasteToEditor(text);
-    // pasteToEditor mutates the editor but does not request a render itself.
-    ui.setStatus("pontrol-paste-refresh", undefined);
-}
-
 function isObject(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -198,7 +188,7 @@ function createControlledSession(
                         "draft_unavailable",
                         "Target editor is unavailable",
                     );
-                pasteEditorDraft(ctx.ui, options.message);
+                ctx.ui.pasteToEditor(options.message);
             } else {
                 if (runs.activeHandle && ctx.isIdle())
                     throw new RunError(
