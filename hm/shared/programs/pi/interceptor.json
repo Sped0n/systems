@@ -52,7 +52,6 @@
       "message": "Use `uv pip` instead."
     },
     {
-      "id": "tmp-usage",
       "matches": [
         { "path": "/tmp/**", "operations": ["write"] },
         { "bash": "*/tmp/*" },

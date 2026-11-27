@@ -871,31 +871,26 @@ async function policyHarness(
 }
 
 const tmpReminder = {
-    id: "temporary-files",
     action: "remind",
     matches: [{ path: "$CWD/**", operations: ["write"] }, { bash: "*/tmp/*" }],
     message: "Keep temporary files small.",
 };
 
-test("reminder schema defaults once and validates action-specific fields and IDs", () => {
+test("reminder schema defaults once and rejects invalid and legacy fields", () => {
     assert.deepEqual(parsePolicy({ rules: [tmpReminder] }).rules[0], {
         ...tmpReminder,
         once: true,
     });
     for (const rule of [
-        { ...tmpReminder, id: undefined },
+        { ...tmpReminder, id: "temporary-files" },
         { ...tmpReminder, message: undefined },
         { ...tmpReminder, once: 1 },
         { ...tmpReminder, matches: [] },
         { ...tmpReminder, action: "allow" },
-        { ...tmpReminder, action: "deny" },
+        { ...tmpReminder, action: "deny", once: true },
         { matches: [{ bash: "*", path: "/tmp" }], action: "allow" },
     ])
         assert.throws(() => parsePolicy({ rules: [rule] }));
-    assert.throws(
-        () => parsePolicy({ rules: [tmpReminder, tmpReminder] }),
-        /duplicates/,
-    );
 });
 
 test("mixed OR matchers preserve permission ordering and reminders cannot authorize", async (t) => {
@@ -992,7 +987,6 @@ test("once false emits on every matching allowed call but never on denied calls"
             { ...tmpReminder, once: false },
             {
                 ...tmpReminder,
-                id: "cleanup",
                 message: "Clean up\n\u001b[1mafterward\u001b[0m.",
                 once: false,
             },
@@ -1048,6 +1042,41 @@ test("concurrent matches emit once and successful compaction re-arms persisted s
         h.ctx,
     );
     assert.equal(fresh.messages.length, 1);
+});
+
+test("reminder history survives reordering and distinguishes matcher and message changes", async (t) => {
+    const allow = { matches: [{ bash: "*" }], action: "allow" };
+    const h = await policyHarness(t, [allow, tmpReminder, tmpReminder]);
+    const command = "echo /tmp/file";
+    assert.equal(await h.call("bash", { command }), undefined);
+    assert.equal(h.messages.length, 1);
+
+    const changedMatches = {
+        ...tmpReminder,
+        matches: tmpReminder.matches.map((matcher) =>
+            "path" in matcher ? { ...matcher, path: `${h.root}/**` } : matcher,
+        ),
+    };
+    const changedMessage = { ...tmpReminder, message: "Clean up afterward." };
+    await writeFile(
+        path.join(h.root, "interceptor.json"),
+        JSON.stringify({
+            rules: [tmpReminder, allow, changedMatches, changedMessage],
+        }),
+    );
+    const reloaded = await interceptorLifecycleHarness(h.sessionManager);
+    await reloaded.handlers.get("session_start")!({ reason: "reload" }, h.ctx);
+    assert.equal(
+        await reloaded.handlers.get("tool_call")!(
+            { toolName: "bash", input: { command } },
+            h.ctx,
+        ),
+        undefined,
+    );
+    assert.deepEqual(
+        reloaded.messages.map((message) => message.content),
+        [changedMatches.message, changedMessage.message],
+    );
 });
 
 test("environment paths are snapshotted on load while Bash patterns and messages stay literal", async (t) => {
@@ -1142,7 +1171,7 @@ test("environment paths are snapshotted on load while Bash patterns and messages
     }
 });
 
-test("global and trusted-project reminders have independent IDs", async (t) => {
+test("identical reminders in global and trusted-project files deliver independently", async (t) => {
     const h = await policyHarness(t, [
         { matches: [{ bash: "*" }], action: "allow" },
         tmpReminder,

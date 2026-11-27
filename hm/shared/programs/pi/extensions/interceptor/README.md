@@ -20,7 +20,6 @@ Tool-call guard for `read`, `edit`, `write`, and `bash`; not an OS sandbox. File
       "message": "Use `uv pip` instead."
     },
     {
-      "id": "tmp-usage",
       "matches": [
         { "path": "/tmp/**", "operations": ["write"] },
         { "bash": "*/tmp/*" }
@@ -50,23 +49,23 @@ Tool-call guard for `read`, `edit`, `write`, and `bash`; not an OS sandbox. File
 
 ## Reminders
 
-- A `remind` rule requires a stable `id`, unique within its file. Global and project IDs are independent. Other actions do not accept `id` or `once`.
-- `once` defaults to `true`. All matchers share one delivery per context window, including concurrent calls. Successful compaction allows delivery on the next match. Failed or cancelled compaction changes nothing. With `once: false`, every matching allowed call sends a reminder.
-- Pi restores delivery history from reminder messages in the active session branch. Reloading and resuming preserve it. A new session starts fresh. Changing an ID creates a new reminder identity.
-- When Pi sends a reminder, it shows `Interceptor: <message>` in dim text in the TUI and leaves out the rule ID. The model receives the reminder on its next request. A reminder does not start another turn, change or retry the current command, or skip other tool calls.
+- Only `remind` rules accept `once`, which defaults to `true`. All matchers share one delivery per context window, including concurrent calls. Successful compaction allows delivery on the next match. Failed or cancelled compaction changes nothing. With `once: false`, every matching allowed call sends a reminder.
+- Delivery history is keyed by policy file path, configured matchers (before path expansion), and message. Identical reminders in one file share history. Reordering rules preserves history; changing a reminder’s matchers or message gives it a new key.
+- Pi restores delivery history from reminder messages in the active session branch. Reloading and resuming preserve it. A new session starts fresh.
+- When Pi sends a reminder, it shows `Interceptor: <message>` in dim text in the TUI. The model receives the reminder on its next request. A reminder does not start another turn, change or retry the current command, or skip other tool calls.
 - Path reminders check original and resolved paths. Bash reminders check the whole source and each parsed command. They match text, not filesystem effects. Patterns may match read-only commands and miss paths supplied through variables or scripts.
 - Reminder failures warn without denying an allowed operation.
 
 ## Denial messages
 
 - Prefix: `Interceptor denied the tool call: `.
-- Matching deny: configured `message` or match description, followed by `Matched rule: <JSON>`. JSON excludes `message` and internal scope and source fields.
+- Matching deny: configured `message` or match description, followed by `Matched rule: <JSON>`. JSON excludes `message` and the internal scope.
 - No match or input/parser failure: explanation only.
 
 ## Reloading
 
 - At process startup, configuration failures go to stderr before the TUI starts. This check may read project policy data but does not activate it or grant trust.
-- Policies load at session start and `/reload`, not per tool call.
+- Policies load at session start and `/reload`, not per tool call. When upgrading from ID-based reminders, remove `id` from each policy. Older sessions may deliver those reminders once more.
 - Successful loads populate a process-local last-valid cache keyed by global configuration directory, working directory, and trust state.
 - Failed loads warn and retain the matching cached policy; without one, they use an empty policy and deny guarded calls. Warnings appear in the TUI, or on stderr in non-interactive modes.
 - Restarting Pi clears the cache.

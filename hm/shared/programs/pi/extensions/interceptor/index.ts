@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { existsSync, promises as fs } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
@@ -11,15 +12,23 @@ export type PermissionAction = "allow" | "deny";
 export type Matcher =
     | { path: string; operations: Operation[] }
     | { bash: string };
-export type Rule = { matches: Matcher[] } & (
-    | { action: PermissionAction; message?: string }
-    | { action: "remind"; id: string; message: string; once: boolean }
-);
-export type Policy = { rules: Rule[] };
-export type ScopedRule = Rule & {
-    scope: string;
-    source: string;
+type PermissionRule = {
+    matches: Matcher[];
+    action: PermissionAction;
+    message?: string;
 };
+type ReminderRule = {
+    matches: Matcher[];
+    action: "remind";
+    message: string;
+    once: boolean;
+};
+export type Rule = PermissionRule | ReminderRule;
+export type Policy = { rules: Rule[] };
+export type ScopedRule = (
+    | PermissionRule
+    | (ReminderRule & { reminderKey: string })
+) & { scope: string };
 export type PolicyLoad = { rules: ScopedRule[] } | { error: string };
 type ToolName = "read" | "edit" | "write";
 
@@ -131,7 +140,6 @@ export function parsePolicy(value: unknown): Policy {
     const policy = onlyKeys(value, "policy", ["rules"]);
     if (!Array.isArray(policy.rules))
         throw new Error("policy.rules must be an array");
-    const ids = new Set<string>();
     return {
         rules: policy.rules.map((value, index): Rule => {
             const name = `policy.rules[${index}]`;
@@ -145,7 +153,7 @@ export function parsePolicy(value: unknown): Policy {
                 value,
                 name,
                 action === "remind"
-                    ? ["matches", "action", "id", "message", "once"]
+                    ? ["matches", "action", "message", "once"]
                     : action === "deny"
                       ? ["matches", "action", "message"]
                       : ["matches", "action"],
@@ -162,15 +170,11 @@ export function parsePolicy(value: unknown): Policy {
                     action,
                     ...(message === undefined ? {} : { message }),
                 };
-            const id = validateText(rule.id, name + ".id");
-            if (id === undefined) throw new Error(name + ".id is required");
-            if (ids.has(id)) throw new Error(name + ".id duplicates " + id);
-            ids.add(id);
             if (message === undefined)
                 throw new Error(name + ".message is required");
             if (rule.once !== undefined && typeof rule.once !== "boolean")
                 throw new Error(name + ".once must be a boolean");
-            return { matches, action, id, message, once: rule.once !== false };
+            return { matches, action, message, once: rule.once !== false };
         }),
     };
 }
@@ -178,13 +182,10 @@ export function parsePolicy(value: unknown): Policy {
 function scopedRules(
     policy: Policy,
     scope: string,
-    source = scope,
+    policyPath = scope,
 ): ScopedRule[] {
-    return policy.rules.map((rule) => ({
-        ...rule,
-        scope,
-        source,
-        matches: rule.matches.flatMap((matcher): Matcher[] => {
+    return policy.rules.map((rule) => {
+        const matches = rule.matches.flatMap((matcher): Matcher[] => {
             if (!("path" in matcher)) return [matcher];
             const { root, subtree } = splitPattern(matcher.path);
             let missing = false;
@@ -219,8 +220,14 @@ function scopedRules(
                         : resolved,
                 },
             ];
-        }),
-    }));
+        });
+        if (rule.action !== "remind") return { ...rule, scope, matches };
+        // Use configured matchers so path expansion cannot change the identity.
+        const reminderKey = createHash("sha256")
+            .update(JSON.stringify([policyPath, rule.matches, rule.message]))
+            .digest("hex");
+        return { ...rule, scope, matches, reminderKey };
+    });
 }
 
 async function loadPolicyFile(
@@ -231,7 +238,7 @@ async function loadPolicyFile(
         return scopedRules(
             parsePolicy(JSON.parse(await fs.readFile(file, "utf8"))),
             scope,
-            file,
+            path.resolve(file),
         );
     } catch (error) {
         if (isNodeError(error, "ENOENT")) {
@@ -412,8 +419,11 @@ async function ruleMatches(
     };
 }
 
-function denyReason(rule: ScopedRule, fallback: string): string {
-    const { scope, source, message, ...matchedRule } = rule;
+function denyReason(
+    rule: PermissionRule & { scope: string },
+    fallback: string,
+): string {
+    const { scope, message, ...matchedRule } = rule;
     const reason = message ?? fallback;
     const separator = /[.!?]$/u.test(reason) ? " " : ". ";
     return reason + separator + "Matched rule: " + JSON.stringify(matchedRule);
@@ -765,7 +775,7 @@ export default async function interceptor(pi: ExtensionAPI): Promise<void> {
         const notices: string[] = [];
         for (const rule of fileRules) {
             if (rule.action !== "remind") continue;
-            const key = JSON.stringify([rule.source, rule.id]);
+            const key = rule.reminderKey;
             if (rule.once && delivered.has(key)) continue;
             try {
                 if (!(await reminderMatches(rule, tool, value, ctx.cwd)))
