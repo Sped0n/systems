@@ -41,6 +41,16 @@ Reach for:
 - A queue, cache, index, graph, tree, or normalized collection where the access pattern calls for it.
 - Any other structure that fits. When none fits, work out what the code must never allow and how the data gets read, then find the structure that encodes exactly that.
 
+### Check functional independence with Axiomatic Design
+
+Use the Independence Axiom of Axiomatic Design to ask: when one behavior needs to change, which other behaviors must be adjusted to compensate? For example, changing a report's display precision should not change its calculated totals. If it does, presentation and calculation share a decision that should be independent.
+
+When the interactions are hard to reason about, build a design matrix. Put functional requirements (the outcomes required) in rows and design parameters (the decisions you can adjust) in columns. Mark a cell when changing that parameter can affect that requirement. Ground each mark in a contract, code path, or observed behavior, not merely an import.
+
+- A **diagonal matrix** represents an *uncoupled* design: each parameter affects only its corresponding requirement.
+- A **triangular matrix** represents a *decoupled* design when it has off-diagonal dependencies: the requirements can be satisfied by setting the parameters in order, without undoing earlier work. Lower versus upper depends on the ordering.
+- If no ordering makes the matrix triangular, identify the specific decisions that require mutual adjustment. Recommend a different boundary when that coupling obstructs a required change, not merely to make the matrix look cleaner.
+
 Do not force an abstraction. Prefer boring code if the current shape is already clear, local, and unlikely to grow. Be skeptical of an abstraction that adds indirection without removing branches, duplicated rules, invalid states, or lifecycle risk.
 
 The sign that you skipped this is a new feature that grows an existing if/else chain by one more branch, or a second boolean that must stay in sync with the first. Temporal decomposition is another sign. Phase-named modules repeat the same domain rules across steps. These are reasons to inspect the model, not automatic permission for an unrelated refactor.
